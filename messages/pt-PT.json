@@ -18,7 +18,15 @@
     "no": "Não",
     "noResults": "Sem resultados",
     "error": "Erro",
-    "success": "Sucesso"
+    "success": "Sucesso",
+    "status": "Estado",
+    "active": "Ativo",
+    "inactive": "Inativo",
+    "name": "Nome",
+    "address": "Morada",
+    "phone": "Telefone",
+    "school": "Escola",
+    "role": "Função"
   },
   "auth": {
     "login": "Iniciar sessão",
@@ -35,7 +43,9 @@
     "classes": "Aulas",
     "students": "Alunos",
     "instructors": "Instrutores",
-    "settings": "Definições"
+    "settings": "Definições",
+    "schools": "Escolas",
+    "users": "Utilizadores"
   },
   "roles": {
     "ADMIN": "Administrador",
@@ -43,9 +53,28 @@
     "INSTRUCTOR": "Instrutor/a",
     "STUDENT": "Aluno/a"
   },
+  "schools": {
+    "title": "Escolas",
+    "create": "Criar escola",
+    "edit": "Editar escola",
+    "noSchools": "Nenhuma escola registada",
+    "studentsCount": "{count, plural, =0 {Sem alunos} one {# aluno} other {# alunos}}",
+    "classesCount": "{count, plural, =0 {Sem aulas} one {# aula} other {# aulas}}"
+  },
+  "users": {
+    "title": "Utilizadores",
+    "create": "Criar utilizador",
+    "edit": "Editar utilizador",
+    "deactivate": "Desativar",
+    "activate": "Ativar",
+    "noUsers": "Nenhum utilizador registado",
+    "tempPassword": "Palavra-passe temporária",
+    "cannotDeactivateSelf": "Não pode desativar a sua própria conta"
+  },
   "classes": {
     "title": "Aulas",
     "create": "Criar aula",
+    "edit": "Editar aula",
     "theory": "Teórica",
     "practical": "Prática",
     "scheduled": "Agendada",
@@ -57,7 +86,20 @@
     "startTime": "Hora de início",
     "endTime": "Hora de fim",
     "date": "Data",
-    "type": "Tipo"
+    "type": "Tipo",
+    "oneOff": "Aula única",
+    "recurring": "Aula recorrente",
+    "daysOfWeek": "Dias da semana",
+    "validFrom": "De",
+    "validUntil": "Até",
+    "noClasses": "Nenhuma aula registada",
+    "cancelConfirm": "Tem a certeza que pretende cancelar esta aula?",
+    "schoolNotFound": "Escola não encontrada",
+    "instructorNotFound": "Instrutor não encontrado",
+    "notFound": "Aula não encontrada",
+    "cannotEditFinished": "Não é possível editar aulas concluídas ou canceladas",
+    "cannotCancelCompleted": "Não é possível cancelar aulas concluídas",
+    "noSessionsGenerated": "Nenhuma aula gerada para o período indicado"
   },
   "enrollment": {
     "enroll": "Inscrever",
@@ -65,11 +107,25 @@
     "enrolled": "Inscrito/a",
     "attended": "Presente",
     "noShow": "Faltou",
-    "classFull": "Aula lotada"
+    "classFull": "Aula lotada",
+    "alreadyEnrolled": "Já inscrito/a nesta aula",
+    "notFound": "Inscrição não encontrada",
+    "notActive": "Esta inscrição não está ativa",
+    "classNotAvailable": "Esta aula não está disponível para inscrição",
+    "myEnrollments": "As minhas inscrições"
   },
   "dashboard": {
     "welcome": "Bem-vindo/a",
     "upcomingClasses": "Próximas aulas",
     "todaySchedule": "Horário de hoje"
+  },
+  "days": {
+    "0": "Segunda-feira",
+    "1": "Terça-feira",
+    "2": "Quarta-feira",
+    "3": "Quinta-feira",
+    "4": "Sexta-feira",
+    "5": "Sábado",
+    "6": "Domingo"
   }
 }

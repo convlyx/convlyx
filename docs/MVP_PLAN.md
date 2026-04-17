@@ -411,6 +411,13 @@ saas/
 | Mobile (post-MVP) | React Native (Expo) | Flutter, PWA | Shares TypeScript + tRPC types with web. One language across entire stack. |
 | i18n | next-intl (pt-PT only for MVP) | next-i18next, react-intl | App Router native, lightweight. All UI strings go through translation from day one. Adding a new locale = adding a JSON file, zero code changes. |
 | Default Language | Portuguese (pt-PT) | Start in English | Target market is Portugal. pt-PT from day one avoids retrofit. |
+| Recurrence model | Business logic only (no DB tables) | RecurrencePattern table | Simpler. tRPC procedure bulk-inserts individual ClassSession rows. No pattern tracking needed for MVP. |
+| User invitation (MVP) | Admin creates account with temp password | Email invite with link | Simpler for MVP. No email provider setup needed. Post-MVP: switch to invite emails. |
+| Timezone (MVP) | Continental Portugal only (Europe/Lisbon) | Multi-timezone support | First market is mainland PT. Store datetimes in UTC, display in Europe/Lisbon. |
+| DB connection | Supabase pooler session mode (port 5432) | Direct connection (IPv6 only on free tier) | Direct connection requires IPv6 or paid IPv4 add-on. Pooler on port 5432 (session mode) works with Prisma. |
+| Prisma migrations | `prisma db push` for MVP | `prisma migrate dev` | Direct DB connection blocked on free tier. `db push` works through pooler. Switch to proper migrations when on paid tier. |
+| Multi-school users (MVP) | Single school_id per user | UserSchool join table | Simpler for MVP. If needed later, migrate to join table. |
+| Batch class creation | Not in MVP | batch_id grouping on RecurrencePattern | Over-engineering for MVP. Secretary creates patterns individually if needed. |
 
 ---
 

@@ -17,6 +17,8 @@ const navItems: NavItem[] = [
   { key: "classes", href: "/classes", roles: ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"] },
   { key: "students", href: "/students", roles: ["ADMIN", "SECRETARY", "INSTRUCTOR"] },
   { key: "instructors", href: "/instructors", roles: ["ADMIN", "SECRETARY"] },
+  { key: "schools", href: "/schools", roles: ["ADMIN"] },
+  { key: "users", href: "/users", roles: ["ADMIN", "SECRETARY"] },
   { key: "settings", href: "/settings", roles: ["ADMIN"] },
 ];
 
