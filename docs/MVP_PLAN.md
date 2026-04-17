@@ -172,9 +172,11 @@ This is why Prisma was chosen over raw Supabase client for data access.
 │ name         │      │ tenant_id    │      │ tenant_id        │
 │ subdomain    │      │ name         │      │ school_id        │
 │ created_at   │      │ address      │      │ email            │
-│ status       │      │ phone        │      │ name             │
-└──────────────┘      │ created_at   │      │ role (enum)      │
+│ updated_at   │      │ phone        │      │ name             │
+│ status       │      │ created_at   │      │ role (enum)      │
+└──────────────┘      │ updated_at   │      │ status           │
                       └──────┬───────┘      │ created_at       │
+                             │              │ updated_at       │
                              │              └──────────────────┘
                              │
               ┌──────────────┘
@@ -193,10 +195,13 @@ This is why Prisma was chosen over raw Supabase client for data access.
    │ capacity           │    (theory: e.g. 30, practical: 1-2)
    │ status (enum)      │
    │ created_at         │
+   │ updated_at         │
+   │ created_by         │    → User who created it
+   │ updated_by         │    → User who last modified it
    └────────┬───────────┘
             │
    ┌────────▼───────────┐
-   │ Enrollment         │
+   │ Enrollment         │    UNIQUE(session_id, student_id)
    │────────────────────│
    │ id                 │
    │ tenant_id          │
@@ -204,6 +209,7 @@ This is why Prisma was chosen over raw Supabase client for data access.
    │ student_id         │    → User (role=STUDENT)
    │ status (enum)      │
    │ enrolled_at        │
+   │ updated_at         │
    └────────────────────┘
 
 Enums:
@@ -427,12 +433,14 @@ saas/
 - Email/SMS notifications (class reminders, schedule changes)
 
 ### Medium-term
+- GDPR compliance (data export, right to deletion, consent tracking)
 - IMT category tracking (A, A1, A2, B, B1, etc.)
 - Vehicle/fleet management
 - Payment processing (Stripe integration)
 - Group-level analytics dashboard
 - Instructor availability management (recurring schedules)
 - Waiting lists for full classes
+- Multi-school users (instructor/secretary working across schools in the same tenant)
 
 ### Long-term
 - Document management (student contracts, certificates)

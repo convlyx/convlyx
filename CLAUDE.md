@@ -49,6 +49,13 @@ See `docs/MVP_PLAN.md` for full architecture, data model, and roadmap.
 - Paginate all lists (cursor-based). Never load unbounded data.
 - Transactions for multi-step operations (e.g. auth account + User row).
 - Index all foreign keys (`tenant_id`, `school_id`, `instructor_id`, `session_id`).
+- All tables must have `updated_at` (auto-managed by Prisma `@updatedAt`). Mutation-heavy tables (`ClassSession`) also have `created_by` and `updated_by`.
+- Use unique constraints to prevent duplicates (e.g. `@@unique([session_id, student_id])` on Enrollment).
+
+### GDPR Awareness
+- EU market — GDPR applies. All user data must be traceable via FK chains (User → Enrollments, ClassSessions, etc.) so data export and deletion are possible.
+- Soft delete covers most cases; a hard-delete path for GDPR requests will be added post-MVP.
+- Keep side effects in tRPC procedures separable (e.g. `createEnrollment` does the insert, then triggers notifications) so future event-driven patterns (emails, audit logs, webhooks) can hook in without rewriting business logic.
 
 ### i18n
 - All user-facing strings use `next-intl` translation keys — never hardcoded text.
