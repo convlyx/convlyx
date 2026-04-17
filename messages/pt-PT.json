@@ -1,0 +1,75 @@
+{
+  "common": {
+    "appName": "Escola de Condução",
+    "loading": "A carregar...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Criar",
+    "search": "Pesquisar",
+    "filter": "Filtrar",
+    "actions": "Ações",
+    "confirm": "Confirmar",
+    "back": "Voltar",
+    "next": "Seguinte",
+    "previous": "Anterior",
+    "yes": "Sim",
+    "no": "Não",
+    "noResults": "Sem resultados",
+    "error": "Erro",
+    "success": "Sucesso"
+  },
+  "auth": {
+    "login": "Iniciar sessão",
+    "logout": "Terminar sessão",
+    "email": "Email",
+    "password": "Palavra-passe",
+    "forgotPassword": "Esqueceu a palavra-passe?",
+    "notAuthenticated": "Não autenticado. Inicie sessão para continuar.",
+    "insufficientPermissions": "Não tem permissões para realizar esta ação."
+  },
+  "nav": {
+    "dashboard": "Painel",
+    "calendar": "Calendário",
+    "classes": "Aulas",
+    "students": "Alunos",
+    "instructors": "Instrutores",
+    "settings": "Definições"
+  },
+  "roles": {
+    "ADMIN": "Administrador",
+    "SECRETARY": "Secretário/a",
+    "INSTRUCTOR": "Instrutor/a",
+    "STUDENT": "Aluno/a"
+  },
+  "classes": {
+    "title": "Aulas",
+    "create": "Criar aula",
+    "theory": "Teórica",
+    "practical": "Prática",
+    "scheduled": "Agendada",
+    "inProgress": "Em curso",
+    "completed": "Concluída",
+    "cancelled": "Cancelada",
+    "capacity": "Capacidade",
+    "instructor": "Instrutor/a",
+    "startTime": "Hora de início",
+    "endTime": "Hora de fim",
+    "date": "Data",
+    "type": "Tipo"
+  },
+  "enrollment": {
+    "enroll": "Inscrever",
+    "cancel": "Cancelar inscrição",
+    "enrolled": "Inscrito/a",
+    "attended": "Presente",
+    "noShow": "Faltou",
+    "classFull": "Aula lotada"
+  },
+  "dashboard": {
+    "welcome": "Bem-vindo/a",
+    "upcomingClasses": "Próximas aulas",
+    "todaySchedule": "Horário de hoje"
+  }
+}

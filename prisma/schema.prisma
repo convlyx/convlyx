@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ──────────────────────────────────────────
+// Enums
+// ──────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  SECRETARY
+  INSTRUCTOR
+  STUDENT
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ClassType {
+  THEORY
+  PRACTICAL
+}
+
+enum ClassStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  CANCELLED
+  ATTENDED
+  NO_SHOW
+}
+
+enum TenantStatus {
+  ACTIVE
+  INACTIVE
+}
+
+// ──────────────────────────────────────────
+// Models
+// ──────────────────────────────────────────
+
+model Tenant {
+  id        String       @id @default(uuid()) @db.Uuid
+  name      String
+  subdomain String       @unique
+  status    TenantStatus @default(ACTIVE)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  schools School[]
+  users   User[]
+
+  @@map("tenants")
+}
+
+model School {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  address   String?
+  phone     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant   Tenant         @relation(fields: [tenantId], references: [id])
+  users    User[]
+  sessions ClassSession[]
+
+  @@index([tenantId])
+  @@map("schools")
+}
+
+model User {
+  id        String     @id @db.Uuid // matches Supabase auth.users.id
+  tenantId  String     @map("tenant_id") @db.Uuid
+  schoolId  String     @map("school_id") @db.Uuid
+  email     String
+  name      String
+  role      UserRole
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  tenant      Tenant         @relation(fields: [tenantId], references: [id])
+  school      School         @relation(fields: [schoolId], references: [id])
+  enrollments Enrollment[]
+
+  // Classes where this user is the instructor
+  instructedSessions ClassSession[] @relation("InstructorSessions")
+
+  // Audit trail: classes created/modified by this user
+  createdSessions ClassSession[] @relation("CreatedBySessions")
+  updatedSessions ClassSession[] @relation("UpdatedBySessions")
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("users")
+}
+
+model ClassSession {
+  id           String      @id @default(uuid()) @db.Uuid
+  tenantId     String      @map("tenant_id") @db.Uuid
+  schoolId     String      @map("school_id") @db.Uuid
+  classType    ClassType   @map("class_type")
+  instructorId String      @map("instructor_id") @db.Uuid
+  title        String
+  startsAt     DateTime    @map("starts_at")
+  endsAt       DateTime    @map("ends_at")
+  capacity     Int
+  status       ClassStatus @default(SCHEDULED)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  createdById  String      @map("created_by") @db.Uuid
+  updatedById  String      @map("updated_by") @db.Uuid
+
+  school      School       @relation(fields: [schoolId], references: [id])
+  instructor  User         @relation("InstructorSessions", fields: [instructorId], references: [id])
+  createdBy   User         @relation("CreatedBySessions", fields: [createdById], references: [id])
+  updatedBy   User         @relation("UpdatedBySessions", fields: [updatedById], references: [id])
+  enrollments Enrollment[]
+
+  @@index([tenantId])
+  @@index([schoolId])
+  @@index([instructorId])
+  @@index([startsAt])
+  @@map("class_sessions")
+}
+
+model Enrollment {
+  id         String           @id @default(uuid()) @db.Uuid
+  tenantId   String           @map("tenant_id") @db.Uuid
+  sessionId  String           @map("session_id") @db.Uuid
+  studentId  String           @map("student_id") @db.Uuid
+  status     EnrollmentStatus @default(ENROLLED)
+  enrolledAt DateTime         @default(now()) @map("enrolled_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+
+  session ClassSession @relation(fields: [sessionId], references: [id])
+  student User         @relation(fields: [studentId], references: [id])
+
+  @@unique([sessionId, studentId])
+  @@index([tenantId])
+  @@index([sessionId])
+  @@index([studentId])
+  @@map("enrollments")
+}
