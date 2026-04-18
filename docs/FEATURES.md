@@ -1,0 +1,158 @@
+# Features Inventory
+
+Living document of everything the app can do, organized by area.
+
+---
+
+## Authentication & Authorization
+- Email/password login via Supabase Auth
+- Role-based access: ADMIN, SECRETARY, INSTRUCTOR, STUDENT
+- Server-side role checks on all pages (redirect if unauthorized)
+- tRPC middleware enforces role permissions on all API endpoints
+- Session refresh via middleware on every request
+- Logout
+
+## Multi-Tenancy
+- Tenant resolved from subdomain (`escola1.escolaconduzir.app`)
+- All queries scoped by `tenant_id` — no cross-tenant data access
+- Supabase RLS as defense in depth
+- Tenant name editable in settings (admin only)
+
+## Schools
+- List schools (card + table view toggle)
+- Create school (admin only)
+- Edit school info in settings (admin, secretary)
+- School count badges (users, classes)
+
+## Users
+- List users with filters (role, school) and search
+- Card + table view toggle
+- Create user with temporary password (admin, secretary)
+- Edit user (name, role, school)
+- Deactivate / activate user (admin only)
+- Role-colored avatars (purple=admin, blue=secretary, green=instructor, primary=student)
+
+## Classes
+- List classes with filters (type, school) and search
+- Card + table view toggle
+- Create class — one-off or recurring (by day of week + date range)
+- Practical classes: capacity limited to 1-2 students, assign students on creation
+- Theory classes: configurable capacity, students self-enroll
+- Edit class (instructor, title, capacity, date/time)
+- Cancel class (cascades to all enrollments)
+- Auto status management: SCHEDULED → IN_PROGRESS → COMPLETED based on time
+- Class type badges (Teórica / Prática)
+- Status badges (Agendada / Em curso / Concluída / Cancelada)
+
+## Enrollment
+- Student self-enrollment in theory classes
+- Secretary assigns students to practical classes on creation
+- Cancel enrollment (student cancels own, secretary/admin can cancel any)
+- Capacity check — prevents over-enrollment
+- Duplicate prevention — unique constraint on session+student
+- Re-enrollment after cancellation
+- Attendance marking: Present / No-show (admin, secretary, instructor)
+- Enrollment status tracking: ENROLLED → ATTENDED / NO_SHOW / CANCELLED
+- Instructor can flag unavailability — cancels the class and all enrollments
+- Secretary/admin can cancel individual student enrollments from class detail
+
+## Calendar
+- FullCalendar integration (week, day, month, list views)
+- Portuguese locale, Monday start, 07:00-22:00 range
+- Color-coded events by class type (blue=theory, green=practical)
+- Student view: enrolled classes highlighted (vivid) vs available (muted)
+- Legend for student calendar
+- Click event → class detail dialog
+- Filters by type and school (admin, secretary)
+- Responsive toolbar for mobile
+
+## Dashboard
+- Role-specific home pages
+- **Admin/Secretary**: stat cards (scheduled, in progress, students), upcoming classes list
+- **Student (mobile-first)**: 
+  - Time-of-day greeting
+  - Next class hero card with countdown
+  - Progress stats (scheduled, attended, no-shows) with attendance bar
+  - Upcoming enrollments list
+  - Available classes with one-tap enroll
+- **Instructor (mobile-first)**:
+  - Time-of-day greeting
+  - Current/next class hero card (pulsing indicator when in progress)
+  - Today's progress bar with mini stats
+  - Today's timeline schedule with dot connectors
+  - This week's upcoming classes
+
+## Student Profiles (`/students/[id]`)
+- Profile header with avatar, name, email, school, member since
+- Photo placeholder (camera icon for future upload)
+- Stat cards: upcoming, attended, no-shows, enrolled
+- Theory/practical progress breakdown
+- Full enrollment history with type badges and status
+
+## Instructor Profiles (`/instructors/[id]`)
+- Profile header with avatar, name, email, school, member since
+- Photo placeholder
+- Stat cards: upcoming, completed, total, students taught
+- Theory/practical class breakdown
+- Full class history with enrollment counts and status
+
+## Settings
+- Profile section: edit own name
+- Change password (via Supabase Auth)
+- School info section: edit name, address, phone (admin, secretary)
+- Tenant/group section: edit group name (admin only)
+
+## UI/UX
+- Green/grey/white professional theme (CSS variables, easy to swap per tenant)
+- Dark mode support (CSS variables defined)
+- Inter font
+- Icons throughout (lucide-react)
+- Card + table view toggle (persisted per route in localStorage)
+- Card-based list design with hover shadows and transitions
+- Responsive design: mobile-first for student/instructor, backoffice for admin/secretary
+- Bottom tab navigation for student/instructor
+- Sidebar with role-filtered nav items for admin/secretary
+- Mobile hamburger menu for admin/secretary
+- Scrollable dialogs with sticky footer
+- Custom date picker (calendar popup via Radix Popover)
+- Custom time picker (grid of 15-min slots)
+- Searchable student picker with chips
+- Empty states with icons
+- Loading animation (three pulsing dots)
+- Toast notifications on all mutations (success + error)
+- URL filter params (shareable, bookmarkable)
+- Auto-select when only one option (school, instructor)
+- Form validation with Portuguese error messages
+
+## i18n
+- next-intl with pt-PT locale
+- All UI strings from translation file (`messages/pt-PT.json`)
+- Locale-aware date/time formatting
+- Portuguese calendar locale in FullCalendar
+- Prepared for multi-locale (just add JSON file)
+
+## API (tRPC)
+- Type-safe end-to-end (shared types web ↔ future mobile app)
+- Routers: school, class, enrollment, user
+- Protected procedures with role enforcement
+- Zod validation on all inputs
+- Supabase JWT auth in tRPC context
+- Auto class status sync on list queries
+- Error codes with translatable message keys
+
+## Database
+- Supabase PostgreSQL with Prisma ORM
+- Tables: tenants, schools, users, class_sessions, enrollments
+- Audit columns: updated_at on all tables, created_by/updated_by on class_sessions
+- Unique constraint on enrollment (session+student)
+- Indexed foreign keys
+- Soft delete (user/tenant status: ACTIVE/INACTIVE, class: CANCELLED)
+- Seed script with demo data (4 users, one per role)
+
+## Infrastructure
+- Next.js 15 (App Router) on Vercel (planned)
+- Supabase free tier (auth + database)
+- Prisma db push via pooler (session mode, port 5432)
+- pnpm package manager
+- TypeScript strict mode
+- ESLint

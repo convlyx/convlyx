@@ -239,6 +239,41 @@ export const classRouter = router({
 
       return { success: true };
     }),
+
+  /** Instructor marks themselves unavailable — cancels the class */
+  instructorUnavailable: roleProtectedProcedure(["INSTRUCTOR"])
+    .input(cancelClassSchema)
+    .mutation(async ({ ctx, input }) => {
+      const session = await ctx.db.classSession.findFirst({
+        where: {
+          id: input.id,
+          tenantId: ctx.tenantId,
+          instructorId: ctx.user.id,
+          status: "SCHEDULED",
+        },
+        select: { id: true },
+      });
+
+      if (!session) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "classes.notFound",
+        });
+      }
+
+      await ctx.db.$transaction([
+        ctx.db.classSession.update({
+          where: { id: input.id },
+          data: { status: "CANCELLED", updatedById: ctx.user.id },
+        }),
+        ctx.db.enrollment.updateMany({
+          where: { sessionId: input.id, status: "ENROLLED" },
+          data: { status: "CANCELLED" },
+        }),
+      ]);
+
+      return { success: true };
+    }),
 });
 
 /**

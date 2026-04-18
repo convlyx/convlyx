@@ -119,6 +119,7 @@
     "cannotEditFinished": "Não é possível editar aulas concluídas ou canceladas",
     "cannotCancelCompleted": "Não é possível cancelar aulas concluídas",
     "assignStudents": "Atribuir alunos",
+    "markUnavailable": "Não posso dar esta aula",
     "noSessionsGenerated": "Nenhuma aula gerada para o período indicado",
     "classUpdated": "Aula atualizada com sucesso"
   },
@@ -129,6 +130,7 @@
     "attended": "Presente",
     "noShow": "Faltou",
     "classFull": "Aula lotada",
+    "remove": "Remover",
     "alreadyEnrolled": "Já inscrito/a nesta aula",
     "notFound": "Inscrição não encontrada",
     "notActive": "Esta inscrição não está ativa",

@@ -64,11 +64,25 @@ export function ClassDetailDialog({
     },
   });
 
+  const instructorUnavailableMutation = trpc.class.instructorUnavailable.useMutation({
+    onSuccess: () => {
+      toast.success("Aula cancelada — indisponibilidade registada");
+      utils.class.getById.invalidate({ id: classId! });
+      utils.class.list.invalidate();
+      onClose();
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
   if (!classDetail) return null;
 
   const isFull = classDetail.enrollments.filter((e) => e.status === "ENROLLED").length >= classDetail.capacity;
   const canEnroll = userRole === "STUDENT" && classDetail.status === "SCHEDULED" && !isFull;
   const canManageAttendance = ["ADMIN", "SECRETARY", "INSTRUCTOR"].includes(userRole);
+  const canManage = ["ADMIN", "SECRETARY"].includes(userRole);
+  const isInstructor = userRole === "INSTRUCTOR";
 
   // Check if current student is already enrolled
   const myEnrollment = classDetail.enrollments.find(
@@ -138,30 +152,46 @@ export function ClassDetailDialog({
                         {t(enrollmentStatusKeys[enrollment.status] ?? enrollment.status)}
                       </Badge>
                     </div>
-                    {canManageAttendance && enrollment.status === "ENROLLED" && (
+                    {enrollment.status === "ENROLLED" && (
                       <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={markAttendanceMutation.isPending}
-                          onClick={() => markAttendanceMutation.mutate({
-                            enrollmentId: enrollment.id,
-                            status: "ATTENDED",
-                          })}
-                        >
-                          {t("enrollment.attended")}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          disabled={markAttendanceMutation.isPending}
-                          onClick={() => markAttendanceMutation.mutate({
-                            enrollmentId: enrollment.id,
-                            status: "NO_SHOW",
-                          })}
-                        >
-                          {t("enrollment.noShow")}
-                        </Button>
+                        {canManageAttendance && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={markAttendanceMutation.isPending}
+                              onClick={() => markAttendanceMutation.mutate({
+                                enrollmentId: enrollment.id,
+                                status: "ATTENDED",
+                              })}
+                            >
+                              {t("enrollment.attended")}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={markAttendanceMutation.isPending}
+                              onClick={() => markAttendanceMutation.mutate({
+                                enrollmentId: enrollment.id,
+                                status: "NO_SHOW",
+                              })}
+                            >
+                              {t("enrollment.noShow")}
+                            </Button>
+                          </>
+                        )}
+                        {canManage && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={cancelEnrollmentMutation.isPending}
+                            onClick={() => cancelEnrollmentMutation.mutate({
+                              enrollmentId: enrollment.id,
+                            })}
+                          >
+                            {t("enrollment.remove")}
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -196,6 +226,16 @@ export function ClassDetailDialog({
                 <Badge variant="destructive">{t("enrollment.classFull")}</Badge>
               ) : null}
             </>
+          )}
+          {/* Instructor: flag unavailable */}
+          {isInstructor && classDetail.status === "SCHEDULED" && (
+            <Button
+              variant="destructive"
+              disabled={instructorUnavailableMutation.isPending}
+              onClick={() => instructorUnavailableMutation.mutate({ id: classDetail.id })}
+            >
+              {instructorUnavailableMutation.isPending ? t("common.loading") : t("classes.markUnavailable")}
+            </Button>
           )}
           <Button variant="outline" onClick={onClose}>
             {t("common.back")}
