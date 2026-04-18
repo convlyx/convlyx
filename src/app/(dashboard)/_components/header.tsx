@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { UserAvatar } from "@/components/user-avatar";
 import { LogOut } from "lucide-react";
 import type { UserRole } from "@/generated/prisma/enums";
 
@@ -30,13 +31,6 @@ export function Header({
     router.refresh();
   }
 
-  const initials = userName
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
   return (
     <header className="flex h-14 items-center justify-between px-6 shadow-[0_1px_3px_0_rgb(0_0_0/0.05)]">
       <div className="flex items-center gap-3">
@@ -48,9 +42,7 @@ export function Header({
       </div>
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
-            {initials}
-          </div>
+          <UserAvatar name={userName} className="h-8 w-8 bg-primary text-primary-foreground text-xs font-bold" />
           <div className="text-right">
             <p className="text-sm font-medium leading-tight">{userName}</p>
             <p className="text-xs text-muted-foreground">

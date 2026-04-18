@@ -18,27 +18,10 @@ import {
   Building2,
   Camera,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { Loading } from "@/components/loading";
-
-const typeKeys: Record<string, string> = {
-  THEORY: "classes.theory",
-  PRACTICAL: "classes.practical",
-};
-
-const enrollmentStatusKeys: Record<string, string> = {
-  ENROLLED: "enrollment.enrolled",
-  ATTENDED: "enrollment.attended",
-  NO_SHOW: "enrollment.noShow",
-  CANCELLED: "common.cancel",
-};
-
-const enrollmentStatusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  ENROLLED: "default",
-  ATTENDED: "secondary",
-  NO_SHOW: "destructive",
-  CANCELLED: "outline",
-};
+import { StatCard } from "@/components/stat-card";
+import { EmptyState } from "@/components/empty-state";
+import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant } from "@/lib/constants/class";
 
 export default function StudentDetailPage({
   params,
@@ -127,10 +110,7 @@ export default function StudentDetailPage({
       <div className="space-y-3">
         <h2 className="text-lg font-semibold">{t("users.enrollmentHistory")}</h2>
         {student.enrollments.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-            <BookOpen className="h-8 w-8 mb-2 opacity-30" />
-            <p className="text-sm">{t("users.noHistory")}</p>
-          </div>
+          <EmptyState icon={BookOpen} message={t("users.noHistory")} />
         ) : (
           <div className="space-y-2">
             {student.enrollments.map((enrollment) => (
@@ -167,18 +147,6 @@ export default function StudentDetailPage({
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function StatCard({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: number }) {
-  return (
-    <div className="rounded-xl border bg-card p-4 card-shadow">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <p className="text-3xl font-bold">{value}</p>
     </div>
   );
 }

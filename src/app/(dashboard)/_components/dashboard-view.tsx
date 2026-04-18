@@ -1,8 +1,13 @@
 "use client";
 
+import { useMemo } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import { trpc } from "@/lib/trpc";
+import { Loading } from "@/components/loading";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/empty-state";
+import { StatCard } from "@/components/stat-card";
+import { typeKeys, classTypeColorMap } from "@/lib/constants/class";
 import {
   CalendarDays,
   Clock,
@@ -11,12 +16,6 @@ import {
   BookOpen,
 } from "lucide-react";
 import type { UserRole } from "@/generated/prisma/enums";
-import type { LucideIcon } from "lucide-react";
-
-const typeKeys: Record<string, string> = {
-  THEORY: "classes.theory",
-  PRACTICAL: "classes.practical",
-};
 
 export function DashboardView({
   userName,
@@ -28,15 +27,15 @@ export function DashboardView({
   const t = useTranslations();
   const format = useFormatter();
 
-  // Upcoming classes for the next 7 days
-  const now = new Date();
-  const weekFromNow = new Date(now);
-  weekFromNow.setDate(weekFromNow.getDate() + 7);
+  // Memoize the date range so it doesn't change on every render
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    const weekFromNow = new Date(now);
+    weekFromNow.setDate(weekFromNow.getDate() + 7);
+    return { from: now.toISOString(), to: weekFromNow.toISOString() };
+  }, []);
 
-  const { data: upcomingClasses } = trpc.class.list.useQuery({
-    from: now.toISOString(),
-    to: weekFromNow.toISOString(),
-  });
+  const { data: upcomingClasses, isLoading } = trpc.class.list.useQuery(dateRange);
 
   const { data: enrollments } = trpc.enrollment.listByStudent.useQuery(
     undefined,
@@ -115,71 +114,54 @@ export function DashboardView({
       {/* Upcoming classes list */}
       <div className="space-y-3">
         <h2 className="text-lg font-semibold">{t("dashboard.upcomingClasses")}</h2>
-        {!upcomingClasses || upcomingClasses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <BookOpen className="h-10 w-10 mb-3 opacity-30" />
-            <p className="text-sm">{t("common.noResults")}</p>
-          </div>
+        {isLoading ? (
+          <Loading />
+        ) : !upcomingClasses || upcomingClasses.length === 0 ? (
+          <EmptyState icon={BookOpen} message={t("common.noResults")} />
         ) : (
-          <div className="space-y-2">
+          <div className="grid gap-3">
             {upcomingClasses.slice(0, 10).map((cls) => (
               <div
                 key={cls.id}
-                className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
               >
-                <div className="flex items-center gap-3">
-                  <Badge variant="secondary">
-                    {t(typeKeys[cls.classType])}
-                  </Badge>
-                  <div>
-                    <p className="text-sm font-medium">{cls.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {cls.instructor.name} — {cls.school.name}
-                    </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[cls.classType]}`}>
+                      <BookOpen className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{cls.title}</p>
+                        <Badge variant="secondary">{t(typeKeys[cls.classType])}</Badge>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3.5 w-3.5" />{cls.instructor.name}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <CalendarDays className="h-3.5 w-3.5" />
+                          {format.dateTime(new Date(cls.startsAt), {
+                            weekday: "short", day: "2-digit", month: "2-digit",
+                            hour: "2-digit", minute: "2-digit",
+                          })}
+                          {" · "}
+                          {format.dateTime(new Date(cls.endsAt), {
+                            hour: "2-digit", minute: "2-digit",
+                          })}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5" />{cls._count.enrollments}/{cls.capacity}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm">
-                    {format.dateTime(new Date(cls.startsAt), {
-                      weekday: "short",
-                      day: "2-digit",
-                      month: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {cls._count.enrollments}/{cls.capacity} {t("nav.students").toLowerCase()}
-                  </p>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  description,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: number;
-  description: string;
-}) {
-  return (
-    <div className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-shadow">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <p className="text-3xl font-bold">{value}</p>
-      <p className="text-xs text-muted-foreground">{description}</p>
     </div>
   );
 }

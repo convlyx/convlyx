@@ -14,15 +14,11 @@ import {
 } from "@/components/ui/radix-select";
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
+import { EmptyState } from "@/components/empty-state";
+import { UserAvatar } from "@/components/user-avatar";
+import { roleColorMap } from "@/lib/constants/class";
 
 const ROLES = ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"] as const;
-
-const roleColorMap: Record<string, string> = {
-  ADMIN: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-  SECRETARY: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  INSTRUCTOR: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  STUDENT: "bg-primary/10 text-primary",
-};
 
 export function UsersTable() {
   const t = useTranslations();
@@ -77,18 +73,13 @@ export function UsersTable() {
       {isLoading ? (
         <Loading />
       ) : !users || users.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <Users className="h-10 w-10 mb-3 opacity-30" />
-          <p className="text-sm">{t("users.noUsers")}</p>
-        </div>
+        <EmptyState icon={Users} message={t("users.noUsers")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
           {users.map((user) => (
             <div key={user.id} className="flex items-center justify-between rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all">
               <div className="flex items-center gap-4">
-                <div className={`flex h-11 w-11 items-center justify-center rounded-full font-semibold text-sm ${roleColorMap[user.role] ?? "bg-muted text-foreground"}`}>
-                  {user.name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
-                </div>
+                <UserAvatar name={user.name} className={`h-11 w-11 ${roleColorMap[user.role] ?? "bg-muted text-foreground"}`} />
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="font-medium">{user.name}</p>

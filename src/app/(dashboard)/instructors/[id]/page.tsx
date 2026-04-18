@@ -18,27 +18,10 @@ import {
   Camera,
   XCircle,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { Loading } from "@/components/loading";
-
-const typeKeys: Record<string, string> = {
-  THEORY: "classes.theory",
-  PRACTICAL: "classes.practical",
-};
-
-const statusKeys: Record<string, string> = {
-  SCHEDULED: "classes.scheduled",
-  IN_PROGRESS: "classes.inProgress",
-  COMPLETED: "classes.completed",
-  CANCELLED: "classes.cancelled",
-};
-
-const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  SCHEDULED: "outline",
-  IN_PROGRESS: "default",
-  COMPLETED: "secondary",
-  CANCELLED: "destructive",
-};
+import { StatCard } from "@/components/stat-card";
+import { EmptyState } from "@/components/empty-state";
+import { typeKeys, statusKeys, statusVariant } from "@/lib/constants/class";
 
 export default function InstructorDetailPage({
   params,
@@ -132,10 +115,7 @@ export default function InstructorDetailPage({
       <div className="space-y-3">
         <h2 className="text-lg font-semibold">{t("users.classHistory")}</h2>
         {instructor.instructedSessions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-            <BookOpen className="h-8 w-8 mb-2 opacity-30" />
-            <p className="text-sm">{t("users.noHistory")}</p>
-          </div>
+          <EmptyState icon={BookOpen} message={t("users.noHistory")} />
         ) : (
           <div className="space-y-2">
             {instructor.instructedSessions.slice(0, 20).map((session) => (
@@ -170,18 +150,6 @@ export default function InstructorDetailPage({
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function StatCard({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: number }) {
-  return (
-    <div className="rounded-xl border bg-card p-4 card-shadow">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <p className="text-3xl font-bold">{value}</p>
     </div>
   );
 }

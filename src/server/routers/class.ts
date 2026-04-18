@@ -34,12 +34,14 @@ export const classRouter = router({
           ...instructorFilter,
           ...(input?.schoolId && { schoolId: input.schoolId }),
           ...(input?.classType && { classType: input.classType }),
-          ...(input?.from && {
-            startsAt: { gte: new Date(input.from) },
-          }),
-          ...(input?.to && {
-            endsAt: { lte: new Date(input.to) },
-          }),
+          ...(input?.from || input?.to
+            ? {
+                startsAt: {
+                  ...(input?.from && { gte: new Date(input.from) }),
+                  ...(input?.to && { lte: new Date(input.to) }),
+                },
+              }
+            : {}),
           status: { not: "CANCELLED" },
         },
         select: {

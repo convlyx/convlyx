@@ -7,25 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-const typeKeys: Record<string, string> = {
-  THEORY: "classes.theory",
-  PRACTICAL: "classes.practical",
-};
-
-const statusKeys: Record<string, string> = {
-  SCHEDULED: "classes.scheduled",
-  IN_PROGRESS: "classes.inProgress",
-  COMPLETED: "classes.completed",
-  CANCELLED: "classes.cancelled",
-};
-
-const enrollmentStatusKeys: Record<string, string> = {
-  ENROLLED: "enrollment.enrolled",
-  CANCELLED: "common.cancel",
-  ATTENDED: "enrollment.attended",
-  NO_SHOW: "enrollment.noShow",
-};
+import { typeKeys, statusKeys, enrollmentStatusKeys } from "@/lib/constants/class";
 
 export function ClassDetailDialog({
   classId,

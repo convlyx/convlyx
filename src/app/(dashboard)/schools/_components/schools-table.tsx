@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/table";
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
+import { EmptyState } from "@/components/empty-state";
 
 export function SchoolsTable() {
   const t = useTranslations();
@@ -23,10 +24,7 @@ export function SchoolsTable() {
       {isLoading ? (
         <Loading />
       ) : !schools || schools.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <Building2 className="h-10 w-10 mb-3 opacity-30" />
-          <p className="text-sm">{t("schools.noSchools")}</p>
-        </div>
+        <EmptyState icon={Building2} message={t("schools.noSchools")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
           {schools.map((school) => (

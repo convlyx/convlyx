@@ -10,26 +10,9 @@ import {
 } from "@/components/ui/table";
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
+import { EmptyState } from "@/components/empty-state";
+import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap } from "@/lib/constants/class";
 import type { UserRole } from "@/generated/prisma/enums";
-
-const typeKeys: Record<string, string> = {
-  THEORY: "classes.theory",
-  PRACTICAL: "classes.practical",
-};
-
-const enrollmentStatusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  ENROLLED: "default",
-  ATTENDED: "secondary",
-  NO_SHOW: "destructive",
-  CANCELLED: "outline",
-};
-
-const enrollmentStatusKeys: Record<string, string> = {
-  ENROLLED: "enrollment.enrolled",
-  ATTENDED: "enrollment.attended",
-  NO_SHOW: "enrollment.noShow",
-  CANCELLED: "common.cancel",
-};
 
 export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
   const t = useTranslations();
@@ -59,10 +42,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
       {isLoading ? (
         <Loading />
       ) : !enrollments || enrollments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <ClipboardList className="h-10 w-10 mb-3 opacity-30" />
-          <p className="text-sm">{t("common.noResults")}</p>
-        </div>
+        <EmptyState icon={ClipboardList} message={t("common.noResults")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
           {enrollments.map((enrollment) => (
@@ -72,11 +52,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-                    enrollment.session.classType === "THEORY"
-                      ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                      : "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
-                  }`}>
+                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[enrollment.session.classType]}`}>
                     <BookOpen className="h-5 w-5" />
                   </div>
                   <div>

@@ -17,28 +17,8 @@ import {
 } from "@/components/ui/dialog";
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
-
-function classStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
-  switch (status) {
-    case "SCHEDULED": return "outline";
-    case "IN_PROGRESS": return "default";
-    case "COMPLETED": return "secondary";
-    case "CANCELLED": return "destructive";
-    default: return "outline";
-  }
-}
-
-const statusKeys: Record<string, string> = {
-  SCHEDULED: "classes.scheduled",
-  IN_PROGRESS: "classes.inProgress",
-  COMPLETED: "classes.completed",
-  CANCELLED: "classes.cancelled",
-};
-
-const typeKeys: Record<string, string> = {
-  THEORY: "classes.theory",
-  PRACTICAL: "classes.practical",
-};
+import { EmptyState } from "@/components/empty-state";
+import { typeKeys, statusKeys, statusVariant, classTypeColorMap } from "@/lib/constants/class";
 
 export function ClassesTable() {
   const t = useTranslations();
@@ -96,10 +76,7 @@ export function ClassesTable() {
       {isLoading ? (
         <Loading />
       ) : !classes || classes.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <BookOpen className="h-10 w-10 mb-3 opacity-30" />
-          <p className="text-sm">{t("classes.noClasses")}</p>
-        </div>
+        <EmptyState icon={BookOpen} message={t("classes.noClasses")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
           {classes.map((cls) => (
@@ -109,18 +86,14 @@ export function ClassesTable() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-                    cls.classType === "THEORY"
-                      ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                      : "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
-                  }`}>
+                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[cls.classType]}`}>
                     <BookOpen className="h-5 w-5" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{cls.title}</p>
                       <Badge variant="secondary">{t(typeKeys[cls.classType])}</Badge>
-                      <Badge variant={classStatusVariant(cls.status)}>{t(statusKeys[cls.status])}</Badge>
+                      <Badge variant={statusVariant[cls.status] ?? "outline"}>{t(statusKeys[cls.status])}</Badge>
                     </div>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
                       <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{cls.instructor.name}</span>
@@ -167,7 +140,7 @@ export function ClassesTable() {
                     {format.dateTime(new Date(cls.endsAt), { hour: "2-digit", minute: "2-digit" })}
                   </TableCell>
                   <TableCell>{cls._count.enrollments}/{cls.capacity}</TableCell>
-                  <TableCell><Badge variant={classStatusVariant(cls.status)}>{t(statusKeys[cls.status])}</Badge></TableCell>
+                  <TableCell><Badge variant={statusVariant[cls.status] ?? "outline"}>{t(statusKeys[cls.status])}</Badge></TableCell>
                   <TableCell>
                     {cls.status !== "COMPLETED" && cls.status !== "CANCELLED" && (
                       <Button variant="destructive" size="sm" onClick={() => setCancelId(cls.id)}>{t("common.cancel")}</Button>

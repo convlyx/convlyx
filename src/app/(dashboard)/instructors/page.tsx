@@ -5,6 +5,8 @@ import { trpc } from "@/lib/trpc";
 import Link from "next/link";
 import { Users, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/empty-state";
+import { UserAvatar } from "@/components/user-avatar";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -26,10 +28,7 @@ export default function InstructorsPage() {
       {isLoading ? (
         <Loading />
       ) : !users || users.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <Users className="h-10 w-10 mb-3 opacity-30" />
-          <p className="text-sm">{t("common.noResults")}</p>
-        </div>
+        <EmptyState icon={Users} message={t("common.noResults")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
           {users.map((instructor) => (
@@ -39,9 +38,7 @@ export default function InstructorsPage() {
               className="flex items-center justify-between rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all hover:border-primary/20 group"
             >
               <div className="flex items-center gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-semibold text-sm dark:bg-emerald-900/30 dark:text-emerald-400">
-                  {instructor.name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
-                </div>
+                <UserAvatar name={instructor.name} className="h-11 w-11 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" />
                 <div>
                   <p className="font-medium group-hover:text-primary transition-colors">{instructor.name}</p>
                   <p className="text-sm text-muted-foreground">{instructor.email}</p>
