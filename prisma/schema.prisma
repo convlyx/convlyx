@@ -93,9 +93,10 @@ model User {
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
 
-  tenant      Tenant         @relation(fields: [tenantId], references: [id])
-  school      School         @relation(fields: [schoolId], references: [id])
-  enrollments Enrollment[]
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  school        School         @relation(fields: [schoolId], references: [id])
+  enrollments   Enrollment[]
+  notifications Notification[]
 
   // Classes where this user is the instructor
   instructedSessions ClassSession[] @relation("InstructorSessions")
@@ -156,4 +157,23 @@ model Enrollment {
   @@index([sessionId])
   @@index([studentId])
   @@map("enrollments")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  type      String   // e.g. "enrollment.created", "class.cancelled", "attendance.marked"
+  title     String
+  message   String
+  data      Json?    // optional payload (classId, enrollmentId, etc.)
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([userId, read])
+  @@index([createdAt])
+  @@map("notifications")
 }

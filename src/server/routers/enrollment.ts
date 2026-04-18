@@ -1,6 +1,7 @@
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, roleProtectedProcedure } from "../trpc";
+import { createNotification, formatClassTime } from "../lib/notifications";
 
 export const enrollmentRouter = router({
   /** Enroll a student in a class session */
@@ -28,6 +29,8 @@ export const enrollmentRouter = router({
         where: { id: input.sessionId, tenantId: ctx.tenantId },
         select: {
           id: true,
+          title: true,
+          startsAt: true,
           capacity: true,
           status: true,
           _count: {
@@ -76,14 +79,29 @@ export const enrollmentRouter = router({
 
       // If previously cancelled, re-enroll
       if (existing) {
-        return ctx.db.enrollment.update({
+        const result = await ctx.db.enrollment.update({
           where: { id: existing.id },
           data: { status: "ENROLLED" },
           select: { id: true, status: true },
         });
+
+        // Notify student if enrolled by someone else
+        if (studentId !== ctx.user.id) {
+          createNotification({
+            db: ctx.db,
+            tenantId: ctx.tenantId,
+            userId: studentId,
+            type: "enrollment.created",
+            titleKey: "notifications.enrollmentWasConfirmed",
+            messageKey: "notifications.classAssigned",
+            params: { title: session.title, time: formatClassTime(new Date(session.startsAt)) },
+          }).catch(() => {});
+        }
+
+        return result;
       }
 
-      return ctx.db.enrollment.create({
+      const result = await ctx.db.enrollment.create({
         data: {
           tenantId: ctx.tenantId,
           sessionId: input.sessionId,
@@ -91,6 +109,21 @@ export const enrollmentRouter = router({
         },
         select: { id: true, status: true },
       });
+
+      // Notify student if enrolled by someone else
+      if (studentId !== ctx.user.id) {
+        createNotification({
+          db: ctx.db,
+          tenantId: ctx.tenantId,
+          userId: studentId,
+          type: "enrollment.created",
+          titleKey: "notifications.enrollmentWasConfirmed",
+          messageKey: "notifications.classAssigned",
+          params: { title: session.title, time: formatClassTime(new Date(session.startsAt)) },
+        }).catch(() => {});
+      }
+
+      return result;
     }),
 
   /** Cancel an enrollment */
@@ -102,7 +135,12 @@ export const enrollmentRouter = router({
           id: input.enrollmentId,
           tenantId: ctx.tenantId,
         },
-        select: { id: true, studentId: true, status: true },
+        select: {
+          id: true,
+          studentId: true,
+          status: true,
+          session: { select: { id: true, title: true, startsAt: true } },
+        },
       });
 
       if (!enrollment) {
@@ -124,11 +162,26 @@ export const enrollmentRouter = router({
         });
       }
 
-      return ctx.db.enrollment.update({
+      const result = await ctx.db.enrollment.update({
         where: { id: input.enrollmentId },
         data: { status: "CANCELLED" },
         select: { id: true, status: true },
       });
+
+      // Notify student if cancelled by admin/secretary (not self-cancellation)
+      if (enrollment.studentId !== ctx.user.id) {
+        createNotification({
+          db: ctx.db,
+          tenantId: ctx.tenantId,
+          userId: enrollment.studentId,
+          type: "enrollment.cancelled",
+          titleKey: "notifications.enrollmentWasCancelled",
+          messageKey: "notifications.enrollmentCancelled",
+          params: { title: enrollment.session.title, time: formatClassTime(new Date(enrollment.session.startsAt)) },
+        }).catch(() => {});
+      }
+
+      return result;
     }),
 
   /** Mark attendance (instructor, secretary, admin) */
@@ -146,18 +199,36 @@ export const enrollmentRouter = router({
           tenantId: ctx.tenantId,
           status: "ENROLLED",
         },
-        select: { id: true },
+        select: {
+          id: true,
+          studentId: true,
+          session: { select: { id: true, title: true, startsAt: true } },
+        },
       });
 
       if (!enrollment) {
         throw new TRPCError({ code: "NOT_FOUND", message: "enrollment.notFound" });
       }
 
-      return ctx.db.enrollment.update({
+      const result = await ctx.db.enrollment.update({
         where: { id: input.enrollmentId },
         data: { status: input.status },
         select: { id: true, status: true },
       });
+
+      // Notify student about attendance
+      const timeStr = formatClassTime(new Date(enrollment.session.startsAt));
+      createNotification({
+        db: ctx.db,
+        tenantId: ctx.tenantId,
+        userId: enrollment.studentId,
+        type: "enrollment.attendance",
+        titleKey: "notifications.attendanceWasRecorded",
+        messageKey: "notifications.attendanceMarked",
+        params: { title: enrollment.session.title, time: timeStr, status: input.status },
+      }).catch(() => {});
+
+      return result;
     }),
 
   /** List enrollments for a student (own) or all (admin/secretary) */

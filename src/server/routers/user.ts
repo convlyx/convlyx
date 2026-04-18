@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { createClient } from "@supabase/supabase-js";
 import { router, protectedProcedure, roleProtectedProcedure } from "../trpc";
 import { createUserSchema, updateUserSchema } from "@/lib/validations/user";
+import { createNotification } from "../lib/notifications";
 
 // Admin client for creating auth users
 const supabaseAdmin = createClient(
@@ -140,10 +141,22 @@ export const userRouter = router({
         });
       }
 
-      return ctx.db.user.updateMany({
+      const result = await ctx.db.user.updateMany({
         where: { id: input.id, tenantId: ctx.tenantId },
         data: { status: "INACTIVE" },
       });
+
+      // Notify the deactivated user
+      createNotification({
+        db: ctx.db,
+        tenantId: ctx.tenantId,
+        userId: input.id,
+        type: "user.deactivated",
+        titleKey: "notifications.accountWasDeactivated",
+        messageKey: "notifications.accountDeactivated",
+      }).catch(() => {});
+
+      return result;
     }),
 
   activate: roleProtectedProcedure(["ADMIN"])

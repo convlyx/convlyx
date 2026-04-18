@@ -58,7 +58,7 @@ export function StudentPicker({
               <button
                 type="button"
                 onClick={() => remove(student.id)}
-                className="flex h-3.5 w-3.5 items-center justify-center rounded-full hover:bg-primary/20 transition-colors"
+                className="flex h-3.5 w-3.5 items-center justify-center rounded-full cursor-pointer hover:bg-primary/20 transition-colors"
               >
                 <X className="h-2.5 w-2.5" />
               </button>
@@ -96,7 +96,7 @@ export function StudentPicker({
                       disabled={isSelected}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => { toggle(student.id); setSearch(""); }}
-                      className="flex items-center gap-2.5 w-full px-2.5 py-2 text-left hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center gap-2.5 w-full px-2.5 py-2 text-left cursor-pointer hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <UserAvatar name={student.name} className="h-7 w-7 bg-primary/10 text-primary text-[10px]" />
                       <div className="flex-1 min-w-0">

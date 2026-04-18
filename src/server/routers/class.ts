@@ -7,6 +7,7 @@ import {
   cancelClassSchema,
 } from "@/lib/validations/class";
 import { syncClassStatuses } from "../lib/class-status";
+import { createNotification, createNotifications, formatClassTime } from "../lib/notifications";
 
 export const classRouter = router({
   list: protectedProcedure
@@ -159,6 +160,19 @@ export const classRouter = router({
         select: { id: true, title: true, startsAt: true },
       });
 
+      const timeStr = formatClassTime(new Date(input.startsAt));
+
+      // Notify instructor about new class
+      createNotification({
+        db: ctx.db,
+        tenantId: ctx.tenantId,
+        userId: input.instructorId,
+        type: "class.created",
+        titleKey: "notifications.newClassAssigned",
+        messageKey: "notifications.classCreatedInstructor",
+        params: { title: session.title, time: timeStr },
+      }).catch(() => {});
+
       // Auto-enroll assigned students (practical classes)
       if (input.studentIds && input.studentIds.length > 0) {
         await ctx.db.enrollment.createMany({
@@ -168,6 +182,16 @@ export const classRouter = router({
             studentId,
           })),
         });
+
+        createNotifications({
+          db: ctx.db,
+          tenantId: ctx.tenantId,
+          userIds: input.studentIds,
+          type: "class.assigned",
+          titleKey: "notifications.newClass",
+          messageKey: "notifications.classAssigned",
+          params: { title: session.title, time: timeStr },
+        }).catch(() => {});
       }
 
       return session;
@@ -211,7 +235,16 @@ export const classRouter = router({
     .mutation(async ({ ctx, input }) => {
       const session = await ctx.db.classSession.findFirst({
         where: { id: input.id, tenantId: ctx.tenantId },
-        select: { status: true },
+        select: {
+          title: true,
+          startsAt: true,
+          status: true,
+          instructorId: true,
+          enrollments: {
+            where: { status: "ENROLLED" },
+            select: { studentId: true },
+          },
+        },
       });
 
       if (!session) {
@@ -225,7 +258,9 @@ export const classRouter = router({
         });
       }
 
-      // Cancel the session and all active enrollments
+      const enrolledStudentIds = session.enrollments.map((e) => e.studentId);
+      const timeStr = formatClassTime(new Date(session.startsAt));
+
       await ctx.db.$transaction([
         ctx.db.classSession.update({
           where: { id: input.id },
@@ -236,6 +271,28 @@ export const classRouter = router({
           data: { status: "CANCELLED" },
         }),
       ]);
+
+      if (enrolledStudentIds.length > 0) {
+        createNotifications({
+          db: ctx.db,
+          tenantId: ctx.tenantId,
+          userIds: enrolledStudentIds,
+          type: "class.cancelled",
+          titleKey: "notifications.classWasCancelled",
+          messageKey: "notifications.classCancelled",
+          params: { title: session.title, time: timeStr },
+        }).catch(() => {});
+      }
+
+      createNotification({
+        db: ctx.db,
+        tenantId: ctx.tenantId,
+        userId: session.instructorId,
+        type: "class.cancelled",
+        titleKey: "notifications.classWasCancelled",
+        messageKey: "notifications.classCancelledInstructor",
+        params: { title: session.title, time: timeStr },
+      }).catch(() => {});
 
       return { success: true };
     }),
@@ -251,7 +308,15 @@ export const classRouter = router({
           instructorId: ctx.user.id,
           status: "SCHEDULED",
         },
-        select: { id: true },
+        select: {
+          id: true,
+          title: true,
+          startsAt: true,
+          enrollments: {
+            where: { status: "ENROLLED" },
+            select: { studentId: true },
+          },
+        },
       });
 
       if (!session) {
@@ -260,6 +325,9 @@ export const classRouter = router({
           message: "classes.notFound",
         });
       }
+
+      const enrolledStudentIds = session.enrollments.map((e) => e.studentId);
+      const timeStr = formatClassTime(new Date(session.startsAt));
 
       await ctx.db.$transaction([
         ctx.db.classSession.update({
@@ -271,6 +339,50 @@ export const classRouter = router({
           data: { status: "CANCELLED" },
         }),
       ]);
+
+      if (enrolledStudentIds.length > 0) {
+        createNotifications({
+          db: ctx.db,
+          tenantId: ctx.tenantId,
+          userIds: enrolledStudentIds,
+          type: "class.cancelled",
+          titleKey: "notifications.classWasCancelled",
+          messageKey: "notifications.classCancelledByInstructor",
+          params: { title: session.title, time: timeStr },
+        }).catch(() => {});
+      }
+
+      // Notify admins/secretaries
+      Promise.all([
+        ctx.db.user.findUnique({
+          where: { id: ctx.user.id },
+          select: { name: true },
+        }),
+        ctx.db.user.findMany({
+          where: {
+            tenantId: ctx.tenantId,
+            role: { in: ["ADMIN", "SECRETARY"] },
+            status: "ACTIVE",
+          },
+          select: { id: true },
+        }),
+      ])
+        .then(([instructor, admins]) => {
+          const adminIds = admins.map((a) => a.id);
+          if (adminIds.length > 0) {
+            const instructorName = instructor?.name ?? "Instrutor";
+            createNotifications({
+              db: ctx.db,
+              tenantId: ctx.tenantId,
+              userIds: adminIds,
+              type: "class.instructorUnavailable",
+              titleKey: "notifications.instructorWasUnavailable",
+              messageKey: "notifications.instructorUnavailable",
+              params: { instructor: instructorName, title: session.title, time: timeStr },
+            }).catch(() => {});
+          }
+        })
+        .catch(() => {});
 
       return { success: true };
     }),

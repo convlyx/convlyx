@@ -42,6 +42,7 @@ export default async function DashboardLayout({
   if (user.role === "STUDENT" || user.role === "INSTRUCTOR") {
     return (
       <MobileLayout
+        userId={user.id}
         userName={user.name}
         userRole={user.role}
       >
@@ -56,6 +57,7 @@ export default async function DashboardLayout({
       <Sidebar userRole={user.role} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
+          userId={user.id}
           userName={user.name}
           userRole={user.role}
           userMobileNav={<MobileNav userRole={user.role} />}

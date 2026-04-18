@@ -6,9 +6,11 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { LogOut } from "lucide-react";
+import { NotificationBell } from "@/components/notification-bell";
 import type { UserRole } from "@/generated/prisma/enums";
 
 type HeaderProps = {
+  userId: string;
   userName: string;
   userRole: UserRole;
   tenantName: string;
@@ -17,6 +19,7 @@ type HeaderProps = {
 };
 
 export function Header({
+  userId,
   userName,
   userRole,
   tenantName,
@@ -44,6 +47,7 @@ export function Header({
         <span className="text-sm text-muted-foreground hidden sm:inline truncate">{schoolName}</span>
       </div>
       <div className="flex items-center gap-2 md:gap-3">
+        <NotificationBell userId={userId} />
         <UserAvatar name={userName} className="h-8 w-8 bg-primary text-primary-foreground text-xs font-bold" />
         <div className="text-right hidden sm:block">
           <p className="text-sm font-medium leading-tight">{userName}</p>

@@ -13,6 +13,7 @@ import {
   LogOut,
   CheckSquare,
 } from "lucide-react";
+import { NotificationBell } from "@/components/notification-bell";
 import type { UserRole } from "@/generated/prisma/enums";
 import type { LucideIcon } from "lucide-react";
 
@@ -33,10 +34,12 @@ const tabs: TabItem[] = [
 
 export function MobileLayout({
   children,
+  userId,
   userName,
   userRole,
 }: {
   children: React.ReactNode;
+  userId: string;
   userName: string;
   userRole: UserRole;
 }) {
@@ -66,12 +69,15 @@ export function MobileLayout({
             <p className="text-xs text-muted-foreground">{t(userRole === "STUDENT" ? "classes" : "calendar")}</p>
           </div>
         </div>
-        <button
-          onClick={handleLogout}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-        >
-          <LogOut className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <NotificationBell userId={userId} />
+          <button
+            onClick={handleLogout}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
       </header>
 
       {/* Content area */}

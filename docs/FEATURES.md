@@ -126,6 +126,23 @@ Living document of everything the app can do, organized by area.
 - Auto-select when only one option (school, instructor)
 - Form validation with Portuguese error messages
 
+## Notifications
+- In-app notification system with bell icon in header
+- Unread count badge (red dot with number)
+- Notification dropdown with mark as read / mark all as read
+- Supabase Realtime listener — new notifications appear instantly without refresh
+- Fallback polling every 30 seconds
+- Notification triggers:
+  - Student enrolled by secretary → notifies student
+  - Enrollment cancelled by secretary → notifies student
+  - Attendance marked → notifies student
+  - Class cancelled → notifies all enrolled students + instructor
+  - Instructor marks unavailable → notifies enrolled students + admins/secretaries
+  - Students assigned to practical class → notifies students
+  - User deactivated → notifies user
+- Notifications stored in database (persistent, survives refresh)
+- Relative timestamps ("há 5 minutos")
+
 ## i18n
 - next-intl with pt-PT locale
 - All UI strings from translation file (`messages/pt-PT.json`)
