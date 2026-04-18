@@ -154,4 +154,105 @@ export const userRouter = router({
         data: { status: "ACTIVE" },
       });
     }),
+
+  /** Student profile with enrollment stats and history */
+  studentProfile: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const student = await ctx.db.user.findFirst({
+        where: { id: input.id, tenantId: ctx.tenantId, role: "STUDENT" },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          status: true,
+          createdAt: true,
+          school: { select: { id: true, name: true } },
+          enrollments: {
+            select: {
+              id: true,
+              status: true,
+              enrolledAt: true,
+              session: {
+                select: {
+                  id: true,
+                  title: true,
+                  classType: true,
+                  startsAt: true,
+                  endsAt: true,
+                  status: true,
+                  instructor: { select: { name: true } },
+                },
+              },
+            },
+            orderBy: { enrolledAt: "desc" },
+          },
+        },
+      });
+
+      if (!student) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "user.notFound" });
+      }
+
+      const enrollments = student.enrollments;
+      const stats = {
+        totalEnrolled: enrollments.filter((e) => e.status === "ENROLLED").length,
+        totalAttended: enrollments.filter((e) => e.status === "ATTENDED").length,
+        totalNoShow: enrollments.filter((e) => e.status === "NO_SHOW").length,
+        totalCancelled: enrollments.filter((e) => e.status === "CANCELLED").length,
+        theoryAttended: enrollments.filter((e) => e.status === "ATTENDED" && e.session.classType === "THEORY").length,
+        practicalAttended: enrollments.filter((e) => e.status === "ATTENDED" && e.session.classType === "PRACTICAL").length,
+        upcoming: enrollments.filter((e) => e.status === "ENROLLED" && new Date(e.session.startsAt) > new Date()).length,
+      };
+
+      return { ...student, stats };
+    }),
+
+  /** Instructor profile with class stats and schedule */
+  instructorProfile: roleProtectedProcedure(["ADMIN", "SECRETARY"])
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const instructor = await ctx.db.user.findFirst({
+        where: { id: input.id, tenantId: ctx.tenantId, role: "INSTRUCTOR" },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          status: true,
+          createdAt: true,
+          school: { select: { id: true, name: true } },
+          instructedSessions: {
+            select: {
+              id: true,
+              title: true,
+              classType: true,
+              startsAt: true,
+              endsAt: true,
+              status: true,
+              capacity: true,
+              _count: { select: { enrollments: true } },
+            },
+            orderBy: { startsAt: "desc" },
+          },
+        },
+      });
+
+      if (!instructor) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "user.notFound" });
+      }
+
+      const sessions = instructor.instructedSessions;
+      const now = new Date();
+      const stats = {
+        totalClasses: sessions.length,
+        completedClasses: sessions.filter((s) => s.status === "COMPLETED").length,
+        upcomingClasses: sessions.filter((s) => s.status === "SCHEDULED" && new Date(s.startsAt) > now).length,
+        cancelledClasses: sessions.filter((s) => s.status === "CANCELLED").length,
+        theoryClasses: sessions.filter((s) => s.classType === "THEORY").length,
+        practicalClasses: sessions.filter((s) => s.classType === "PRACTICAL").length,
+        totalStudentsTaught: sessions.reduce((acc, s) => acc + s._count.enrollments, 0),
+      };
+
+      return { ...instructor, stats };
+    }),
 });

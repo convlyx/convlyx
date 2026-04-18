@@ -117,7 +117,7 @@ export function ClassDetailDialog({
               {format.dateTime(new Date(classDetail.startsAt), {
                 hour: "2-digit", minute: "2-digit",
               })}
-              {" — "}
+              {" · "}
               {format.dateTime(new Date(classDetail.endsAt), {
                 hour: "2-digit", minute: "2-digit",
               })}

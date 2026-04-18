@@ -2,12 +2,14 @@
 
 import { useTranslations, useFormatter } from "next-intl";
 import { trpc } from "@/lib/trpc";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, BookOpen, CalendarDays, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { ViewToggle, useViewMode } from "@/components/view-toggle";
+import { Loading } from "@/components/loading";
 import type { UserRole } from "@/generated/prisma/enums";
 
 const typeKeys: Record<string, string> = {
@@ -32,6 +34,7 @@ const enrollmentStatusKeys: Record<string, string> = {
 export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
   const t = useTranslations();
   const format = useFormatter();
+  const [view, setView] = useViewMode("/enrollments");
   const utils = trpc.useUtils();
 
   const { data: enrollments, isLoading } = trpc.enrollment.listByStudent.useQuery();
@@ -43,16 +46,66 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
     },
   });
 
+  const canCancel = (enrollment: { status: string; session: { status: string } }) =>
+    userRole === "STUDENT" && enrollment.status === "ENROLLED" && enrollment.session.status === "SCHEDULED";
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">{t("enrollment.myEnrollments")}</h1>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">{t("enrollment.myEnrollments")}</h1>
+        <ViewToggle view={view} onChange={setView} />
+      </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+        <Loading />
       ) : !enrollments || enrollments.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
           <ClipboardList className="h-10 w-10 mb-3 opacity-30" />
           <p className="text-sm">{t("common.noResults")}</p>
+        </div>
+      ) : view === "cards" ? (
+        <div className="grid gap-3">
+          {enrollments.map((enrollment) => (
+            <div
+              key={enrollment.id}
+              className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                    enrollment.session.classType === "THEORY"
+                      ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                      : "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+                  }`}>
+                    <BookOpen className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{enrollment.session.title}</p>
+                      <Badge variant="secondary">{t(typeKeys[enrollment.session.classType])}</Badge>
+                      <Badge variant={enrollmentStatusVariant[enrollment.status] ?? "outline"}>
+                        {t(enrollmentStatusKeys[enrollment.status] ?? enrollment.status)}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
+                      <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{enrollment.session.instructor.name}</span>
+                      <span className="flex items-center gap-1">
+                        <CalendarDays className="h-3.5 w-3.5" />
+                        {format.dateTime(new Date(enrollment.session.startsAt), { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                        {" · "}
+                        {format.dateTime(new Date(enrollment.session.endsAt), { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {canCancel(enrollment) && (
+                  <Button variant="destructive" size="sm" disabled={cancelMutation.isPending} onClick={() => cancelMutation.mutate({ enrollmentId: enrollment.id })}>
+                    {t("enrollment.cancel")}
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="rounded-xl border card-shadow overflow-hidden">
@@ -71,21 +124,12 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
               {enrollments.map((enrollment) => (
                 <TableRow key={enrollment.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">{enrollment.session.title}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">
-                      {t(typeKeys[enrollment.session.classType])}
-                    </Badge>
-                  </TableCell>
+                  <TableCell><Badge variant="secondary">{t(typeKeys[enrollment.session.classType])}</Badge></TableCell>
                   <TableCell>{enrollment.session.instructor.name}</TableCell>
                   <TableCell>
-                    {format.dateTime(new Date(enrollment.session.startsAt), {
-                      day: "2-digit", month: "2-digit", year: "numeric",
-                      hour: "2-digit", minute: "2-digit",
-                    })}
-                    {" — "}
-                    {format.dateTime(new Date(enrollment.session.endsAt), {
-                      hour: "2-digit", minute: "2-digit",
-                    })}
+                    {format.dateTime(new Date(enrollment.session.startsAt), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                    {" · "}
+                    {format.dateTime(new Date(enrollment.session.endsAt), { hour: "2-digit", minute: "2-digit" })}
                   </TableCell>
                   <TableCell>
                     <Badge variant={enrollmentStatusVariant[enrollment.status] ?? "outline"}>
@@ -94,13 +138,8 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
                   </TableCell>
                   {userRole === "STUDENT" && (
                     <TableCell>
-                      {enrollment.status === "ENROLLED" && enrollment.session.status === "SCHEDULED" && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          disabled={cancelMutation.isPending}
-                          onClick={() => cancelMutation.mutate({ enrollmentId: enrollment.id })}
-                        >
+                      {canCancel(enrollment) && (
+                        <Button variant="destructive" size="sm" disabled={cancelMutation.isPending} onClick={() => cancelMutation.mutate({ enrollmentId: enrollment.id })}>
                           {t("enrollment.cancel")}
                         </Button>
                       )}

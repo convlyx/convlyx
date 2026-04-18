@@ -29,7 +29,7 @@ export function CalendarFilters({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="ALL">{t("classes.type")}: {t("common.filter")}</SelectItem>
+          <SelectItem value="ALL">{t("classes.allTypes")}</SelectItem>
           <SelectItem value="THEORY">{t("classes.theory")}</SelectItem>
           <SelectItem value="PRACTICAL">{t("classes.practical")}</SelectItem>
         </SelectContent>
@@ -39,7 +39,7 @@ export function CalendarFilters({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="ALL">{t("common.school")}: {t("common.filter")}</SelectItem>
+          <SelectItem value="ALL">{t("schools.allSchools")}</SelectItem>
           {schools?.map((school) => (
             <SelectItem key={school.id} value={school.id}>
               {school.name}
