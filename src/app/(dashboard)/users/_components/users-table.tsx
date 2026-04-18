@@ -21,10 +21,11 @@ import { UserAvatar } from "@/components/user-avatar";
 import { roleColorMap } from "@/lib/constants/class";
 import { EditUserDialog } from "./edit-user-dialog";
 import { toast } from "sonner";
+import type { UserRole } from "@/generated/prisma/enums";
 
 const ROLES = ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"] as const;
 
-export function UsersTable() {
+export function UsersTable({ userRole }: { userRole: UserRole }) {
   const t = useTranslations();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -81,6 +82,8 @@ export function UsersTable() {
       toast.error(error.message);
     },
   });
+
+  const canDeactivate = userRole === "ADMIN";
 
   const filteredUsers = users?.filter((user) =>
     user.name.toLowerCase().includes(search.toLowerCase())
@@ -169,7 +172,7 @@ export function UsersTable() {
                     <Button variant="outline" size="sm" onClick={() => setEditUser(user)}>
                       <Pencil className="h-3.5 w-3.5 mr-1" />{t("common.edit")}
                     </Button>
-                    {user.status === "ACTIVE" ? (
+                    {canDeactivate && (user.status === "ACTIVE" ? (
                       <Button variant="destructive" size="sm" className="flex-1" disabled={deactivateMutation.isPending} onClick={() => deactivateMutation.mutate({ id: user.id })}>
                         {t("users.deactivate")}
                       </Button>
@@ -177,7 +180,7 @@ export function UsersTable() {
                       <Button variant="outline" size="sm" className="flex-1" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: user.id })}>
                         {t("users.activate")}
                       </Button>
-                    )}
+                    ))}
                   </div>
                 </div>
                 {/* Desktop action buttons */}
@@ -185,7 +188,7 @@ export function UsersTable() {
                   <Button variant="outline" size="icon-sm" onClick={() => setEditUser(user)} title={t("common.edit")}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  {user.status === "ACTIVE" ? (
+                  {canDeactivate && (user.status === "ACTIVE" ? (
                     <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => deactivateMutation.mutate({ id: user.id })}>
                       {t("users.deactivate")}
                     </Button>
@@ -193,7 +196,7 @@ export function UsersTable() {
                     <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: user.id })}>
                       {t("users.activate")}
                     </Button>
-                  )}
+                  ))}
                 </div>
               </div>
             </div>
@@ -229,7 +232,7 @@ export function UsersTable() {
                       <Button variant="outline" size="icon-sm" onClick={() => setEditUser(user)} title={t("common.edit")}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      {user.status === "ACTIVE" ? (
+                      {canDeactivate && (user.status === "ACTIVE" ? (
                         <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => deactivateMutation.mutate({ id: user.id })}>
                           {t("users.deactivate")}
                         </Button>
@@ -237,7 +240,7 @@ export function UsersTable() {
                         <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: user.id })}>
                           {t("users.activate")}
                         </Button>
-                      )}
+                      ))}
                     </div>
                   </TableCell>
                 </TableRow>

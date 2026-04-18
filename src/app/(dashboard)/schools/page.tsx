@@ -1,19 +1,19 @@
-"use client";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { db } from "@/server/db";
+import { SchoolsPageClient } from "./_components/schools-page-client";
 
-import { useTranslations } from "next-intl";
-import { CreateSchoolDialog } from "./_components/create-school-dialog";
-import { SchoolsTable } from "./_components/schools-table";
+export default async function SchoolsPage() {
+  const supabase = await createClient();
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  if (!authUser) redirect("/login");
 
-export default function SchoolsPage() {
-  const t = useTranslations("schools");
+  const user = await db.user.findUnique({
+    where: { id: authUser.id },
+    select: { role: true },
+  });
+  if (!user) redirect("/login");
+  if (user.role !== "ADMIN") redirect("/");
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <CreateSchoolDialog />
-      </div>
-      <SchoolsTable />
-    </div>
-  );
+  return <SchoolsPageClient />;
 }

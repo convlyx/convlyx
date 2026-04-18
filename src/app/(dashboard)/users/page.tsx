@@ -1,19 +1,19 @@
-"use client";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { db } from "@/server/db";
+import { UsersPageClient } from "./_components/users-page-client";
 
-import { useTranslations } from "next-intl";
-import { CreateUserDialog } from "./_components/create-user-dialog";
-import { UsersTable } from "./_components/users-table";
+export default async function UsersPage() {
+  const supabase = await createClient();
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  if (!authUser) redirect("/login");
 
-export default function UsersPage() {
-  const t = useTranslations("users");
+  const user = await db.user.findUnique({
+    where: { id: authUser.id },
+    select: { role: true },
+  });
+  if (!user) redirect("/login");
+  if (!["ADMIN", "SECRETARY"].includes(user.role)) redirect("/");
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <CreateUserDialog />
-      </div>
-      <UsersTable />
-    </div>
-  );
+  return <UsersPageClient userRole={user.role} />;
 }

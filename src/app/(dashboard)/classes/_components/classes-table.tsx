@@ -23,8 +23,9 @@ import { EmptyState } from "@/components/empty-state";
 import { typeKeys, statusKeys, statusVariant, classTypeColorMap } from "@/lib/constants/class";
 import { EditClassDialog } from "./edit-class-dialog";
 import { toast } from "sonner";
+import type { UserRole } from "@/generated/prisma/enums";
 
-export function ClassesTable() {
+export function ClassesTable({ userRole }: { userRole: UserRole }) {
   const t = useTranslations();
   const format = useFormatter();
   const searchParams = useSearchParams();
@@ -75,6 +76,8 @@ export function ClassesTable() {
       toast.error(error.message);
     },
   });
+
+  const canManage = userRole === "ADMIN" || userRole === "SECRETARY";
 
   const filteredClasses = classes?.filter((cls) =>
     cls.title.toLowerCase().includes(search.toLowerCase())
@@ -171,7 +174,7 @@ export function ClassesTable() {
                     </span>
                     <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5 shrink-0" />{cls._count.enrollments}/{cls.capacity}</span>
                   </div>
-                  {(cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
+                  {canManage && (cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
                     <div className="mt-2 flex gap-2 sm:hidden">
                       <Button variant="outline" size="sm" onClick={() => setEditClass(cls)}>
                         <Pencil className="h-3.5 w-3.5 mr-1" />{t("common.edit")}
@@ -180,7 +183,7 @@ export function ClassesTable() {
                     </div>
                   )}
                 </div>
-                {(cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
+                {canManage && (cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
                   <div className="hidden sm:flex shrink-0 gap-1">
                     <Button variant="outline" size="icon-sm" onClick={() => setEditClass(cls)} title={t("common.edit")}>
                       <Pencil className="h-3.5 w-3.5" />
@@ -220,7 +223,7 @@ export function ClassesTable() {
                   <TableCell>{cls._count.enrollments}/{cls.capacity}</TableCell>
                   <TableCell><Badge variant={statusVariant[cls.status] ?? "outline"}>{t(statusKeys[cls.status])}</Badge></TableCell>
                   <TableCell>
-                    {(cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
+                    {canManage && (cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
                       <div className="flex gap-1">
                         <Button variant="outline" size="icon-sm" onClick={() => setEditClass(cls)} title={t("common.edit")}>
                           <Pencil className="h-3.5 w-3.5" />
