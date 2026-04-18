@@ -6,6 +6,7 @@ import {
   updateClassSchema,
   cancelClassSchema,
 } from "@/lib/validations/class";
+import { syncClassStatuses } from "../lib/class-status";
 
 export const classRouter = router({
   list: protectedProcedure
@@ -18,6 +19,9 @@ export const classRouter = router({
       }).optional()
     )
     .query(async ({ ctx, input }) => {
+      // Auto-update class statuses based on current time
+      await syncClassStatuses(ctx.db, ctx.tenantId);
+
       // Instructors see only their classes, students see available + enrolled
       const instructorFilter =
         ctx.user.role === "INSTRUCTOR"

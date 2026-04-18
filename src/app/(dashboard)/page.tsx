@@ -1,12 +1,20 @@
-import { useTranslations } from "next-intl";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { db } from "@/server/db";
+import { DashboardView } from "./_components/dashboard-view";
 
-export default function DashboardPage() {
-  const t = useTranslations("dashboard");
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const { data: { user: authUser } } = await supabase.auth.getUser();
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">{t("welcome")}</h1>
-      <p className="text-muted-foreground">{t("todaySchedule")}</p>
-    </div>
-  );
+  if (!authUser) redirect("/login");
+
+  const user = await db.user.findUnique({
+    where: { id: authUser.id },
+    select: { id: true, name: true, role: true, tenantId: true },
+  });
+
+  if (!user) redirect("/login");
+
+  return <DashboardView userName={user.name} userRole={user.role} />;
 }

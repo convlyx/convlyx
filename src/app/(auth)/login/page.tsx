@@ -2,10 +2,17 @@ import { LoginForm } from "./_components/login-form";
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-sm space-y-6 px-4">
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold">Escola de Condução</h1>
+    <main className="flex min-h-screen items-center justify-center bg-muted/30 relative overflow-hidden">
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-primary/3 via-transparent to-transparent" />
+
+      <div className="relative w-full max-w-sm space-y-6 rounded-xl border bg-card p-6 card-shadow">
+        <div className="text-center space-y-1">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-xl shadow-md">
+            EC
+          </div>
+          <h1 className="text-xl font-bold">Escola de Condução</h1>
           <p className="text-muted-foreground text-sm">
             Inicie sessão para continuar
           </p>

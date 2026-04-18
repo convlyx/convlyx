@@ -118,7 +118,11 @@
   "dashboard": {
     "welcome": "Bem-vindo/a",
     "upcomingClasses": "Próximas aulas",
-    "todaySchedule": "Horário de hoje"
+    "todaySchedule": "Horário de hoje",
+    "next7Days": "próximos 7 dias",
+    "happeningNow": "a decorrer agora",
+    "activeEnrollments": "inscrições ativas",
+    "availableThisWeek": "aulas disponíveis esta semana"
   },
   "days": {
     "0": "Segunda-feira",

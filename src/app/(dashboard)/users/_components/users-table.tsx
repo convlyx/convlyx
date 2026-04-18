@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { trpc } from "@/lib/trpc";
+import { Users } from "lucide-react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -67,56 +68,61 @@ export function UsersTable() {
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
       ) : !users || users.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("users.noUsers")}</p>
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+          <Users className="h-10 w-10 mb-3 opacity-30" />
+          <p className="text-sm">{t("users.noUsers")}</p>
+        </div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("common.name")}</TableHead>
-              <TableHead>{t("auth.email")}</TableHead>
-              <TableHead>{t("common.role")}</TableHead>
-              <TableHead>{t("common.school")}</TableHead>
-              <TableHead>{t("common.status")}</TableHead>
-              <TableHead>{t("common.actions")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary">{t(`roles.${user.role}`)}</Badge>
-                </TableCell>
-                <TableCell>{user.school.name}</TableCell>
-                <TableCell>
-                  <Badge variant={user.status === "ACTIVE" ? "default" : "destructive"}>
-                    {user.status === "ACTIVE" ? t("common.active") : t("common.inactive")}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {user.status === "ACTIVE" ? (
-                    <Button
-                      variant="destructive" size="sm"
-                      disabled={deactivateMutation.isPending}
-                      onClick={() => deactivateMutation.mutate({ id: user.id })}
-                    >
-                      {t("users.deactivate")}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline" size="sm"
-                      disabled={activateMutation.isPending}
-                      onClick={() => activateMutation.mutate({ id: user.id })}
-                    >
-                      {t("users.activate")}
-                    </Button>
-                  )}
-                </TableCell>
+        <div className="rounded-xl border card-shadow overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("common.name")}</TableHead>
+                <TableHead>{t("auth.email")}</TableHead>
+                <TableHead>{t("common.role")}</TableHead>
+                <TableHead>{t("common.school")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                <TableHead>{t("common.actions")}</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id} className="hover:bg-muted/50 transition-colors">
+                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{t(`roles.${user.role}`)}</Badge>
+                  </TableCell>
+                  <TableCell>{user.school.name}</TableCell>
+                  <TableCell>
+                    <Badge variant={user.status === "ACTIVE" ? "default" : "destructive"}>
+                      {user.status === "ACTIVE" ? t("common.active") : t("common.inactive")}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {user.status === "ACTIVE" ? (
+                      <Button
+                        variant="destructive" size="sm"
+                        disabled={deactivateMutation.isPending}
+                        onClick={() => deactivateMutation.mutate({ id: user.id })}
+                      >
+                        {t("users.deactivate")}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline" size="sm"
+                        disabled={activateMutation.isPending}
+                        onClick={() => activateMutation.mutate({ id: user.id })}
+                      >
+                        {t("users.activate")}
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
     </div>
   );

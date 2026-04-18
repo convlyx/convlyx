@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import { trpc } from "@/lib/trpc";
+import { BookOpen } from "lucide-react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -89,59 +90,64 @@ export function ClassesTable() {
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
       ) : !classes || classes.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("classes.noClasses")}</p>
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+          <BookOpen className="h-10 w-10 mb-3 opacity-30" />
+          <p className="text-sm">{t("classes.noClasses")}</p>
+        </div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("common.name")}</TableHead>
-              <TableHead>{t("classes.type")}</TableHead>
-              <TableHead>{t("classes.instructor")}</TableHead>
-              <TableHead>{t("classes.date")}</TableHead>
-              <TableHead>{t("classes.capacity")}</TableHead>
-              <TableHead>{t("common.status")}</TableHead>
-              <TableHead>{t("common.actions")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {classes.map((cls) => (
-              <TableRow key={cls.id}>
-                <TableCell className="font-medium">{cls.title}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary">
-                    {t(typeKeys[cls.classType] ?? cls.classType)}
-                  </Badge>
-                </TableCell>
-                <TableCell>{cls.instructor.name}</TableCell>
-                <TableCell>
-                  {format.dateTime(new Date(cls.startsAt), {
-                    day: "2-digit", month: "2-digit", year: "numeric",
-                    hour: "2-digit", minute: "2-digit",
-                  })}
-                  {" — "}
-                  {format.dateTime(new Date(cls.endsAt), {
-                    hour: "2-digit", minute: "2-digit",
-                  })}
-                </TableCell>
-                <TableCell>
-                  {cls._count.enrollments}/{cls.capacity}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={classStatusVariant(cls.status)}>
-                    {t(statusKeys[cls.status] ?? cls.status)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {cls.status !== "COMPLETED" && cls.status !== "CANCELLED" && (
-                    <Button variant="destructive" size="sm" onClick={() => setCancelId(cls.id)}>
-                      {t("common.cancel")}
-                    </Button>
-                  )}
-                </TableCell>
+        <div className="rounded-xl border card-shadow overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("common.name")}</TableHead>
+                <TableHead>{t("classes.type")}</TableHead>
+                <TableHead>{t("classes.instructor")}</TableHead>
+                <TableHead>{t("classes.date")}</TableHead>
+                <TableHead>{t("classes.capacity")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                <TableHead>{t("common.actions")}</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {classes.map((cls) => (
+                <TableRow key={cls.id} className="hover:bg-muted/50 transition-colors">
+                  <TableCell className="font-medium">{cls.title}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">
+                      {t(typeKeys[cls.classType] ?? cls.classType)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{cls.instructor.name}</TableCell>
+                  <TableCell>
+                    {format.dateTime(new Date(cls.startsAt), {
+                      day: "2-digit", month: "2-digit", year: "numeric",
+                      hour: "2-digit", minute: "2-digit",
+                    })}
+                    {" — "}
+                    {format.dateTime(new Date(cls.endsAt), {
+                      hour: "2-digit", minute: "2-digit",
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {cls._count.enrollments}/{cls.capacity}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={classStatusVariant(cls.status)}>
+                      {t(statusKeys[cls.status] ?? cls.status)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {cls.status !== "COMPLETED" && cls.status !== "CANCELLED" && (
+                      <Button variant="destructive" size="sm" onClick={() => setCancelId(cls.id)}>
+                        {t("common.cancel")}
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
 
       <Dialog open={cancelId !== null} onOpenChange={(val) => { if (!val) setCancelId(null); }}>
