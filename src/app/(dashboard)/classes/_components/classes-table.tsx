@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations, useFormatter } from "next-intl";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { trpc } from "@/lib/trpc";
-import { BookOpen, Clock, Users, CalendarDays } from "lucide-react";
+import { BookOpen, Clock, Users, CalendarDays, Search, Pencil } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,16 +21,44 @@ import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
 import { EmptyState } from "@/components/empty-state";
 import { typeKeys, statusKeys, statusVariant, classTypeColorMap } from "@/lib/constants/class";
+import { EditClassDialog } from "./edit-class-dialog";
+import { toast } from "sonner";
 
 export function ClassesTable() {
   const t = useTranslations();
   const format = useFormatter();
-  const [view, setView] = useViewMode("/classes");
-  const [typeFilter, setTypeFilter] = useState<string>("ALL");
-  const [schoolFilter, setSchoolFilter] = useState<string>("ALL");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  function updateParams(key: string, value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "ALL" || value === "" || value === "cards") {
+      params.delete(key);
+    } else {
+      params.set(key, value);
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  const initialView = (searchParams.get("view") as "cards" | "table") ?? undefined;
+  const [view, setView] = useViewMode("/classes", initialView);
+  const [search, setSearch] = useState(searchParams.get("search") ?? "");
+  const [typeFilter, setTypeFilter] = useState<string>(searchParams.get("type") ?? "ALL");
+  const [schoolFilter, setSchoolFilter] = useState<string>(searchParams.get("school") ?? "ALL");
   const [cancelId, setCancelId] = useState<string | null>(null);
+  const [editClass, setEditClass] = useState<typeof filteredClasses[number] | null>(null);
 
   const { data: schools } = trpc.school.list.useQuery();
+
+  // Auto-select when only one school
+  useEffect(() => {
+    if (schoolFilter === "ALL" && schools?.length === 1) {
+      handleSchoolChange(schools[0].id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schools]);
+
   const { data: classes, isLoading } = trpc.class.list.useQuery({
     ...(typeFilter !== "ALL" && { classType: typeFilter as "THEORY" | "PRACTICAL" }),
     ...(schoolFilter !== "ALL" && { schoolId: schoolFilter }),
@@ -37,17 +67,54 @@ export function ClassesTable() {
   const utils = trpc.useUtils();
   const cancelMutation = trpc.class.cancel.useMutation({
     onSuccess: () => {
+      toast.success("Aula cancelada");
       utils.class.list.invalidate();
       setCancelId(null);
     },
+    onError: (error) => {
+      toast.error(error.message);
+    },
   });
+
+  const filteredClasses = classes?.filter((cls) =>
+    cls.title.toLowerCase().includes(search.toLowerCase())
+  ) ?? [];
+
+  function handleSearchChange(value: string) {
+    setSearch(value);
+    updateParams("search", value);
+  }
+
+  function handleTypeChange(value: string) {
+    setTypeFilter(value);
+    updateParams("type", value);
+  }
+
+  function handleSchoolChange(value: string) {
+    setSchoolFilter(value);
+    updateParams("school", value);
+  }
+
+  function handleViewChange(mode: "cards" | "table") {
+    setView(mode);
+    updateParams("view", mode);
+  }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[180px]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 sm:flex-none">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t("common.search") + "..."}
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-9 w-full sm:w-[200px]"
+            />
+          </div>
+          <Select value={typeFilter} onValueChange={handleTypeChange}>
+            <SelectTrigger className="w-auto min-w-[140px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -56,8 +123,8 @@ export function ClassesTable() {
               <SelectItem value="PRACTICAL">{t("classes.practical")}</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={schoolFilter} onValueChange={setSchoolFilter}>
-            <SelectTrigger className="w-[200px]">
+          <Select value={schoolFilter} onValueChange={handleSchoolChange}>
+            <SelectTrigger className="w-auto min-w-[140px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -70,45 +137,56 @@ export function ClassesTable() {
             </SelectContent>
           </Select>
         </div>
-        <ViewToggle view={view} onChange={setView} />
+        <ViewToggle view={view} onChange={handleViewChange} />
       </div>
 
       {isLoading ? (
         <Loading />
-      ) : !classes || classes.length === 0 ? (
+      ) : filteredClasses.length === 0 ? (
         <EmptyState icon={BookOpen} message={t("classes.noClasses")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
-          {classes.map((cls) => (
+          {filteredClasses.map((cls) => (
             <div
               key={cls.id}
               className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[cls.classType]}`}>
-                    <BookOpen className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{cls.title}</p>
-                      <Badge variant="secondary">{t(typeKeys[cls.classType])}</Badge>
-                      <Badge variant={statusVariant[cls.status] ?? "outline"}>{t(statusKeys[cls.status])}</Badge>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
-                      <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{cls.instructor.name}</span>
-                      <span className="flex items-center gap-1">
-                        <CalendarDays className="h-3.5 w-3.5" />
-                        {format.dateTime(new Date(cls.startsAt), { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                        {" · "}
-                        {format.dateTime(new Date(cls.endsAt), { hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                      <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{cls._count.enrollments}/{cls.capacity}</span>
-                    </div>
-                  </div>
+              <div className="flex items-start gap-3">
+                <div className={`flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[cls.classType]}`}>
+                  <BookOpen className="h-5 w-5" />
                 </div>
-                {cls.status !== "COMPLETED" && cls.status !== "CANCELLED" && (
-                  <Button variant="destructive" size="sm" onClick={() => setCancelId(cls.id)}>{t("common.cancel")}</Button>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <p className="font-medium truncate">{cls.title}</p>
+                    <Badge variant="secondary">{t(typeKeys[cls.classType])}</Badge>
+                    <Badge variant={statusVariant[cls.status] ?? "outline"}>{t(statusKeys[cls.status])}</Badge>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground mt-0.5">
+                    <span className="flex items-center gap-1 truncate"><Users className="h-3.5 w-3.5 shrink-0" />{cls.instructor.name}</span>
+                    <span className="flex items-center gap-1">
+                      <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                      {format.dateTime(new Date(cls.startsAt), { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                      {" · "}
+                      {format.dateTime(new Date(cls.endsAt), { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                    <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5 shrink-0" />{cls._count.enrollments}/{cls.capacity}</span>
+                  </div>
+                  {(cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
+                    <div className="mt-2 flex gap-2 sm:hidden">
+                      <Button variant="outline" size="sm" onClick={() => setEditClass(cls)}>
+                        <Pencil className="h-3.5 w-3.5 mr-1" />{t("common.edit")}
+                      </Button>
+                      <Button variant="destructive" size="sm" className="flex-1" onClick={() => setCancelId(cls.id)}>{t("common.cancel")}</Button>
+                    </div>
+                  )}
+                </div>
+                {(cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
+                  <div className="hidden sm:flex shrink-0 gap-1">
+                    <Button variant="outline" size="icon-sm" onClick={() => setEditClass(cls)} title={t("common.edit")}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => setCancelId(cls.id)}>{t("common.cancel")}</Button>
+                  </div>
                 )}
               </div>
             </div>
@@ -129,7 +207,7 @@ export function ClassesTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {classes.map((cls) => (
+              {filteredClasses.map((cls) => (
                 <TableRow key={cls.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">{cls.title}</TableCell>
                   <TableCell><Badge variant="secondary">{t(typeKeys[cls.classType])}</Badge></TableCell>
@@ -142,8 +220,13 @@ export function ClassesTable() {
                   <TableCell>{cls._count.enrollments}/{cls.capacity}</TableCell>
                   <TableCell><Badge variant={statusVariant[cls.status] ?? "outline"}>{t(statusKeys[cls.status])}</Badge></TableCell>
                   <TableCell>
-                    {cls.status !== "COMPLETED" && cls.status !== "CANCELLED" && (
-                      <Button variant="destructive" size="sm" onClick={() => setCancelId(cls.id)}>{t("common.cancel")}</Button>
+                    {(cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
+                      <div className="flex gap-1">
+                        <Button variant="outline" size="icon-sm" onClick={() => setEditClass(cls)} title={t("common.edit")}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => setCancelId(cls.id)}>{t("common.cancel")}</Button>
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>
@@ -165,6 +248,14 @@ export function ClassesTable() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {editClass && (
+        <EditClassDialog
+          classData={editClass}
+          open={editClass !== null}
+          onClose={() => setEditClass(null)}
+        />
+      )}
     </div>
   );
 }

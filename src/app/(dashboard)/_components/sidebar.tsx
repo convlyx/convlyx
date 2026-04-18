@@ -17,7 +17,7 @@ import {
 import type { UserRole } from "@/generated/prisma/enums";
 import type { LucideIcon } from "lucide-react";
 
-type NavItem = {
+export type NavItem = {
   key: string;
   href: string;
   roles: UserRole[];
@@ -25,7 +25,7 @@ type NavItem = {
   section?: "main" | "admin";
 };
 
-const navItems: NavItem[] = [
+export const navItems: NavItem[] = [
   { key: "dashboard", href: "/", roles: ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"], icon: LayoutDashboard, section: "main" },
   { key: "calendar", href: "/calendar", roles: ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"], icon: CalendarDays, section: "main" },
   { key: "classes", href: "/classes", roles: ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"], icon: BookOpen, section: "main" },

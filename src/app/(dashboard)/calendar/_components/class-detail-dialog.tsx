@@ -8,6 +8,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { typeKeys, statusKeys, enrollmentStatusKeys } from "@/lib/constants/class";
+import { toast } from "sonner";
 
 export function ClassDetailDialog({
   classId,
@@ -31,23 +32,35 @@ export function ClassDetailDialog({
 
   const enrollMutation = trpc.enrollment.enroll.useMutation({
     onSuccess: () => {
+      toast.success("Inscrito com sucesso");
       utils.class.getById.invalidate({ id: classId! });
       utils.class.list.invalidate();
       utils.enrollment.listByStudent.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 
   const cancelEnrollmentMutation = trpc.enrollment.cancel.useMutation({
     onSuccess: () => {
+      toast.success("Inscrição cancelada");
       utils.class.getById.invalidate({ id: classId! });
       utils.class.list.invalidate();
       utils.enrollment.listByStudent.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 
   const markAttendanceMutation = trpc.enrollment.markAttendance.useMutation({
     onSuccess: () => {
+      toast.success("Presença registada");
       utils.class.getById.invalidate({ id: classId! });
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 

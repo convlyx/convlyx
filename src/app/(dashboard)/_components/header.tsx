@@ -13,6 +13,7 @@ type HeaderProps = {
   userRole: UserRole;
   tenantName: string;
   schoolName: string;
+  userMobileNav: React.ReactNode;
 };
 
 export function Header({
@@ -20,6 +21,7 @@ export function Header({
   userRole,
   tenantName,
   schoolName,
+  userMobileNav,
 }: HeaderProps) {
   const t = useTranslations();
   const router = useRouter();
@@ -32,23 +34,22 @@ export function Header({
   }
 
   return (
-    <header className="flex h-14 items-center justify-between px-6 shadow-[0_1px_3px_0_rgb(0_0_0/0.05)]">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold">{tenantName}</span>
-          <span className="text-muted-foreground">/</span>
-          <span className="text-sm text-muted-foreground">{schoolName}</span>
-        </div>
+    <header className="flex h-14 items-center justify-between px-3 md:px-6 shadow-[0_1px_3px_0_rgb(0_0_0/0.05)]">
+      <div className="flex items-center gap-2">
+        {/* Hamburger on mobile */}
+        {userMobileNav}
+        {/* Tenant / school breadcrumb — hide school on mobile */}
+        <span className="text-sm font-semibold truncate">{tenantName}</span>
+        <span className="text-muted-foreground hidden sm:inline">/</span>
+        <span className="text-sm text-muted-foreground hidden sm:inline truncate">{schoolName}</span>
       </div>
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-3">
-          <UserAvatar name={userName} className="h-8 w-8 bg-primary text-primary-foreground text-xs font-bold" />
-          <div className="text-right">
-            <p className="text-sm font-medium leading-tight">{userName}</p>
-            <p className="text-xs text-muted-foreground">
-              {t(`roles.${userRole}`)}
-            </p>
-          </div>
+      <div className="flex items-center gap-2 md:gap-3">
+        <UserAvatar name={userName} className="h-8 w-8 bg-primary text-primary-foreground text-xs font-bold" />
+        <div className="text-right hidden sm:block">
+          <p className="text-sm font-medium leading-tight">{userName}</p>
+          <p className="text-xs text-muted-foreground">
+            {t(`roles.${userRole}`)}
+          </p>
         </div>
         <Button
           variant="ghost"

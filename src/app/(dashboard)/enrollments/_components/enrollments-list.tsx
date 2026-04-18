@@ -12,6 +12,7 @@ import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
 import { EmptyState } from "@/components/empty-state";
 import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap } from "@/lib/constants/class";
+import { toast } from "sonner";
 import type { UserRole } from "@/generated/prisma/enums";
 
 export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
@@ -24,8 +25,12 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
 
   const cancelMutation = trpc.enrollment.cancel.useMutation({
     onSuccess: () => {
+      toast.success("Inscrição cancelada");
       utils.enrollment.listByStudent.invalidate();
       utils.class.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 

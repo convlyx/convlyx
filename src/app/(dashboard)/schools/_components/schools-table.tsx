@@ -28,34 +28,32 @@ export function SchoolsTable() {
       ) : view === "cards" ? (
         <div className="grid gap-3">
           {schools.map((school) => (
-            <div key={school.id} className="rounded-xl border bg-card p-5 card-shadow hover:card-shadow-hover transition-all">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Building2 className="h-5 w-5" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="font-semibold">{school.name}</p>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                      {school.address && (
-                        <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{school.address}</span>
-                      )}
-                      {school.phone && (
-                        <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{school.phone}</span>
-                      )}
-                    </div>
-                  </div>
+            <div key={school.id} className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Building2 className="h-5 w-5" />
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    <span className="font-medium text-foreground">{school._count.users}</span>
-                    {t("nav.students").toLowerCase()}
+                <div className="flex-1 min-w-0 space-y-1">
+                  <p className="font-semibold truncate">{school.name}</p>
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1 sm:gap-x-4 text-sm text-muted-foreground">
+                    {school.address && (
+                      <span className="flex items-center gap-1.5 truncate"><MapPin className="h-3.5 w-3.5 shrink-0" />{school.address}</span>
+                    )}
+                    {school.phone && (
+                      <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 shrink-0" />{school.phone}</span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <BookOpen className="h-4 w-4" />
-                    <span className="font-medium text-foreground">{school._count.sessions}</span>
-                    {t("nav.classes").toLowerCase()}
+                  <div className="flex items-center gap-4 pt-1">
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Users className="h-3.5 w-3.5" />
+                      <span className="font-medium text-foreground">{school._count.users}</span>
+                      <span className="hidden sm:inline">{t("nav.students").toLowerCase()}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <BookOpen className="h-3.5 w-3.5" />
+                      <span className="font-medium text-foreground">{school._count.sessions}</span>
+                      <span className="hidden sm:inline">{t("nav.classes").toLowerCase()}</span>
+                    </div>
                   </div>
                 </div>
               </div>

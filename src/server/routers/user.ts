@@ -155,6 +155,31 @@ export const userRouter = router({
       });
     }),
 
+  me: protectedProcedure.query(async ({ ctx }) => {
+      const user = await ctx.db.user.findUnique({
+        where: { id: ctx.user.id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          school: { select: { id: true, name: true, address: true, phone: true } },
+          tenant: { select: { id: true, name: true } },
+        },
+      });
+      return user;
+    }),
+
+  updateProfile: protectedProcedure
+    .input(z.object({ name: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.user.update({
+        where: { id: ctx.user.id },
+        data: { name: input.name },
+      });
+      return { success: true };
+    }),
+
   /** Student profile with enrollment stats and history */
   studentProfile: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
     .input(z.object({ id: z.string().uuid() }))

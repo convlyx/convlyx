@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
+import { toast } from "sonner";
 
 const ROLES = ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"] as const;
 
@@ -25,16 +26,26 @@ export function CreateUserDialog() {
 
   const { data: schools } = trpc.school.list.useQuery();
 
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<CreateUserInput>({
+  const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm<CreateUserInput>({
     resolver: zodResolver(createUserSchema),
     defaultValues: { name: "", email: "", password: "", role: "STUDENT", schoolId: "" },
   });
 
+  // Auto-select when only one school
+  const schoolId = watch("schoolId");
+  useEffect(() => {
+    if (!schoolId && schools?.length === 1) setValue("schoolId", schools[0].id);
+  }, [schools, schoolId, setValue]);
+
   const createMutation = trpc.user.create.useMutation({
     onSuccess: () => {
+      toast.success("Utilizador criado com sucesso");
       utils.user.list.invalidate();
       setOpen(false);
       reset();
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 

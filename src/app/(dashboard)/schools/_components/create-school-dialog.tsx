@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 export function CreateSchoolDialog() {
   const t = useTranslations();
@@ -35,9 +36,13 @@ export function CreateSchoolDialog() {
 
   const createMutation = trpc.school.create.useMutation({
     onSuccess: () => {
+      toast.success("Escola criada com sucesso");
       utils.school.list.invalidate();
       setOpen(false);
       reset();
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 

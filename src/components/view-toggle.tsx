@@ -17,11 +17,21 @@ function storeView(route: string, mode: ViewMode) {
   localStorage.setItem(`${STORAGE_PREFIX}${route}`, mode);
 }
 
-export function useViewMode(route: string): [ViewMode, (mode: ViewMode) => void] {
-  const [view, setView] = useState<ViewMode>("cards");
+export function useViewMode(route: string, urlValue?: ViewMode): [ViewMode, (mode: ViewMode) => void] {
+  const [view, setView] = useState<ViewMode>(() => {
+    if (urlValue === "cards" || urlValue === "table") return urlValue;
+    return "cards";
+  });
 
   useEffect(() => {
-    setView(getStoredView(route));
+    // On mount, resolve from URL or localStorage
+    if (urlValue === "cards" || urlValue === "table") {
+      setView(urlValue);
+      storeView(route, urlValue);
+    } else {
+      setView(getStoredView(route));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route]);
 
   function setAndStore(mode: ViewMode) {

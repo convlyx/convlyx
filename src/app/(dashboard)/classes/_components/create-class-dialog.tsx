@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useForm, Controller } from "react-hook-form";
 import { trpc } from "@/lib/trpc";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
+import { toast } from "sonner";
 
 type ScheduleMode = "one-off" | "recurring";
 const DAYS_OF_WEEK = [0, 1, 2, 3, 4, 5, 6] as const;
@@ -27,7 +28,7 @@ export function CreateClassDialog() {
   const { data: schools } = trpc.school.list.useQuery();
   const { data: instructors } = trpc.user.list.useQuery({ role: "INSTRUCTOR" });
 
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm({
     defaultValues: {
       classType: "THEORY" as "THEORY" | "PRACTICAL",
       schoolId: "",
@@ -42,13 +43,27 @@ export function CreateClassDialog() {
     },
   });
 
+  // Auto-select when only one option
+  const schoolId = watch("schoolId");
+  const instructorId = watch("instructorId");
+  useEffect(() => {
+    if (!schoolId && schools?.length === 1) setValue("schoolId", schools[0].id);
+  }, [schools, schoolId, setValue]);
+  useEffect(() => {
+    if (!instructorId && instructors?.length === 1) setValue("instructorId", instructors[0].id);
+  }, [instructors, instructorId, setValue]);
+
   const createMutation = trpc.class.create.useMutation({
     onSuccess: () => {
+      toast.success("Aula criada com sucesso");
       utils.class.list.invalidate();
       setOpen(false);
       reset();
       setScheduleMode("one-off");
       setSelectedDays([]);
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 

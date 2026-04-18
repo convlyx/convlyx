@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export function LoginForm() {
   const t = useTranslations("auth");
@@ -30,6 +31,7 @@ export function LoginForm() {
 
     if (authError) {
       setError(authError.message);
+      toast.error(authError.message);
       setLoading(false);
       return;
     }

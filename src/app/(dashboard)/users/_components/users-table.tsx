@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { trpc } from "@/lib/trpc";
-import { Users, Mail, Building2 } from "lucide-react";
+import { Users, Mail, Building2, Search, Pencil } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,16 +19,44 @@ import { Loading } from "@/components/loading";
 import { EmptyState } from "@/components/empty-state";
 import { UserAvatar } from "@/components/user-avatar";
 import { roleColorMap } from "@/lib/constants/class";
+import { EditUserDialog } from "./edit-user-dialog";
+import { toast } from "sonner";
 
 const ROLES = ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"] as const;
 
 export function UsersTable() {
   const t = useTranslations();
-  const [view, setView] = useViewMode("/users");
-  const [roleFilter, setRoleFilter] = useState<string>("ALL");
-  const [schoolFilter, setSchoolFilter] = useState<string>("ALL");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  function updateParams(key: string, value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "ALL" || value === "" || value === "cards") {
+      params.delete(key);
+    } else {
+      params.set(key, value);
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  const initialView = (searchParams.get("view") as "cards" | "table") ?? undefined;
+  const [view, setView] = useViewMode("/users", initialView);
+  const [search, setSearch] = useState(searchParams.get("search") ?? "");
+  const [roleFilter, setRoleFilter] = useState<string>(searchParams.get("role") ?? "ALL");
+  const [schoolFilter, setSchoolFilter] = useState<string>(searchParams.get("school") ?? "ALL");
+  const [editUser, setEditUser] = useState<typeof filteredUsers[number] | null>(null);
 
   const { data: schools } = trpc.school.list.useQuery();
+
+  // Auto-select when only one school
+  useEffect(() => {
+    if (schoolFilter === "ALL" && schools?.length === 1) {
+      handleSchoolChange(schools[0].id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schools]);
+
   const { data: users, isLoading } = trpc.user.list.useQuery({
     ...(roleFilter !== "ALL" && { role: roleFilter as typeof ROLES[number] }),
     ...(schoolFilter !== "ALL" && { schoolId: schoolFilter }),
@@ -34,18 +64,63 @@ export function UsersTable() {
 
   const utils = trpc.useUtils();
   const deactivateMutation = trpc.user.deactivate.useMutation({
-    onSuccess: () => utils.user.list.invalidate(),
+    onSuccess: () => {
+      toast.success("Utilizador desativado");
+      utils.user.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
   });
   const activateMutation = trpc.user.activate.useMutation({
-    onSuccess: () => utils.user.list.invalidate(),
+    onSuccess: () => {
+      toast.success("Utilizador ativado");
+      utils.user.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
   });
+
+  const filteredUsers = users?.filter((user) =>
+    user.name.toLowerCase().includes(search.toLowerCase())
+  ) ?? [];
+
+  function handleSearchChange(value: string) {
+    setSearch(value);
+    updateParams("search", value);
+  }
+
+  function handleRoleChange(value: string) {
+    setRoleFilter(value);
+    updateParams("role", value);
+  }
+
+  function handleSchoolChange(value: string) {
+    setSchoolFilter(value);
+    updateParams("school", value);
+  }
+
+  function handleViewChange(mode: "cards" | "table") {
+    setView(mode);
+    updateParams("view", mode);
+  }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-[180px]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 sm:flex-none">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t("common.search") + "..."}
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-9 w-full sm:w-[200px]"
+            />
+          </div>
+          <Select value={roleFilter} onValueChange={handleRoleChange}>
+            <SelectTrigger className="w-auto min-w-[140px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -55,8 +130,8 @@ export function UsersTable() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={schoolFilter} onValueChange={setSchoolFilter}>
-            <SelectTrigger className="w-[200px]">
+          <Select value={schoolFilter} onValueChange={handleSchoolChange}>
+            <SelectTrigger className="w-auto min-w-[140px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -67,40 +142,60 @@ export function UsersTable() {
             </SelectContent>
           </Select>
         </div>
-        <ViewToggle view={view} onChange={setView} />
+        <ViewToggle view={view} onChange={handleViewChange} />
       </div>
 
       {isLoading ? (
         <Loading />
-      ) : !users || users.length === 0 ? (
+      ) : filteredUsers.length === 0 ? (
         <EmptyState icon={Users} message={t("users.noUsers")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
-          {users.map((user) => (
-            <div key={user.id} className="flex items-center justify-between rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all">
-              <div className="flex items-center gap-4">
-                <UserAvatar name={user.name} className={`h-11 w-11 ${roleColorMap[user.role] ?? "bg-muted text-foreground"}`} />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium">{user.name}</p>
+          {filteredUsers.map((user) => (
+            <div key={user.id} className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all">
+              <div className="flex items-center gap-3">
+                <UserAvatar name={user.name} className={`h-10 w-10 sm:h-11 sm:w-11 shrink-0 ${roleColorMap[user.role] ?? "bg-muted text-foreground"}`} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <p className="font-medium truncate">{user.name}</p>
                     <Badge variant="secondary">{t(`roles.${user.role}`)}</Badge>
                     {user.status !== "ACTIVE" && <Badge variant="destructive">{t("common.inactive")}</Badge>}
                   </div>
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
-                    <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{user.email}</span>
-                    <span className="flex items-center gap-1"><Building2 className="h-3.5 w-3.5" />{user.school.name}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground mt-0.5">
+                    <span className="flex items-center gap-1 truncate"><Mail className="h-3.5 w-3.5 shrink-0" />{user.email}</span>
+                    <span className="flex items-center gap-1 truncate"><Building2 className="h-3.5 w-3.5 shrink-0" />{user.school.name}</span>
+                  </div>
+                  <div className="mt-2 flex gap-2 sm:hidden">
+                    <Button variant="outline" size="sm" onClick={() => setEditUser(user)}>
+                      <Pencil className="h-3.5 w-3.5 mr-1" />{t("common.edit")}
+                    </Button>
+                    {user.status === "ACTIVE" ? (
+                      <Button variant="destructive" size="sm" className="flex-1" disabled={deactivateMutation.isPending} onClick={() => deactivateMutation.mutate({ id: user.id })}>
+                        {t("users.deactivate")}
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" className="flex-1" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: user.id })}>
+                        {t("users.activate")}
+                      </Button>
+                    )}
                   </div>
                 </div>
+                {/* Desktop action buttons */}
+                <div className="hidden sm:flex shrink-0 gap-1">
+                  <Button variant="outline" size="icon-sm" onClick={() => setEditUser(user)} title={t("common.edit")}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  {user.status === "ACTIVE" ? (
+                    <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => deactivateMutation.mutate({ id: user.id })}>
+                      {t("users.deactivate")}
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: user.id })}>
+                      {t("users.activate")}
+                    </Button>
+                  )}
+                </div>
               </div>
-              {user.status === "ACTIVE" ? (
-                <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => deactivateMutation.mutate({ id: user.id })}>
-                  {t("users.deactivate")}
-                </Button>
-              ) : (
-                <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: user.id })}>
-                  {t("users.activate")}
-                </Button>
-              )}
             </div>
           ))}
         </div>
@@ -118,7 +213,7 @@ export function UsersTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <TableRow key={user.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
@@ -130,21 +225,34 @@ export function UsersTable() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {user.status === "ACTIVE" ? (
-                      <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => deactivateMutation.mutate({ id: user.id })}>
-                        {t("users.deactivate")}
+                    <div className="flex gap-1">
+                      <Button variant="outline" size="icon-sm" onClick={() => setEditUser(user)} title={t("common.edit")}>
+                        <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                    ) : (
-                      <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: user.id })}>
-                        {t("users.activate")}
-                      </Button>
-                    )}
+                      {user.status === "ACTIVE" ? (
+                        <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => deactivateMutation.mutate({ id: user.id })}>
+                          {t("users.deactivate")}
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: user.id })}>
+                          {t("users.activate")}
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
+      )}
+
+      {editUser && (
+        <EditUserDialog
+          userData={editUser}
+          open={editUser !== null}
+          onClose={() => setEditUser(null)}
+        />
       )}
     </div>
   );

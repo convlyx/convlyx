@@ -47,7 +47,17 @@ export const schoolRouter = router({
       });
     }),
 
-  update: roleProtectedProcedure(["ADMIN"])
+  updateTenant: roleProtectedProcedure(["ADMIN"])
+    .input(z.object({ name: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.tenant.update({
+        where: { id: ctx.tenantId },
+        data: { name: input.name },
+      });
+      return { success: true };
+    }),
+
+  update: roleProtectedProcedure(["ADMIN", "SECRETARY"])
     .input(updateSchoolSchema)
     .mutation(async ({ ctx, input }) => {
       return ctx.db.school.updateMany({

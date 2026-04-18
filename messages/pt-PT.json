@@ -74,6 +74,7 @@
     "tempPassword": "Palavra-passe temporária",
     "cannotDeactivateSelf": "Não pode desativar a sua própria conta",
     "notFound": "Utilizador não encontrado",
+    "userUpdated": "Utilizador atualizado com sucesso",
     "memberSince": "Membro desde",
     "profile": "Perfil",
     "classesAttended": "Aulas assistidas",
@@ -117,7 +118,8 @@
     "notFound": "Aula não encontrada",
     "cannotEditFinished": "Não é possível editar aulas concluídas ou canceladas",
     "cannotCancelCompleted": "Não é possível cancelar aulas concluídas",
-    "noSessionsGenerated": "Nenhuma aula gerada para o período indicado"
+    "noSessionsGenerated": "Nenhuma aula gerada para o período indicado",
+    "classUpdated": "Aula atualizada com sucesso"
   },
   "enrollment": {
     "enroll": "Inscrever",
@@ -140,6 +142,24 @@
     "happeningNow": "a decorrer agora",
     "activeEnrollments": "inscrições ativas",
     "availableThisWeek": "aulas disponíveis esta semana"
+  },
+  "settings": {
+    "title": "Definições",
+    "profile": "Perfil",
+    "updateName": "Atualizar nome",
+    "changePassword": "Alterar palavra-passe",
+    "currentPassword": "Palavra-passe atual",
+    "newPassword": "Nova palavra-passe",
+    "confirmPassword": "Confirmar palavra-passe",
+    "passwordMismatch": "As palavras-passe não coincidem",
+    "passwordUpdated": "Palavra-passe atualizada com sucesso",
+    "profileUpdated": "Perfil atualizado com sucesso",
+    "schoolInfo": "Informação da escola",
+    "schoolUpdated": "Escola atualizada com sucesso",
+    "tenantInfo": "Informação do grupo",
+    "tenantUpdated": "Grupo atualizado com sucesso",
+    "groupName": "Nome do grupo",
+    "passwordError": "Erro ao atualizar palavra-passe"
   },
   "days": {
     "0": "Segunda-feira",

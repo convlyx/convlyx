@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { trpc } from "@/lib/trpc";
 import {
@@ -22,10 +23,18 @@ export function CalendarFilters({
   const t = useTranslations();
   const { data: schools } = trpc.school.list.useQuery();
 
+  // Auto-select when only one school
+  useEffect(() => {
+    if (schoolFilter === "ALL" && schools?.length === 1) {
+      onSchoolChange(schools[0].id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schools]);
+
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-2">
       <Select value={typeFilter} onValueChange={onTypeChange}>
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-auto min-w-[140px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -35,7 +44,7 @@ export function CalendarFilters({
         </SelectContent>
       </Select>
       <Select value={schoolFilter} onValueChange={onSchoolChange}>
-        <SelectTrigger className="w-[200px]">
+        <SelectTrigger className="w-auto min-w-[140px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
