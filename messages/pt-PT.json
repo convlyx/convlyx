@@ -120,6 +120,9 @@
     "cannotCancelCompleted": "Não é possível cancelar aulas concluídas",
     "assignStudents": "Atribuir alunos",
     "markUnavailable": "Não posso dar esta aula",
+    "upcoming": "Próximas",
+    "past": "Anteriores",
+    "cancelClass": "Cancelar aula",
     "noSessionsGenerated": "Nenhuma aula gerada para o período indicado",
     "classUpdated": "Aula atualizada com sucesso"
   },

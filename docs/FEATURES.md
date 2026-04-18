@@ -40,6 +40,8 @@ Living document of everything the app can do, organized by area.
 - Theory classes: configurable capacity, students self-enroll
 - Edit class (instructor, title, capacity, date/time)
 - Cancel class (cascades to all enrollments)
+- Class detail page (`/classes/[id]`) for secretary/admin: full class info, student list, add/remove students, attendance, cancel class
+- Navigate to class detail from class list (chevron button)
 - Auto status management: SCHEDULED → IN_PROGRESS → COMPLETED based on time
 - Class type badges (Teórica / Prática)
 - Status badges (Agendada / Em curso / Concluída / Cancelada)
