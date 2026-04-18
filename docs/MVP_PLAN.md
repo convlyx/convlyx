@@ -418,6 +418,8 @@ saas/
 | Prisma migrations | `prisma db push` for MVP | `prisma migrate dev` | Direct DB connection blocked on free tier. `db push` works through pooler. Switch to proper migrations when on paid tier. |
 | Multi-school users (MVP) | Single school_id per user | UserSchool join table | Simpler for MVP. If needed later, migrate to join table. |
 | Batch class creation | Not in MVP | batch_id grouping on RecurrencePattern | Over-engineering for MVP. Secretary creates patterns individually if needed. |
+| Practical self-booking | Enabled for MVP | Tenant-level toggle | All students can self-book practical classes for now. Post-MVP: add tenant setting to restrict this per school/tenant. |
+| Calendar default view | Week view (all roles) | Month, day, list | Week view gives best overview for scheduling. Students also get list view for enrolled classes. |
 
 ---
 

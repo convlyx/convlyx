@@ -45,7 +45,8 @@
     "instructors": "Instrutores",
     "settings": "Definições",
     "schools": "Escolas",
-    "users": "Utilizadores"
+    "users": "Utilizadores",
+    "enrollments": "As minhas inscrições"
   },
   "roles": {
     "ADMIN": "Administrador",

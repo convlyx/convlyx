@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
-import { CalendarView } from "./_components/calendar-view";
+import { EnrollmentsList } from "./_components/enrollments-list";
 
-export default async function CalendarPage() {
+export default async function EnrollmentsPage() {
   const supabase = await createClient();
   const { data: { user: authUser } } = await supabase.auth.getUser();
 
@@ -16,5 +16,5 @@ export default async function CalendarPage() {
 
   if (!user) redirect("/login");
 
-  return <CalendarView userRole={user.role} />;
+  return <EnrollmentsList userRole={user.role} />;
 }
