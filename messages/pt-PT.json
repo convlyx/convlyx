@@ -118,6 +118,7 @@
     "notFound": "Aula não encontrada",
     "cannotEditFinished": "Não é possível editar aulas concluídas ou canceladas",
     "cannotCancelCompleted": "Não é possível cancelar aulas concluídas",
+    "assignStudents": "Atribuir alunos",
     "noSessionsGenerated": "Nenhuma aula gerada para o período indicado",
     "classUpdated": "Aula atualizada com sucesso"
   },
@@ -132,7 +133,8 @@
     "notFound": "Inscrição não encontrada",
     "notActive": "Esta inscrição não está ativa",
     "classNotAvailable": "Esta aula não está disponível para inscrição",
-    "myEnrollments": "As minhas inscrições"
+    "myEnrollments": "As minhas inscrições",
+    "enrollmentsShort": "Inscrições"
   },
   "dashboard": {
     "welcome": "Bem-vindo/a",

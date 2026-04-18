@@ -4,10 +4,10 @@ import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod/v4";
 import { trpc } from "@/lib/trpc";
-import { updateClassSchema, type UpdateClassInput } from "@/lib/validations/class";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogBody,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
+import { DatePicker, TimePicker } from "@/components/date-picker";
 import { toast } from "sonner";
 
 type ClassData = {
@@ -29,37 +30,55 @@ type ClassData = {
   school: { id: string; name: string };
 };
 
-type EditClassDialogProps = {
-  classData: ClassData;
-  open: boolean;
-  onClose: () => void;
-};
+const editClassFormSchema = z.object({
+  id: z.string().uuid(),
+  instructorId: z.string().min(1, "Selecione um instrutor"),
+  title: z.string().min(1, "O título é obrigatório"),
+  capacity: z.number().int().min(1, "A capacidade deve ser pelo menos 1"),
+  date: z.string().min(1, "Selecione uma data"),
+  startTime: z.string().min(1, "Selecione hora de início"),
+  endTime: z.string().min(1, "Selecione hora de fim"),
+});
 
-function toDateInputValue(d: string | Date): string {
+type EditClassFormData = z.infer<typeof editClassFormSchema>;
+
+function toDateValue(d: string | Date): string {
   const date = new Date(d);
-  return date.toISOString().split("T")[0];
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
-function toTimeInputValue(d: string | Date): string {
+function toTimeValue(d: string | Date): string {
   const date = new Date(d);
   return date.toTimeString().slice(0, 5);
 }
 
-export function EditClassDialog({ classData, open, onClose }: EditClassDialogProps) {
+export function EditClassDialog({
+  classData,
+  open,
+  onClose,
+}: {
+  classData: ClassData;
+  open: boolean;
+  onClose: () => void;
+}) {
   const t = useTranslations();
   const utils = trpc.useUtils();
 
   const { data: instructors } = trpc.user.list.useQuery({ role: "INSTRUCTOR" });
 
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<UpdateClassInput>({
-    resolver: zodResolver(updateClassSchema),
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<EditClassFormData>({
+    resolver: zodResolver(editClassFormSchema),
     defaultValues: {
       id: classData.id,
       instructorId: classData.instructor.id,
       title: classData.title,
       capacity: classData.capacity,
-      startsAt: new Date(classData.startsAt).toISOString(),
-      endsAt: new Date(classData.endsAt).toISOString(),
+      date: toDateValue(classData.startsAt),
+      startTime: toTimeValue(classData.startsAt),
+      endTime: toTimeValue(classData.endsAt),
     },
   });
 
@@ -70,8 +89,9 @@ export function EditClassDialog({ classData, open, onClose }: EditClassDialogPro
         instructorId: classData.instructor.id,
         title: classData.title,
         capacity: classData.capacity,
-        startsAt: new Date(classData.startsAt).toISOString(),
-        endsAt: new Date(classData.endsAt).toISOString(),
+        date: toDateValue(classData.startsAt),
+        startTime: toTimeValue(classData.startsAt),
+        endTime: toTimeValue(classData.endsAt),
       });
     }
   }, [open, classData, reset]);
@@ -87,33 +107,15 @@ export function EditClassDialog({ classData, open, onClose }: EditClassDialogPro
     },
   });
 
-  function onSubmit(data: {
-    id: string;
-    instructorId: string;
-    title: string;
-    capacity: number;
-    startsAt: string;
-    endsAt: string;
-  }) {
-    // Reconstruct ISO datetimes from the form date/time inputs
-    updateMutation.mutate(data);
-  }
-
-  function handleFormSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    // We need to manually construct the datetimes from the date + time inputs
-    const formEl = e.target as HTMLFormElement;
-    const dateVal = (formEl.querySelector("#edit-class-date") as HTMLInputElement).value;
-    const startVal = (formEl.querySelector("#edit-class-start") as HTMLInputElement).value;
-    const endVal = (formEl.querySelector("#edit-class-end") as HTMLInputElement).value;
-
-    handleSubmit((data) => {
-      onSubmit({
-        ...data,
-        startsAt: new Date(`${dateVal}T${startVal}:00`).toISOString(),
-        endsAt: new Date(`${dateVal}T${endVal}:00`).toISOString(),
-      });
-    })(e);
+  function onSubmit(data: EditClassFormData) {
+    updateMutation.mutate({
+      id: data.id,
+      instructorId: data.instructorId,
+      title: data.title,
+      capacity: data.capacity,
+      startsAt: new Date(`${data.date}T${data.startTime}:00`).toISOString(),
+      endsAt: new Date(`${data.date}T${data.endTime}:00`).toISOString(),
+    });
   }
 
   return (
@@ -122,57 +124,81 @@ export function EditClassDialog({ classData, open, onClose }: EditClassDialogPro
         <DialogHeader>
           <DialogTitle>{t("classes.edit")}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleFormSubmit} className="grid gap-4">
-          <input type="hidden" {...register("id")} />
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <DialogBody>
+            <div className="grid gap-4">
+              <input type="hidden" {...register("id")} />
 
-          <div className="grid gap-2">
-            <Label>{t("classes.instructor")}</Label>
-            <Controller
-              control={control}
-              name="instructorId"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t("classes.instructor")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {instructors?.map((instructor) => (
-                      <SelectItem key={instructor.id} value={instructor.id}>
-                        {instructor.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
+              <div className="grid gap-2">
+                <Label>{t("classes.instructor")}</Label>
+                <Controller
+                  control={control}
+                  name="instructorId"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={t("classes.instructor")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {instructors?.map((instructor) => (
+                          <SelectItem key={instructor.id} value={instructor.id}>
+                            {instructor.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.instructorId && <p className="text-sm text-destructive">{errors.instructorId.message}</p>}
+              </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="edit-class-title">{t("common.name")}</Label>
-            <Input id="edit-class-title" {...register("title")} />
-            {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
-          </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-class-title">{t("common.name")}</Label>
+                <Input id="edit-class-title" {...register("title")} />
+                {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+              </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="edit-class-capacity">{t("classes.capacity")}</Label>
-            <Input id="edit-class-capacity" type="number" min={1} {...register("capacity", { valueAsNumber: true })} />
-          </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-class-capacity">{t("classes.capacity")}</Label>
+                <Input id="edit-class-capacity" type="number" min={1} {...register("capacity", { valueAsNumber: true })} />
+                {errors.capacity && <p className="text-sm text-destructive">{errors.capacity.message}</p>}
+              </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="edit-class-date">{t("classes.date")}</Label>
-            <Input id="edit-class-date" type="date" defaultValue={toDateInputValue(classData.startsAt)} />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="edit-class-start">{t("classes.startTime")}</Label>
-              <Input id="edit-class-start" type="time" defaultValue={toTimeInputValue(classData.startsAt)} />
+              <div className="grid gap-2">
+                <Label>{t("classes.date")}</Label>
+                <Controller
+                  control={control}
+                  name="date"
+                  render={({ field }) => (
+                    <DatePicker value={field.value} onChange={field.onChange} />
+                  )}
+                />
+                {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>{t("classes.startTime")}</Label>
+                  <Controller
+                    control={control}
+                    name="startTime"
+                    render={({ field }) => (
+                      <TimePicker value={field.value} onChange={field.onChange} />
+                    )}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>{t("classes.endTime")}</Label>
+                  <Controller
+                    control={control}
+                    name="endTime"
+                    render={({ field }) => (
+                      <TimePicker value={field.value} onChange={field.onChange} />
+                    )}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-class-end">{t("classes.endTime")}</Label>
-              <Input id="edit-class-end" type="time" defaultValue={toTimeInputValue(classData.endsAt)} />
-            </div>
-          </div>
-
+          </DialogBody>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               {t("common.cancel")}

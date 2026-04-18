@@ -14,18 +14,23 @@ import { ClassDetailDialog } from "./class-detail-dialog";
 type CalendarFilter = {
   schoolId?: string;
   classType?: "THEORY" | "PRACTICAL";
-  // For students: only show enrolled or all available
-  showAvailable?: boolean;
 };
 
-const typeColors: Record<string, { bg: string; border: string }> = {
+// Enrolled classes — vivid solid colors
+const enrolledColors: Record<string, { bg: string; border: string }> = {
   THEORY: { bg: "#3b82f6", border: "#2563eb" },
-  PRACTICAL: { bg: "#22c55e", border: "#16a34a" },
+  PRACTICAL: { bg: "#10b981", border: "#059669" },
+};
+
+// Available classes — lighter, more muted
+const availableColors: Record<string, { bg: string; border: string }> = {
+  THEORY: { bg: "#93c5fd", border: "#60a5fa" },
+  PRACTICAL: { bg: "#6ee7b7", border: "#34d399" },
 };
 
 const statusColors: Record<string, { bg: string; border: string }> = {
   CANCELLED: { bg: "#ef4444", border: "#dc2626" },
-  COMPLETED: { bg: "#6b7280", border: "#4b5563" },
+  COMPLETED: { bg: "#9ca3af", border: "#6b7280" },
 };
 
 export function ClassCalendar({
@@ -48,11 +53,38 @@ export function ClassCalendar({
 
   const { data: classes } = trpc.class.list.useQuery(queryInput);
 
+  // For students: fetch enrollments to highlight enrolled classes
+  const isStudent = userRole === "STUDENT";
+  const { data: enrollments } = trpc.enrollment.listByStudent.useQuery(
+    undefined,
+    { enabled: isStudent }
+  );
+
+  const enrolledSessionIds = useMemo(() => {
+    if (!isStudent || !enrollments) return new Set<string>();
+    return new Set(
+      enrollments
+        .filter((e) => e.status === "ENROLLED")
+        .map((e) => e.session.id)
+    );
+  }, [isStudent, enrollments]);
+
   const events = useMemo(() => {
     if (!classes) return [];
     return classes.map((cls) => {
-      const colors = statusColors[cls.status] ?? typeColors[cls.classType] ?? typeColors.THEORY;
+      const isEnrolled = enrolledSessionIds.has(cls.id);
       const isFull = cls._count.enrollments >= cls.capacity;
+
+      let colors;
+      if (statusColors[cls.status]) {
+        colors = statusColors[cls.status];
+      } else if (isStudent) {
+        colors = isEnrolled
+          ? enrolledColors[cls.classType] ?? enrolledColors.THEORY
+          : availableColors[cls.classType] ?? availableColors.THEORY;
+      } else {
+        colors = enrolledColors[cls.classType] ?? enrolledColors.THEORY;
+      }
 
       return {
         id: cls.id,
@@ -67,10 +99,11 @@ export function ClassCalendar({
           school: cls.school.name,
           status: cls.status,
           isFull,
+          isEnrolled,
         },
       };
     });
-  }, [classes]);
+  }, [classes, enrolledSessionIds, isStudent]);
 
   function handleEventClick(info: EventClickArg) {
     setSelectedClassId(info.event.id);
@@ -117,13 +150,36 @@ export function ClassCalendar({
             const props = arg.event.extendedProps;
             return (
               <div className="p-1 text-xs leading-tight overflow-hidden">
-                <div className="font-medium truncate">{arg.event.title}</div>
+                <div className="flex items-center gap-1">
+                  {props.isEnrolled && (
+                    <span className="flex h-1.5 w-1.5 rounded-full bg-white shrink-0" />
+                  )}
+                  <span className="font-medium truncate">{arg.event.title}</span>
+                </div>
                 <div className="opacity-80 truncate">{props.instructor}</div>
               </div>
             );
           }}
         />
       </div>
+
+      {/* Legend for students */}
+      {isStudent && (
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded bg-blue-500" />
+            Inscrito (Teórica)
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded bg-emerald-500" />
+            Inscrito (Prática)
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded bg-blue-300" />
+            Disponível
+          </span>
+        </div>
+      )}
 
       <ClassDetailDialog
         classId={selectedClassId}

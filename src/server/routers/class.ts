@@ -143,7 +143,7 @@ export const classRouter = router({
       }
 
       // One-off creation
-      return ctx.db.classSession.create({
+      const session = await ctx.db.classSession.create({
         data: {
           tenantId: ctx.tenantId,
           schoolId: input.schoolId,
@@ -158,6 +158,19 @@ export const classRouter = router({
         },
         select: { id: true, title: true, startsAt: true },
       });
+
+      // Auto-enroll assigned students (practical classes)
+      if (input.studentIds && input.studentIds.length > 0) {
+        await ctx.db.enrollment.createMany({
+          data: input.studentIds.map((studentId) => ({
+            tenantId: ctx.tenantId,
+            sessionId: session.id,
+            studentId,
+          })),
+        });
+      }
+
+      return session;
     }),
 
   update: roleProtectedProcedure(["ADMIN", "SECRETARY"])

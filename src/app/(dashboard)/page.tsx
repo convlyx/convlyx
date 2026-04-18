@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
 import { DashboardView } from "./_components/dashboard-view";
+import { StudentHome } from "./_components/student-home";
+import { InstructorHome } from "./_components/instructor-home";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -15,6 +17,14 @@ export default async function DashboardPage() {
   });
 
   if (!user) redirect("/login");
+
+  if (user.role === "STUDENT") {
+    return <StudentHome userName={user.name} />;
+  }
+
+  if (user.role === "INSTRUCTOR") {
+    return <InstructorHome userName={user.name} />;
+  }
 
   return <DashboardView userName={user.name} userRole={user.role} />;
 }

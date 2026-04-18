@@ -149,6 +149,9 @@
   .animate-loading-dot {
     animation: loading-dot 1.4s ease-in-out infinite;
   }
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
 }
 
 @keyframes loading-dot {
@@ -260,6 +263,44 @@
 
 .fc .fc-timegrid-slot {
   height: 2.5rem;
+}
+
+/* Mobile responsive toolbar */
+@media (max-width: 640px) {
+  .fc .fc-toolbar {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    align-items: stretch !important;
+  }
+
+  .fc .fc-toolbar-chunk {
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: 1rem !important;
+    text-align: center !important;
+  }
+
+  .fc .fc-button.fc-button {
+    font-size: 0.8rem !important;
+    padding: 0.4rem 0.75rem !important;
+    min-height: 2.25rem !important;
+  }
+
+  /* On mobile, default to day view */
+  .fc .fc-timegrid-slot {
+    height: 2rem;
+  }
+
+  .fc .fc-col-header-cell-cushion {
+    font-size: 0.7rem !important;
+  }
+
+  .fc .fc-timegrid-slot-label-cushion {
+    font-size: 0.7rem !important;
+  }
 }
 
 .fc .fc-col-header-cell {

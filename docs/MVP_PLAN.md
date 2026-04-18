@@ -420,6 +420,7 @@ saas/
 | Batch class creation | Not in MVP | batch_id grouping on RecurrencePattern | Over-engineering for MVP. Secretary creates patterns individually if needed. |
 | Practical self-booking | Enabled for MVP | Tenant-level toggle | All students can self-book practical classes for now. Post-MVP: add tenant setting to restrict this per school/tenant. |
 | Calendar default view | Week view (all roles) | Month, day, list | Week view gives best overview for scheduling. Students also get list view for enrolled classes. |
+| Practical class assignment | Secretary assigns student on creation | Student self-enrolls only | Practical classes are 1-on-1/1-on-2. Secretary picks the student(s) when creating. Theory classes remain self-enroll. |
 | Class status management | Auto-update based on time | Manual only | Classes auto-transition: SCHEDULED → IN_PROGRESS (at startsAt) → COMPLETED (at endsAt). Can still be manually cancelled. Future: tenant accent color customization. |
 | Theme | Green/grey/white professional palette | Blue, custom brand | Clean and neutral. Primary green, grey tones, white backgrounds. Future: per-tenant accent color override. |
 

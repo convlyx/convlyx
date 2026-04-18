@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { trpc } from "@/lib/trpc";
 import { updateUserSchema, type UpdateUserInput } from "@/lib/validations/user";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogBody,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,61 +82,64 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
         <DialogHeader>
           <DialogTitle>{t("users.edit")}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-          <input type="hidden" {...register("id")} />
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <DialogBody>
+            <div className="grid gap-4">
+              <input type="hidden" {...register("id")} />
 
-          <div className="grid gap-2">
-            <Label htmlFor="edit-user-name">{t("common.name")}</Label>
-            <Input id="edit-user-name" {...register("name")} />
-            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-          </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-user-name">{t("common.name")}</Label>
+                <Input id="edit-user-name" {...register("name")} />
+                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+              </div>
 
-          <div className="grid gap-2">
-            <Label>{t("common.role")}</Label>
-            <Controller
-              control={control}
-              name="role"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ROLES.map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {t(`roles.${role}`)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.role && <p className="text-sm text-destructive">{errors.role.message}</p>}
-          </div>
+              <div className="grid gap-2">
+                <Label>{t("common.role")}</Label>
+                <Controller
+                  control={control}
+                  name="role"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLES.map((role) => (
+                          <SelectItem key={role} value={role}>
+                            {t(`roles.${role}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.role && <p className="text-sm text-destructive">{errors.role.message}</p>}
+              </div>
 
-          <div className="grid gap-2">
-            <Label>{t("common.school")}</Label>
-            <Controller
-              control={control}
-              name="schoolId"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t("common.school")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {schools?.map((school) => (
-                      <SelectItem key={school.id} value={school.id}>
-                        {school.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.schoolId && <p className="text-sm text-destructive">{errors.schoolId.message}</p>}
-          </div>
-
+              <div className="grid gap-2">
+                <Label>{t("common.school")}</Label>
+                <Controller
+                  control={control}
+                  name="schoolId"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={t("common.school")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {schools?.map((school) => (
+                          <SelectItem key={school.id} value={school.id}>
+                            {school.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.schoolId && <p className="text-sm text-destructive">{errors.schoolId.message}</p>}
+              </div>
+            </div>
+          </DialogBody>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               {t("common.cancel")}

@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod/v4";
 import { trpc } from "@/lib/trpc";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogBody,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +15,24 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
+import { StudentPicker } from "@/components/student-picker";
+import { DatePicker, TimePicker } from "@/components/date-picker";
 import { toast } from "sonner";
+
+const createClassFormSchema = z.object({
+  classType: z.enum(["THEORY", "PRACTICAL"]),
+  schoolId: z.string().min(1, "Selecione uma escola"),
+  instructorId: z.string().min(1, "Selecione um instrutor"),
+  title: z.string().min(1, "O título é obrigatório"),
+  capacity: z.number().int().min(1, "A capacidade deve ser pelo menos 1"),
+  date: z.string(),
+  startTime: z.string().min(1, "Selecione hora de início"),
+  endTime: z.string().min(1, "Selecione hora de fim"),
+  validFrom: z.string(),
+  validUntil: z.string(),
+});
+
+type CreateClassFormData = z.infer<typeof createClassFormSchema>;
 
 type ScheduleMode = "one-off" | "recurring";
 const DAYS_OF_WEEK = [0, 1, 2, 3, 4, 5, 6] as const;
@@ -23,12 +42,15 @@ export function CreateClassDialog() {
   const [open, setOpen] = useState(false);
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>("one-off");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const utils = trpc.useUtils();
 
   const { data: schools } = trpc.school.list.useQuery();
   const { data: instructors } = trpc.user.list.useQuery({ role: "INSTRUCTOR" });
+  const { data: students } = trpc.user.list.useQuery({ role: "STUDENT" });
 
-  const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm<CreateClassFormData>({
+    resolver: zodResolver(createClassFormSchema),
     defaultValues: {
       classType: "THEORY" as "THEORY" | "PRACTICAL",
       schoolId: "",
@@ -42,6 +64,18 @@ export function CreateClassDialog() {
       validUntil: "",
     },
   });
+
+  // Auto-set capacity when switching class type
+  const classType = watch("classType");
+  useEffect(() => {
+    if (classType === "PRACTICAL") {
+      setValue("capacity", 1);
+      setSelectedStudents([]);
+    } else {
+      setValue("capacity", 20);
+      setSelectedStudents([]);
+    }
+  }, [classType, setValue]);
 
   // Auto-select when only one option
   const schoolId = watch("schoolId");
@@ -61,24 +95,18 @@ export function CreateClassDialog() {
       reset();
       setScheduleMode("one-off");
       setSelectedDays([]);
+      setSelectedStudents([]);
     },
     onError: (error) => {
       toast.error(error.message);
     },
   });
 
-  function onSubmit(data: {
-    classType: "THEORY" | "PRACTICAL";
-    schoolId: string;
-    instructorId: string;
-    title: string;
-    capacity: number;
-    date: string;
-    startTime: string;
-    endTime: string;
-    validFrom: string;
-    validUntil: string;
-  }) {
+  function onSubmit(data: CreateClassFormData) {
+    const studentIds = data.classType === "PRACTICAL" && selectedStudents.length > 0
+      ? selectedStudents
+      : undefined;
+
     if (scheduleMode === "recurring") {
       createMutation.mutate({
         classType: data.classType,
@@ -86,6 +114,7 @@ export function CreateClassDialog() {
         instructorId: data.instructorId,
         title: data.title,
         capacity: data.capacity,
+        studentIds,
         startsAt: new Date(`${data.validFrom}T${data.startTime}:00`).toISOString(),
         endsAt: new Date(`${data.validFrom}T${data.endTime}:00`).toISOString(),
         recurrence: {
@@ -103,6 +132,7 @@ export function CreateClassDialog() {
         instructorId: data.instructorId,
         title: data.title,
         capacity: data.capacity,
+        studentIds,
         startsAt: new Date(`${data.date}T${data.startTime}:00`).toISOString(),
         endsAt: new Date(`${data.date}T${data.endTime}:00`).toISOString(),
       });
@@ -123,7 +153,9 @@ export function CreateClassDialog() {
           <DialogHeader>
             <DialogTitle>{t("classes.create")}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <DialogBody>
+              <div className="grid gap-4">
             <div className="grid gap-2">
               <Label>{t("classes.type")}</Label>
               <Controller
@@ -163,6 +195,7 @@ export function CreateClassDialog() {
                   </Select>
                 )}
               />
+              {errors.schoolId && <p className="text-sm text-destructive">{errors.schoolId.message}</p>}
             </div>
 
             <div className="grid gap-2">
@@ -185,6 +218,7 @@ export function CreateClassDialog() {
                   </Select>
                 )}
               />
+              {errors.instructorId && <p className="text-sm text-destructive">{errors.instructorId.message}</p>}
             </div>
 
             <div className="grid gap-2">
@@ -195,8 +229,43 @@ export function CreateClassDialog() {
 
             <div className="grid gap-2">
               <Label htmlFor="class-capacity">{t("classes.capacity")}</Label>
-              <Input id="class-capacity" type="number" min={1} {...register("capacity", { valueAsNumber: true })} />
+              {watch("classType") === "PRACTICAL" ? (
+                <Controller
+                  control={control}
+                  name="capacity"
+                  render={({ field }) => {
+                    const val = field.value <= 2 ? String(field.value) : "1";
+                    return (
+                      <Select value={val} onValueChange={(v) => field.onChange(Number(v))}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 {t("nav.students").toLowerCase()}</SelectItem>
+                          <SelectItem value="2">2 {t("nav.students").toLowerCase()}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    );
+                  }}
+                />
+              ) : (
+                <Input id="class-capacity" type="number" min={1} {...register("capacity", { valueAsNumber: true })} />
+              )}
+              {errors.capacity && <p className="text-sm text-destructive">{errors.capacity.message}</p>}
             </div>
+
+            {/* Student assignment — only for practical classes */}
+            {watch("classType") === "PRACTICAL" && students && students.length > 0 && (
+              <div className="grid gap-2">
+                <Label>{t("classes.assignStudents")}</Label>
+                <StudentPicker
+                  students={students}
+                  selected={selectedStudents}
+                  onChange={setSelectedStudents}
+                  max={watch("capacity")}
+                />
+              </div>
+            )}
 
             <div className="flex gap-2">
               <Button type="button" variant={scheduleMode === "one-off" ? "default" : "outline"} size="sm" onClick={() => setScheduleMode("one-off")}>
@@ -210,17 +279,36 @@ export function CreateClassDialog() {
             {scheduleMode === "one-off" ? (
               <>
                 <div className="grid gap-2">
-                  <Label htmlFor="class-date">{t("classes.date")}</Label>
-                  <Input id="class-date" type="date" {...register("date")} />
+                  <Label>{t("classes.date")}</Label>
+                  <Controller
+                    control={control}
+                    name="date"
+                    render={({ field }) => (
+                      <DatePicker value={field.value} onChange={field.onChange} />
+                    )}
+                  />
+                  {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="class-start">{t("classes.startTime")}</Label>
-                    <Input id="class-start" type="time" {...register("startTime")} />
+                    <Label>{t("classes.startTime")}</Label>
+                    <Controller
+                      control={control}
+                      name="startTime"
+                      render={({ field }) => (
+                        <TimePicker value={field.value} onChange={field.onChange} />
+                      )}
+                    />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="class-end">{t("classes.endTime")}</Label>
-                    <Input id="class-end" type="time" {...register("endTime")} />
+                    <Label>{t("classes.endTime")}</Label>
+                    <Controller
+                      control={control}
+                      name="endTime"
+                      render={({ field }) => (
+                        <TimePicker value={field.value} onChange={field.onChange} />
+                      )}
+                    />
                   </div>
                 </div>
               </>
@@ -250,27 +338,53 @@ export function CreateClassDialog() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="class-start-r">{t("classes.startTime")}</Label>
-                    <Input id="class-start-r" type="time" {...register("startTime")} />
+                    <Label>{t("classes.startTime")}</Label>
+                    <Controller
+                      control={control}
+                      name="startTime"
+                      render={({ field }) => (
+                        <TimePicker value={field.value} onChange={field.onChange} />
+                      )}
+                    />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="class-end-r">{t("classes.endTime")}</Label>
-                    <Input id="class-end-r" type="time" {...register("endTime")} />
+                    <Label>{t("classes.endTime")}</Label>
+                    <Controller
+                      control={control}
+                      name="endTime"
+                      render={({ field }) => (
+                        <TimePicker value={field.value} onChange={field.onChange} />
+                      )}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="class-from">{t("classes.validFrom")}</Label>
-                    <Input id="class-from" type="date" {...register("validFrom")} />
+                    <Label>{t("classes.validFrom")}</Label>
+                    <Controller
+                      control={control}
+                      name="validFrom"
+                      render={({ field }) => (
+                        <DatePicker value={field.value} onChange={field.onChange} />
+                      )}
+                    />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="class-until">{t("classes.validUntil")}</Label>
-                    <Input id="class-until" type="date" {...register("validUntil")} />
+                    <Label>{t("classes.validUntil")}</Label>
+                    <Controller
+                      control={control}
+                      name="validUntil"
+                      render={({ field }) => (
+                        <DatePicker value={field.value} onChange={field.onChange} />
+                      )}
+                    />
                   </div>
                 </div>
               </>
             )}
 
+              </div>
+            </DialogBody>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 {t("common.cancel")}

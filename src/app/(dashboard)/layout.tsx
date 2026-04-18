@@ -4,6 +4,7 @@ import { db } from "@/server/db";
 import { Sidebar } from "./_components/sidebar";
 import { MobileNav } from "./_components/mobile-nav";
 import { Header } from "./_components/header";
+import { MobileLayout } from "./_components/mobile-layout";
 
 export default async function DashboardLayout({
   children,
@@ -37,6 +38,19 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  // Student and Instructor get mobile-first layout
+  if (user.role === "STUDENT" || user.role === "INSTRUCTOR") {
+    return (
+      <MobileLayout
+        userName={user.name}
+        userRole={user.role}
+      >
+        {children}
+      </MobileLayout>
+    );
+  }
+
+  // Admin and Secretary get the backoffice layout
   return (
     <div className="flex h-screen">
       <Sidebar userRole={user.role} />

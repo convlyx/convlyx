@@ -50,7 +50,7 @@ export function ViewToggle({
   onChange: (mode: ViewMode) => void;
 }) {
   return (
-    <div className="flex items-center rounded-lg border p-0.5 gap-0.5">
+    <div className="flex items-center rounded-lg border p-0.5 gap-0.5 w-fit shrink-0 self-end">
       <Button
         variant={view === "cards" ? "default" : "ghost"}
         size="icon-sm"

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod/v4";
 import { trpc } from "@/lib/trpc";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -29,6 +31,20 @@ type SettingsFormProps = {
   };
 };
 
+const profileFormSchema = z.object({
+  name: z.string().min(1, "O nome é obrigatório"),
+});
+
+const schoolFormSchema = z.object({
+  name: z.string().min(1, "O nome é obrigatório"),
+  address: z.string(),
+  phone: z.string(),
+});
+
+const tenantFormSchema = z.object({
+  name: z.string().min(1, "O nome é obrigatório"),
+});
+
 export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
   const t = useTranslations("settings");
   const tc = useTranslations("common");
@@ -38,7 +54,7 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
   const canEditSchool = isAdmin || isSecretary;
 
   // --- Profile section ---
-  const profileForm = useForm({ defaultValues: { name: user.name } });
+  const profileForm = useForm({ resolver: zodResolver(profileFormSchema), defaultValues: { name: user.name } });
   const updateProfileMutation = trpc.user.updateProfile.useMutation({
     onSuccess: () => toast.success(t("profileUpdated")),
     onError: (error) => toast.error(error.message),
@@ -77,6 +93,7 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
 
   // --- School section ---
   const schoolForm = useForm({
+    resolver: zodResolver(schoolFormSchema),
     defaultValues: { name: school.name, address: school.address, phone: school.phone },
   });
   const updateSchoolMutation = trpc.school.update.useMutation({
@@ -85,7 +102,7 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
   });
 
   // --- Tenant section ---
-  const tenantForm = useForm({ defaultValues: { name: tenant.name } });
+  const tenantForm = useForm({ resolver: zodResolver(tenantFormSchema), defaultValues: { name: tenant.name } });
   const updateTenantMutation = trpc.school.updateTenant.useMutation({
     onSuccess: () => toast.success(t("tenantUpdated")),
     onError: (error) => toast.error(error.message),
@@ -108,6 +125,7 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
           <div className="grid gap-2">
             <Label htmlFor="profile-name">{tc("name")}</Label>
             <Input id="profile-name" {...profileForm.register("name")} />
+            {profileForm.formState.errors.name && <p className="text-sm text-destructive">{profileForm.formState.errors.name.message}</p>}
           </div>
           <Button type="submit" disabled={updateProfileMutation.isPending}>
             {updateProfileMutation.isPending ? tc("loading") : t("updateName")}
@@ -169,6 +187,7 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
             <div className="grid gap-2">
               <Label htmlFor="school-name">{tc("name")}</Label>
               <Input id="school-name" {...schoolForm.register("name")} />
+              {schoolForm.formState.errors.name && <p className="text-sm text-destructive">{schoolForm.formState.errors.name.message}</p>}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="school-address">{tc("address")}</Label>
@@ -198,6 +217,7 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
             <div className="grid gap-2">
               <Label htmlFor="tenant-name">{t("groupName")}</Label>
               <Input id="tenant-name" {...tenantForm.register("name")} />
+              {tenantForm.formState.errors.name && <p className="text-sm text-destructive">{tenantForm.formState.errors.name.message}</p>}
             </div>
             <Button type="submit" disabled={updateTenantMutation.isPending}>
               {updateTenantMutation.isPending ? tc("loading") : tc("save")}

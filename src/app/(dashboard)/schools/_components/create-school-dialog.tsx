@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogTrigger,
+  DialogBody,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,22 +59,26 @@ export function CreateSchoolDialog() {
         <DialogHeader>
           <DialogTitle>{t("schools.create")}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="school-name">{t("common.name")}</Label>
-            <Input id="school-name" {...register("name")} />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="school-address">{t("common.address")}</Label>
-            <Input id="school-address" {...register("address")} />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="school-phone">{t("common.phone")}</Label>
-            <Input id="school-phone" {...register("phone")} />
-          </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <DialogBody>
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="school-name">{t("common.name")}</Label>
+                <Input id="school-name" {...register("name")} />
+                {errors.name && (
+                  <p className="text-sm text-destructive">{errors.name.message}</p>
+                )}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="school-address">{t("common.address")}</Label>
+                <Input id="school-address" {...register("address")} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="school-phone">{t("common.phone")}</Label>
+                <Input id="school-phone" {...register("phone")} />
+              </div>
+            </div>
+          </DialogBody>
           <DialogFooter>
             <Button
               type="button"
