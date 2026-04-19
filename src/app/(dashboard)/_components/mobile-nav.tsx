@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import type { UserRole } from "@/generated/prisma/enums";
 import { navItems } from "./sidebar";
 
-export function MobileNav({ userRole }: { userRole: UserRole }) {
+export function MobileNav({ userRole, tenantName }: { userRole: UserRole; tenantName: string }) {
   const t = useTranslations();
   const tNav = useTranslations("nav");
   const pathname = usePathname();
@@ -49,7 +49,7 @@ export function MobileNav({ userRole }: { userRole: UserRole }) {
                 onClick={() => setOpen(false)}
               >
                 <img src="/favicon.png" alt="" width={28} height={28} className="shrink-0" />
-                <span className="text-sm font-bold">{t("common.appName")}</span>
+                <span className="text-sm font-bold truncate">{tenantName}</span>
               </Link>
               <Button
                 variant="ghost"

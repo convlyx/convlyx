@@ -45,6 +45,7 @@ export default async function DashboardLayout({
         userId={user.id}
         userName={user.name}
         userRole={user.role}
+        tenantName={user.tenant.name}
       >
         {children}
       </MobileLayout>
@@ -54,13 +55,13 @@ export default async function DashboardLayout({
   // Admin and Secretary get the backoffice layout
   return (
     <div className="flex h-screen">
-      <Sidebar userRole={user.role} />
+      <Sidebar userRole={user.role} tenantName={user.tenant.name} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
           userId={user.id}
           userName={user.name}
           userRole={user.role}
-          userMobileNav={<MobileNav userRole={user.role} />}
+          userMobileNav={<MobileNav userRole={user.role} tenantName={user.tenant.name} />}
           tenantName={user.tenant.name}
           schoolName={user.school.name}
         />

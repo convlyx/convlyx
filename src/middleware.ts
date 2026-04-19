@@ -48,6 +48,6 @@ function extractSubdomain(hostname: string): string | null {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|favicon\\.png|api/).*)",
   ],
 };

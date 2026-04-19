@@ -13,7 +13,7 @@ export default function ResetPasswordPage() {
 
       <div className="relative w-full max-w-sm space-y-6 rounded-xl border bg-card p-6 card-shadow">
         <div className="text-center space-y-1">
-          <img src="/favicon.png" alt="" width={56} height={56} className="mx-auto mb-3 rounded-xl shadow-md" />
+          <img src="/favicon.png" alt="" width={56} height={56} className="mx-auto mb-3" />
           <h1 className="text-xl font-bold">{t("resetPassword")}</h1>
           <p className="text-muted-foreground text-sm">
             {t("resetPasswordDescription")}

@@ -37,11 +37,13 @@ export function MobileLayout({
   userId,
   userName,
   userRole,
+  tenantName,
 }: {
   children: React.ReactNode;
   userId: string;
   userName: string;
   userRole: UserRole;
+  tenantName: string;
 }) {
   const t = useTranslations();
   const tNav = useTranslations("nav");
@@ -64,8 +66,8 @@ export function MobileLayout({
         <div className="flex items-center gap-2">
           <img src="/favicon.png" alt="" width={28} height={28} className="shrink-0" />
           <div>
-            <p className="text-sm font-semibold leading-tight">{userName}</p>
-            <p className="text-xs text-muted-foreground">{tNav(userRole === "STUDENT" ? "classes" : "calendar")}</p>
+            <p className="text-sm font-semibold leading-tight truncate">{tenantName}</p>
+            <p className="text-xs text-muted-foreground truncate">{userName}</p>
           </div>
         </div>
         <div className="flex items-center gap-1">

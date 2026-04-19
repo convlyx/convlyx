@@ -1,6 +1,7 @@
 {
   "common": {
-    "appName": "Escola de Condução",
+    "appName": "Convlyx",
+    "appDescription": "Gestão de escolas de condução",
     "loading": "A carregar...",
     "save": "Guardar",
     "cancel": "Cancelar",

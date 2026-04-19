@@ -37,7 +37,7 @@ export const navItems: NavItem[] = [
   { key: "settings", href: "/settings", roles: ["ADMIN"], icon: Settings, section: "admin" },
 ];
 
-export function Sidebar({ userRole }: { userRole: UserRole }) {
+export function Sidebar({ userRole, tenantName }: { userRole: UserRole; tenantName: string }) {
   const t = useTranslations();
   const tNav = useTranslations("nav");
   const pathname = usePathname();
@@ -54,7 +54,7 @@ export function Sidebar({ userRole }: { userRole: UserRole }) {
       <div className="flex h-14 items-center border-b border-sidebar-border px-4">
         <Link href="/" className="flex items-center gap-2">
           <img src="/favicon.png" alt="" width={28} height={28} className="shrink-0" />
-          <span className="text-sm font-bold">{t("common.appName")}</span>
+          <span className="text-sm font-bold truncate">{tenantName}</span>
         </Link>
       </div>
       <nav className="flex-1 space-y-1 p-3">

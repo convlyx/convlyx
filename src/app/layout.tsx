@@ -12,8 +12,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Escola de Condução",
-  description: "Plataforma de gestão para escolas de condução",
+  title: "Convlyx",
+  description: "Gestão de escolas de condução",
 };
 
 export default async function RootLayout({
