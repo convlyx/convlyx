@@ -53,9 +53,7 @@ export function Sidebar({ userRole }: { userRole: UserRole }) {
     <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
       <div className="flex h-14 items-center border-b border-sidebar-border px-4">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground text-xs font-bold">
-            EC
-          </div>
+          <img src="/favicon.png" alt="" width={28} height={28} className="shrink-0" />
           <span className="text-sm font-bold">{t("common.appName")}</span>
         </Link>
       </div>

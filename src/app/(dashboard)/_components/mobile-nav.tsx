@@ -48,9 +48,7 @@ export function MobileNav({ userRole }: { userRole: UserRole }) {
                 className="flex items-center gap-2"
                 onClick={() => setOpen(false)}
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground text-xs font-bold">
-                  EC
-                </div>
+                <img src="/favicon.png" alt="" width={28} height={28} className="shrink-0" />
                 <span className="text-sm font-bold">{t("common.appName")}</span>
               </Link>
               <Button

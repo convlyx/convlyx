@@ -62,9 +62,7 @@ export function MobileLayout({
       {/* Top bar — minimal, clean */}
       <header className="flex items-center justify-between px-4 h-14 border-b bg-card shrink-0">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-bold">
-            EC
-          </div>
+          <img src="/favicon.png" alt="" width={28} height={28} className="shrink-0" />
           <div>
             <p className="text-sm font-semibold leading-tight">{userName}</p>
             <p className="text-xs text-muted-foreground">{tNav(userRole === "STUDENT" ? "classes" : "calendar")}</p>
