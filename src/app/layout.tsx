@@ -4,6 +4,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { TRPCProvider } from "@/lib/trpc-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const inter = Inter({
@@ -34,6 +36,8 @@ export default async function RootLayout({
           <TRPCProvider>{children}</TRPCProvider>
           <Toaster position="bottom-right" richColors />
         </NextIntlClientProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
