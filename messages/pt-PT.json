@@ -75,7 +75,8 @@
     "noTenantDescription": "Para aceder à sua escola de condução, utilize o endereço fornecido pela sua escola.",
     "noTenantExample": "Exemplo:",
     "noTenantContact": "Não tem um endereço? Contacte a sua escola de condução.",
-    "poweredBy": "powered by"
+    "poweredBy": "powered by",
+    "loginTitle": "Iniciar sessão"
   },
   "nav": {
     "dashboard": "Painel",

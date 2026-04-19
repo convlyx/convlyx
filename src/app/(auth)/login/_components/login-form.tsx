@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { AlertCircle } from "lucide-react";
 
 export function LoginForm() {
   const t = useTranslations("auth");
@@ -32,7 +32,6 @@ export function LoginForm() {
 
     if (authError) {
       setError(t("invalidCredentials"));
-      toast.error(t("invalidCredentials"));
       setLoading(false);
       return;
     }
@@ -42,20 +41,22 @@ export function LoginForm() {
     const parts = hostname.split(".");
     const subdomain = parts.length >= 3 ? parts[0] : null;
 
-    if (subdomain && data.user) {
+    if (subdomain) {
       try {
-        const res = await fetch(`/api/trpc/user.me?batch=1&input=${encodeURIComponent('{"0":{"json":null}}')}`);
-        const json = await res.json();
-        // If tRPC returns an error (UNAUTHORIZED), the user doesn't belong to this tenant
-        if (json?.[0]?.error || !json?.[0]?.result?.data) {
+        const res = await fetch("/api/auth/verify-tenant");
+        const { valid, subdomain: userSubdomain } = await res.json();
+
+        if (!valid || userSubdomain !== subdomain) {
           await supabase.auth.signOut();
           setError(t("invalidCredentials"));
-          toast.error(t("invalidCredentials"));
           setLoading(false);
           return;
         }
       } catch {
-        // If check fails, let the server-side validation handle it
+        await supabase.auth.signOut();
+        setError(t("invalidCredentials"));
+        setLoading(false);
+        return;
       }
     }
 
@@ -102,7 +103,10 @@ export function LoginForm() {
       </div>
 
       {error && (
-        <p className="text-sm text-destructive">{error}</p>
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+          <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
       )}
 
       <Button type="submit" className="w-full" disabled={loading}>

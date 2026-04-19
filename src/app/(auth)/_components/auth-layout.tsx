@@ -2,14 +2,19 @@
 
 import { useTranslations } from "next-intl";
 
-export function AuthLayout({ children }: { children: React.ReactNode }) {
+export function AuthLayout({
+  children,
+  tenantName,
+}: {
+  children: React.ReactNode;
+  tenantName?: string | null;
+}) {
   const t = useTranslations();
 
   return (
     <main className="flex min-h-screen">
       {/* Left — branded panel (desktop) */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-emerald-700 text-primary-foreground">
-        {/* Decorative shapes */}
         <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-white/5" />
         <div className="absolute top-1/3 -right-20 h-64 w-64 rounded-full bg-white/5" />
         <div className="absolute -bottom-32 left-1/4 h-80 w-80 rounded-full bg-white/3" />
@@ -22,17 +27,22 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
             <span className="text-xl font-bold">{t("common.appName")}</span>
           </div>
 
-          {/* Center — welcome message */}
+          {/* Center */}
           <div className="space-y-4 max-w-md">
-            <h2 className="text-4xl font-bold leading-tight">
-              {t("auth.welcomeBack")}
-            </h2>
-            <p className="text-lg opacity-80">
-              {t("auth.welcomeMessage")}
-            </p>
+            {tenantName ? (
+              <>
+                <h2 className="text-4xl font-bold leading-tight">{tenantName}</h2>
+                <p className="text-lg opacity-80">{t("auth.welcomeMessage")}</p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-4xl font-bold leading-tight">{t("auth.welcomeBack")}</h2>
+                <p className="text-lg opacity-80">{t("auth.welcomeMessage")}</p>
+              </>
+            )}
           </div>
 
-          {/* Bottom — copyright */}
+          {/* Bottom */}
           <p className="text-xs opacity-50">
             {t("auth.copyright", { year: new Date().getFullYear().toString() })}
           </p>

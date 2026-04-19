@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -51,6 +52,10 @@ export function MobileLayout({
   const router = useRouter();
 
   const visibleTabs = tabs.filter((tab) => tab.roles.includes(userRole));
+
+  useEffect(() => {
+    document.title = `${tenantName} | Convlyx`;
+  }, [tenantName]);
 
   async function handleLogout() {
     const supabase = createClient();
