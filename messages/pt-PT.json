@@ -65,7 +65,11 @@
     "passwordMismatch": "As palavras-passe não coincidem",
     "passwordTooShort": "A palavra-passe deve ter pelo menos 6 caracteres",
     "minChars": "Mínimo 6 caracteres",
-    "loginDescription": "Inicie sessão para continuar"
+    "loginDescription": "Inicie sessão para continuar",
+    "enterCredentials": "Introduza as suas credenciais para aceder à plataforma",
+    "welcomeBack": "Bem-vindo/a de volta",
+    "welcomeMessage": "A sua escola de condução, sempre consigo.",
+    "copyright": "© {year} Convlyx. Todos os direitos reservados."
   },
   "nav": {
     "dashboard": "Painel",
