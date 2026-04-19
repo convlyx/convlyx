@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { LoginForm } from "./_components/login-form";
 
@@ -19,7 +20,9 @@ export default function LoginPage() {
             {t("auth.loginDescription")}
           </p>
         </div>
-        <LoginForm />
+        <Suspense>
+          <LoginForm />
+        </Suspense>
       </div>
     </main>
   );
