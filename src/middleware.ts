@@ -8,7 +8,7 @@ const ROOT_DOMAINS = ["convlyx.com", "www.convlyx.com"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const hostname = request.headers.get("host") ?? "";
+  const hostname = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "";
   const response = NextResponse.next();
 
   // 1. Resolve tenant from subdomain
