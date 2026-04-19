@@ -15,9 +15,7 @@ import {
 } from "@/components/ui/table";
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
-import type { UserRole } from "@/generated/prisma/enums";
-
-export function StudentsPageClient({ userRole: _userRole }: { userRole: UserRole }) {
+export function StudentsPageClient() {
   const t = useTranslations();
   const searchParams = useSearchParams();
   const router = useRouter();

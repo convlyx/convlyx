@@ -15,5 +15,5 @@ export default async function StudentsPage() {
   if (!user) redirect("/login");
   if (!["ADMIN", "SECRETARY", "INSTRUCTOR"].includes(user.role)) redirect("/");
 
-  return <StudentsPageClient userRole={user.role} />;
+  return <StudentsPageClient />;
 }
