@@ -69,7 +69,12 @@
     "enterCredentials": "Introduza as suas credenciais para aceder à plataforma",
     "welcomeBack": "Bem-vindo/a de volta",
     "welcomeMessage": "A sua escola de condução, sempre consigo.",
-    "copyright": "© {year} Convlyx. Todos os direitos reservados."
+    "copyright": "© {year} Convlyx. Todos os direitos reservados.",
+    "noTenantTitle": "Aceda à sua escola",
+    "noTenantDescription": "Para aceder à sua escola de condução, utilize o endereço fornecido pela sua escola.",
+    "noTenantExample": "Exemplo:",
+    "noTenantContact": "Não tem um endereço? Contacte a sua escola de condução.",
+    "poweredBy": "powered by"
   },
   "nav": {
     "dashboard": "Painel",
