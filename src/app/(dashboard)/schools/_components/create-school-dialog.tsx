@@ -37,7 +37,7 @@ export function CreateSchoolDialog() {
 
   const createMutation = trpc.school.create.useMutation({
     onSuccess: () => {
-      toast.success("Escola criada com sucesso");
+      toast.success(t("toast.schoolCreated"));
       utils.school.list.invalidate();
       setOpen(false);
       reset();

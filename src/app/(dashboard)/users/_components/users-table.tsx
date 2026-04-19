@@ -68,7 +68,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
   const utils = trpc.useUtils();
   const deactivateMutation = trpc.user.deactivate.useMutation({
     onSuccess: () => {
-      toast.success("Utilizador desativado");
+      toast.success(t("toast.userDeactivated"));
       utils.user.list.invalidate();
     },
     onError: (error) => {
@@ -77,7 +77,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
   });
   const activateMutation = trpc.user.activate.useMutation({
     onSuccess: () => {
-      toast.success("Utilizador ativado");
+      toast.success(t("toast.userActivated"));
       utils.user.list.invalidate();
     },
     onError: (error) => {
@@ -267,8 +267,8 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
           if (deactivateUserId) deactivateMutation.mutate({ id: deactivateUserId });
           setDeactivateUserId(null);
         }}
-        title="Desativar utilizador"
-        message="Tem a certeza que pretende desativar este utilizador?"
+        title={t("users.deactivateTitle")}
+        message={t("users.deactivateMessage")}
         loading={deactivateMutation.isPending}
       />
     </div>

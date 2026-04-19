@@ -28,7 +28,7 @@ export function CreateUserDialog() {
 
   const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm<CreateUserInput>({
     resolver: zodResolver(createUserSchema),
-    defaultValues: { name: "", email: "", password: "", role: "STUDENT", schoolId: "" },
+    defaultValues: { name: "", email: "", role: "STUDENT", schoolId: "" },
   });
 
   // Auto-select when only one school
@@ -39,7 +39,7 @@ export function CreateUserDialog() {
 
   const createMutation = trpc.user.create.useMutation({
     onSuccess: () => {
-      toast.success("Utilizador criado com sucesso");
+      toast.success(t("toast.inviteSent"));
       utils.user.list.invalidate();
       setOpen(false);
       reset();
@@ -74,11 +74,9 @@ export function CreateUserDialog() {
                   <Input id="user-email" type="email" {...register("email")} />
                   {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="user-password">{t("users.tempPassword")}</Label>
-                  <Input id="user-password" type="password" {...register("password")} />
-                  {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
-                </div>
+                <p className="text-xs text-muted-foreground -mt-1">
+                  {t("users.inviteInfo")}
+                </p>
                 <div className="grid gap-2">
                   <Label>{t("common.role")}</Label>
                   <Controller

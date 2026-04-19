@@ -25,7 +25,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
 
   const cancelMutation = trpc.enrollment.cancel.useMutation({
     onSuccess: () => {
-      toast.success("Inscrição cancelada");
+      toast.success(t("toast.enrollmentCancelled"));
       utils.enrollment.listByStudent.invalidate();
       utils.class.list.invalidate();
     },

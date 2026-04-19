@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -49,13 +50,15 @@ export function ViewToggle({
   view: ViewMode;
   onChange: (mode: ViewMode) => void;
 }) {
+  const t = useTranslations("common");
+
   return (
     <div className="flex items-center rounded-lg border p-0.5 gap-0.5 w-fit shrink-0 self-end">
       <Button
         variant={view === "cards" ? "default" : "ghost"}
         size="icon-sm"
         onClick={() => onChange("cards")}
-        title="Vista em cartões"
+        title={t("cardView")}
         className="h-7 w-7"
       >
         <LayoutGrid className="h-3.5 w-3.5" />
@@ -64,7 +67,7 @@ export function ViewToggle({
         variant={view === "table" ? "default" : "ghost"}
         size="icon-sm"
         onClick={() => onChange("table")}
-        title="Vista em tabela"
+        title={t("tableView")}
         className="h-7 w-7"
       >
         <List className="h-3.5 w-3.5" />

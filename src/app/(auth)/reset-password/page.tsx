@@ -1,14 +1,13 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { LoginForm } from "./_components/login-form";
+import { ResetPasswordForm } from "./_components/reset-password-form";
 
-export default function LoginPage() {
-  const t = useTranslations();
+export default function ResetPasswordPage() {
+  const t = useTranslations("auth");
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted/30 relative overflow-hidden">
-      {/* Subtle background pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-primary/3 via-transparent to-transparent" />
 
@@ -17,12 +16,12 @@ export default function LoginPage() {
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-xl shadow-md">
             EC
           </div>
-          <h1 className="text-xl font-bold">{t("common.appName")}</h1>
+          <h1 className="text-xl font-bold">{t("resetPassword")}</h1>
           <p className="text-muted-foreground text-sm">
-            {t("auth.loginDescription")}
+            {t("resetPasswordDescription")}
           </p>
         </div>
-        <LoginForm />
+        <ResetPasswordForm />
       </div>
     </main>
   );

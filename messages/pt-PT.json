@@ -26,7 +26,17 @@
     "address": "Morada",
     "phone": "Telefone",
     "school": "Escola",
-    "role": "Função"
+    "role": "Função",
+    "hora": "Hora",
+    "selectDate": "Selecionar data",
+    "searchStudent": "Pesquisar aluno...",
+    "selected": "Selecionado",
+    "studentsSelected": "{count}/{max} {max, plural, one {aluno selecionado} other {alunos selecionados}}",
+    "cardView": "Vista em cartões",
+    "tableView": "Vista em tabela",
+    "openMenu": "Abrir menu",
+    "closeMenu": "Fechar menu",
+    "profile": "Perfil"
   },
   "auth": {
     "login": "Iniciar sessão",
@@ -35,7 +45,26 @@
     "password": "Palavra-passe",
     "forgotPassword": "Esqueceu a palavra-passe?",
     "notAuthenticated": "Não autenticado. Inicie sessão para continuar.",
-    "insufficientPermissions": "Não tem permissões para realizar esta ação."
+    "insufficientPermissions": "Não tem permissões para realizar esta ação.",
+    "resetPassword": "Recuperar palavra-passe",
+    "resetPasswordDescription": "Introduza o seu email para receber um link de recuperação",
+    "sendResetLink": "Enviar link de recuperação",
+    "sending": "A enviar...",
+    "emailSent": "Email enviado",
+    "emailSentDescription": "Verifique a sua caixa de entrada em {email} e clique no link para redefinir a sua palavra-passe.",
+    "backToLogin": "Voltar ao login",
+    "newPassword": "Nova palavra-passe",
+    "newPasswordDescription": "Introduza a sua nova palavra-passe",
+    "confirmPassword": "Confirmar palavra-passe",
+    "updatePassword": "Atualizar palavra-passe",
+    "updating": "A atualizar...",
+    "passwordUpdated": "Palavra-passe atualizada",
+    "passwordUpdatedSuccess": "Palavra-passe atualizada com sucesso",
+    "redirecting": "A redirecionar para a aplicação...",
+    "passwordMismatch": "As palavras-passe não coincidem",
+    "passwordTooShort": "A palavra-passe deve ter pelo menos 6 caracteres",
+    "minChars": "Mínimo 6 caracteres",
+    "loginDescription": "Inicie sessão para continuar"
   },
   "nav": {
     "dashboard": "Painel",
@@ -71,7 +100,7 @@
     "activate": "Ativar",
     "allRoles": "Todas as funções",
     "noUsers": "Nenhum utilizador registado",
-    "tempPassword": "Palavra-passe temporária",
+    "inviteInfo": "O utilizador receberá um email para definir a sua palavra-passe.",
     "cannotDeactivateSelf": "Não pode desativar a sua própria conta",
     "notFound": "Utilizador não encontrado",
     "userUpdated": "Utilizador atualizado com sucesso",
@@ -87,7 +116,9 @@
     "studentsTaught": "Alunos ensinados",
     "classHistory": "Histórico de aulas",
     "enrollmentHistory": "Histórico de inscrições",
-    "noHistory": "Sem histórico"
+    "noHistory": "Sem histórico",
+    "deactivateTitle": "Desativar utilizador",
+    "deactivateMessage": "Tem a certeza que pretende desativar este utilizador?"
   },
   "classes": {
     "title": "Aulas",
@@ -124,7 +155,23 @@
     "past": "Anteriores",
     "cancelClass": "Cancelar aula",
     "noSessionsGenerated": "Nenhuma aula gerada para o período indicado",
-    "classUpdated": "Aula atualizada com sucesso"
+    "classUpdated": "Aula atualizada com sucesso",
+    "addStudent": "Adicionar aluno",
+    "noStudents": "Sem alunos inscritos",
+    "enrollCount": "Inscrever {count} {count, plural, one {aluno} other {alunos}}",
+    "cancelClassConfirmTitle": "Cancelar aula",
+    "cancelClassConfirmMessage": "Tem a certeza que pretende cancelar esta aula? Todos os alunos inscritos serão notificados.",
+    "removeStudentTitle": "Remover aluno",
+    "removeStudentMessage": "Tem a certeza que pretende remover este aluno da aula?",
+    "cancelOwnEnrollmentTitle": "Cancelar inscrição",
+    "cancelOwnEnrollmentMessage": "Tem a certeza que pretende cancelar a sua inscrição?",
+    "unavailableConfirmTitle": "Cancelar aula",
+    "unavailableConfirmMessage": "Tem a certeza? A aula será cancelada e todos os alunos serão notificados.",
+    "noClassesCalendar": "Sem aulas neste período",
+    "detailsButton": "Ver detalhes",
+    "createdBy": "Criada por {name}",
+    "enrolledAt": "Inscrito {date}",
+    "spotsOf": "de {capacity}"
   },
   "enrollment": {
     "enroll": "Inscrever",
@@ -172,7 +219,44 @@
     "next7Days": "próximos 7 dias",
     "happeningNow": "a decorrer agora",
     "activeEnrollments": "inscrições ativas",
-    "availableThisWeek": "aulas disponíveis esta semana"
+    "availableThisWeek": "aulas disponíveis esta semana",
+    "greeting": {
+      "morning": "Bom dia",
+      "afternoon": "Boa tarde",
+      "evening": "Boa noite"
+    },
+    "noScheduledClasses": "Sem aulas agendadas",
+    "exploreClasses": "Explorar aulas disponíveis",
+    "noClassesThisWeek": "Sem aulas disponíveis esta semana",
+    "allClassesDone": "Todas as aulas de hoje concluídas",
+    "noClassesToday": "Sem aulas para hoje",
+    "noClassesScheduled": "Sem aulas agendadas esta semana",
+    "classCount": "{count} {count, plural, one {aula} other {aulas}}",
+    "timeNow": "agora",
+    "timeInMinutes": "em {minutes}min",
+    "timeInHours": "em {hours}h {minutes}min",
+    "timeInDays": "em {days} {days, plural, one {dia} other {dias}}",
+    "classToday": "{count, plural, one {aula hoje} other {aulas hoje}}",
+    "scheduledCount": "{count, plural, one {aula agendada} other {aulas agendadas}}",
+    "available": "Disponíveis",
+    "myClasses": "As minhas aulas",
+    "viewAll": "Ver todas",
+    "calendarLink": "Calendário",
+    "inProgress": "A decorrer agora",
+    "nextClass": "Próxima aula",
+    "todaysProgress": "Progresso de hoje",
+    "completed": "Concluídas",
+    "remaining": "Restantes",
+    "myProgress": "O meu progresso",
+    "scheduled": "Agendadas",
+    "attendances": "Presenças",
+    "absences": "Faltas",
+    "attendanceRate": "Assiduidade",
+    "spots": "vagas",
+    "students": "alunos",
+    "enrolled": "Inscritos",
+    "vacancies": "Vagas",
+    "inProgressBadge": "A decorrer"
   },
   "settings": {
     "title": "Definições",
@@ -200,5 +284,36 @@
     "4": "Sexta-feira",
     "5": "Sábado",
     "6": "Domingo"
+  },
+  "toast": {
+    "schoolCreated": "Escola criada com sucesso",
+    "classCreated": "Aula criada com sucesso",
+    "classCancelled": "Aula cancelada",
+    "inviteSent": "Convite enviado com sucesso",
+    "userDeactivated": "Utilizador desativado",
+    "userActivated": "Utilizador ativado",
+    "enrollmentSuccess": "Inscrito com sucesso",
+    "enrollmentCancelled": "Inscrição cancelada",
+    "enrollmentRemoved": "Inscrição removida",
+    "attendanceRecorded": "Presença registada",
+    "instructorUnavailable": "Aula cancelada — indisponibilidade registada",
+    "studentEnrolled": "Aluno inscrito com sucesso"
+  },
+  "notFound": {
+    "title": "Página não encontrada",
+    "message": "A página que procura não existe ou foi movida.",
+    "backHome": "Voltar ao início"
+  },
+  "calendar": {
+    "enrolled": {
+      "theory": "Inscrito (Teórica)",
+      "practical": "Inscrito (Prática)"
+    },
+    "availableLabel": "Disponível",
+    "today": "Hoje",
+    "month": "Mês",
+    "week": "Semana",
+    "day": "Dia",
+    "list": "Lista"
   }
 }

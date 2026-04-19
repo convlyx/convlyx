@@ -43,7 +43,8 @@ export function MobileLayout({
   userName: string;
   userRole: UserRole;
 }) {
-  const t = useTranslations("nav");
+  const t = useTranslations();
+  const tNav = useTranslations("nav");
   const pathname = usePathname();
   const router = useRouter();
 
@@ -66,7 +67,7 @@ export function MobileLayout({
           </div>
           <div>
             <p className="text-sm font-semibold leading-tight">{userName}</p>
-            <p className="text-xs text-muted-foreground">{t(userRole === "STUDENT" ? "classes" : "calendar")}</p>
+            <p className="text-xs text-muted-foreground">{tNav(userRole === "STUDENT" ? "classes" : "calendar")}</p>
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -109,7 +110,7 @@ export function MobileLayout({
               >
                 <Icon className={`h-5 w-5 ${isActive ? "stroke-[2.5px]" : ""}`} />
                 <span className="text-[10px] font-medium leading-tight">
-                  {tab.key === "settings" ? "Perfil" : tab.key === "enrollments" ? "Inscrições" : t(tab.key)}
+                  {tab.key === "settings" ? t("common.profile") : tab.key === "enrollments" ? t("enrollment.enrollmentsShort") : tNav(tab.key)}
                 </span>
               </Link>
             );

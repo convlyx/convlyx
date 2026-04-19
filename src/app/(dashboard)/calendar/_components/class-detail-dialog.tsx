@@ -37,7 +37,7 @@ export function ClassDetailDialog({
 
   const enrollMutation = trpc.enrollment.enroll.useMutation({
     onSuccess: () => {
-      toast.success("Inscrito com sucesso");
+      toast.success(t("toast.enrollmentSuccess"));
       utils.class.getById.invalidate({ id: classId! });
       utils.class.list.invalidate();
       utils.enrollment.listByStudent.invalidate();
@@ -49,7 +49,7 @@ export function ClassDetailDialog({
 
   const cancelEnrollmentMutation = trpc.enrollment.cancel.useMutation({
     onSuccess: () => {
-      toast.success("Inscrição cancelada");
+      toast.success(t("toast.enrollmentCancelled"));
       utils.class.getById.invalidate({ id: classId! });
       utils.class.list.invalidate();
       utils.enrollment.listByStudent.invalidate();
@@ -61,7 +61,7 @@ export function ClassDetailDialog({
 
   const markAttendanceMutation = trpc.enrollment.markAttendance.useMutation({
     onSuccess: () => {
-      toast.success("Presença registada");
+      toast.success(t("toast.attendanceRecorded"));
       utils.class.getById.invalidate({ id: classId! });
     },
     onError: (error) => {
@@ -71,7 +71,7 @@ export function ClassDetailDialog({
 
   const instructorUnavailableMutation = trpc.class.instructorUnavailable.useMutation({
     onSuccess: () => {
-      toast.success("Aula cancelada — indisponibilidade registada");
+      toast.success(t("toast.instructorUnavailable"));
       utils.class.getById.invalidate({ id: classId! });
       utils.class.list.invalidate();
       onClose();
@@ -251,8 +251,8 @@ export function ClassDetailDialog({
           if (confirmRemoveEnrollmentId) cancelEnrollmentMutation.mutate({ enrollmentId: confirmRemoveEnrollmentId });
           setConfirmRemoveEnrollmentId(null);
         }}
-        title="Remover aluno"
-        message="Tem a certeza que pretende remover este aluno da aula?"
+        title={t("classes.removeStudentTitle")}
+        message={t("classes.removeStudentMessage")}
         loading={cancelEnrollmentMutation.isPending}
       />
 
@@ -263,8 +263,8 @@ export function ClassDetailDialog({
           if (myEnrollment) cancelEnrollmentMutation.mutate({ enrollmentId: myEnrollment.id });
           setConfirmCancelOwn(false);
         }}
-        title="Cancelar inscrição"
-        message="Tem a certeza que pretende cancelar a sua inscrição?"
+        title={t("classes.cancelOwnEnrollmentTitle")}
+        message={t("classes.cancelOwnEnrollmentMessage")}
         loading={cancelEnrollmentMutation.isPending}
       />
 
@@ -275,8 +275,8 @@ export function ClassDetailDialog({
           instructorUnavailableMutation.mutate({ id: classDetail.id });
           setConfirmUnavailable(false);
         }}
-        title="Cancelar aula"
-        message="Tem a certeza? A aula será cancelada e todos os alunos serão notificados."
+        title={t("classes.unavailableConfirmTitle")}
+        message={t("classes.unavailableConfirmMessage")}
         loading={instructorUnavailableMutation.isPending}
       />
     </Dialog>

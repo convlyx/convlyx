@@ -19,16 +19,16 @@ import {
 } from "lucide-react";
 import { typeKeys, statusKeys, statusVariant, classTypeColorMap } from "@/lib/constants/class";
 
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Bom dia";
-  if (hour < 18) return "Boa tarde";
-  return "Boa noite";
-}
-
 export function InstructorHome({ userName }: { userName: string }) {
   const t = useTranslations();
   const format = useFormatter();
+
+  function getGreeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return t("dashboard.greeting.morning");
+    if (hour < 18) return t("dashboard.greeting.afternoon");
+    return t("dashboard.greeting.evening");
+  }
 
   const todayRange = useMemo(() => {
     const now = new Date();
@@ -91,12 +91,12 @@ export function InstructorHome({ userName }: { userName: string }) {
               {currentOrNextClass.status === "IN_PROGRESS" ? (
                 <>
                   <span className="flex h-2 w-2 rounded-full bg-white animate-pulse" />
-                  A decorrer
+                  {t("dashboard.inProgress")}
                 </>
               ) : (
                 <>
                   <Timer className="h-3.5 w-3.5" />
-                  Próxima aula
+                  {t("dashboard.nextClass")}
                 </>
               )}
             </div>
@@ -124,13 +124,13 @@ export function InstructorHome({ userName }: { userName: string }) {
         /* All done for today */
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-muted to-muted/50 p-6 text-center">
           <Coffee className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
-          <p className="text-base font-semibold">Todas as aulas de hoje concluídas</p>
-          <p className="text-sm text-muted-foreground mt-1">{completedToday} {completedToday === 1 ? "aula" : "aulas"} · {totalStudentsToday} alunos</p>
+          <p className="text-base font-semibold">{t("dashboard.allClassesDone")}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t("dashboard.classCount", { count: completedToday })} · {totalStudentsToday} {t("dashboard.students")}</p>
         </div>
       ) : (
         <div className="rounded-2xl border-2 border-dashed border-muted-foreground/20 p-8 text-center">
           <CalendarDays className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Sem aulas para hoje</p>
+          <p className="text-sm text-muted-foreground">{t("dashboard.noClassesToday")}</p>
         </div>
       )}
 
@@ -138,7 +138,7 @@ export function InstructorHome({ userName }: { userName: string }) {
       {totalToday > 0 && (
         <div className="rounded-xl border bg-card p-4 card-shadow">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold">Progresso de hoje</p>
+            <p className="text-sm font-semibold">{t("dashboard.todaysProgress")}</p>
             <span className="text-sm text-muted-foreground">{completedToday}/{totalToday}</span>
           </div>
           {/* Progress bar */}
@@ -155,21 +155,21 @@ export function InstructorHome({ userName }: { userName: string }) {
                 <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
                 <span className="text-lg font-bold">{completedToday}</span>
               </div>
-              <p className="text-[10px] text-muted-foreground">Concluídas</p>
+              <p className="text-[10px] text-muted-foreground">{t("dashboard.completed")}</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1">
                 <CalendarDays className="h-3.5 w-3.5 text-primary" />
                 <span className="text-lg font-bold">{remainingToday}</span>
               </div>
-              <p className="text-[10px] text-muted-foreground">Restantes</p>
+              <p className="text-[10px] text-muted-foreground">{t("dashboard.remaining")}</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1">
                 <Users className="h-3.5 w-3.5 text-blue-500" />
                 <span className="text-lg font-bold">{totalStudentsToday}</span>
               </div>
-              <p className="text-[10px] text-muted-foreground">Alunos</p>
+              <p className="text-[10px] text-muted-foreground">{t("nav.students")}</p>
             </div>
           </div>
         </div>
@@ -228,11 +228,11 @@ export function InstructorHome({ userName }: { userName: string }) {
                         {t(typeKeys[cls.classType])}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        {cls._count.enrollments}/{cls.capacity} alunos
+                        {cls._count.enrollments}/{cls.capacity} {t("dashboard.students")}
                       </span>
                       {isCurrent && (
                         <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0">
-                          A decorrer
+                          {t("dashboard.inProgressBadge")}
                         </Badge>
                       )}
                     </div>
@@ -250,7 +250,7 @@ export function InstructorHome({ userName }: { userName: string }) {
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold">{t("dashboard.upcomingClasses")}</h2>
             <Link href="/calendar" className="text-sm text-primary font-medium flex items-center gap-0.5">
-              Calendário <ChevronRight className="h-3.5 w-3.5" />
+              {t("dashboard.calendarLink")} <ChevronRight className="h-3.5 w-3.5" />
             </Link>
           </div>
           <div className="space-y-2">
@@ -283,7 +283,7 @@ export function InstructorHome({ userName }: { userName: string }) {
       )}
 
       {!todayClasses?.length && !weekClasses?.length && (
-        <EmptyState icon={CalendarDays} message="Sem aulas agendadas esta semana" />
+        <EmptyState icon={CalendarDays} message={t("dashboard.noClassesScheduled")} />
       )}
     </div>
   );

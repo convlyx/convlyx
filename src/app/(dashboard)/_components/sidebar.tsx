@@ -38,7 +38,8 @@ export const navItems: NavItem[] = [
 ];
 
 export function Sidebar({ userRole }: { userRole: UserRole }) {
-  const t = useTranslations("nav");
+  const t = useTranslations();
+  const tNav = useTranslations("nav");
   const pathname = usePathname();
 
   const visibleItems = navItems.filter((item) =>
@@ -55,7 +56,7 @@ export function Sidebar({ userRole }: { userRole: UserRole }) {
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground text-xs font-bold">
             EC
           </div>
-          <span className="text-sm font-bold">Escola de Condução</span>
+          <span className="text-sm font-bold">{t("common.appName")}</span>
         </Link>
       </div>
       <nav className="flex-1 space-y-1 p-3">
@@ -77,7 +78,7 @@ export function Sidebar({ userRole }: { userRole: UserRole }) {
               }`}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              {t(item.key)}
+              {tNav(item.key)}
             </Link>
           );
         })}
@@ -100,7 +101,7 @@ export function Sidebar({ userRole }: { userRole: UserRole }) {
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
-                  {t(item.key)}
+                  {tNav(item.key)}
                 </Link>
               );
             })}

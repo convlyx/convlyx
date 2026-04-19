@@ -10,6 +10,9 @@ Living document of everything the app can do, organized by area.
 - Server-side role checks on all pages (redirect if unauthorized)
 - tRPC middleware enforces role permissions on all API endpoints
 - Session refresh via middleware on every request
+- User invite via email — new users set their own password (no temp passwords)
+- Password reset flow (email link via Supabase)
+- Update password page after reset
 - Logout
 
 ## Multi-Tenancy

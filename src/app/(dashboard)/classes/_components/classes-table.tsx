@@ -69,7 +69,7 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
   const utils = trpc.useUtils();
   const cancelMutation = trpc.class.cancel.useMutation({
     onSuccess: () => {
-      toast.success("Aula cancelada");
+      toast.success(t("toast.classCancelled"));
       utils.class.list.invalidate();
       setCancelId(null);
     },

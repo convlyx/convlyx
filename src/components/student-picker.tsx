@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/user-avatar";
@@ -22,6 +23,7 @@ export function StudentPicker({
   onChange: (ids: string[]) => void;
   max?: number;
 }) {
+  const t = useTranslations("common");
   const [search, setSearch] = useState("");
 
   const filtered = students.filter(
@@ -73,7 +75,7 @@ export function StudentPicker({
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Pesquisar aluno..."
+              placeholder={t("searchStudent")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onBlur={() => setTimeout(() => setSearch(""), 150)}
@@ -85,7 +87,7 @@ export function StudentPicker({
           {search.length > 0 && (
             <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-40 overflow-y-auto rounded-lg border bg-popover shadow-md divide-y">
               {filtered.length === 0 ? (
-                <p className="text-xs text-muted-foreground p-2 text-center">Sem resultados</p>
+                <p className="text-xs text-muted-foreground p-2 text-center">{t("noResults")}</p>
               ) : (
                 filtered.slice(0, 10).map((student) => {
                   const isSelected = selected.includes(student.id);
@@ -104,7 +106,7 @@ export function StudentPicker({
                         <p className="text-[11px] text-muted-foreground truncate">{student.email}</p>
                       </div>
                       {isSelected && (
-                        <span className="text-[10px] text-primary font-medium">Selecionado</span>
+                        <span className="text-[10px] text-primary font-medium">{t("selected")}</span>
                       )}
                     </button>
                   );
@@ -116,7 +118,7 @@ export function StudentPicker({
       )}
 
       <p className="text-xs text-muted-foreground">
-        {selected.length}/{max} {max === 1 ? "aluno selecionado" : "alunos selecionados"}
+        {t("studentsSelected", { count: selected.length, max })}
       </p>
     </div>
   );

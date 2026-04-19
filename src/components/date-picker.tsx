@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import * as Popover from "@radix-ui/react-popover";
 import { CalendarDays, Clock } from "lucide-react";
 import { format } from "date-fns";
@@ -12,7 +13,7 @@ import { cn } from "@/lib/utils";
 export function DatePicker({
   value,
   onChange,
-  placeholder = "Selecionar data",
+  placeholder,
   className,
 }: {
   value?: string;
@@ -20,6 +21,8 @@ export function DatePicker({
   placeholder?: string;
   className?: string;
 }) {
+  const t = useTranslations("common");
+  const resolvedPlaceholder = placeholder ?? t("selectDate");
   const [open, setOpen] = useState(false);
   const selected = value ? new Date(value + "T00:00:00") : undefined;
 
@@ -38,7 +41,7 @@ export function DatePicker({
           <CalendarDays className="mr-2 h-4 w-4 shrink-0" />
           {selected
             ? format(selected, "d 'de' MMMM, yyyy", { locale: pt })
-            : placeholder}
+            : resolvedPlaceholder}
         </Button>
       </Popover.Trigger>
       <Popover.Portal>
@@ -80,6 +83,7 @@ export function TimePicker({
   onChange: (time: string) => void;
   className?: string;
 }) {
+  const t = useTranslations("common");
   const [open, setOpen] = useState(false);
 
   return (
@@ -95,7 +99,7 @@ export function TimePicker({
           )}
         >
           <Clock className="mr-2 h-4 w-4 shrink-0" />
-          {value || "Hora"}
+          {value || t("hora")}
         </Button>
       </Popover.Trigger>
       <Popover.Portal>

@@ -74,12 +74,10 @@ export const userRouter = router({
         });
       }
 
-      // Create Supabase auth user
+      // Invite user via email — they'll set their own password
       const { data: authData, error: authError } =
-        await supabaseAdmin.auth.admin.createUser({
-          email: input.email,
-          password: input.password,
-          email_confirm: true,
+        await supabaseAdmin.auth.admin.inviteUserByEmail(input.email, {
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/update-password`,
         });
 
       if (authError) {

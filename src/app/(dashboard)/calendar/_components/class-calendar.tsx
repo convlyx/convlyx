@@ -128,13 +128,13 @@ export function ClassCalendar({
             right: "timeGridWeek,timeGridDay,dayGridMonth,listMonth",
           }}
           buttonText={{
-            today: "Hoje",
-            month: "Mês",
-            week: "Semana",
-            day: "Dia",
-            list: "Lista",
+            today: t("calendar.today"),
+            month: t("calendar.month"),
+            week: t("calendar.week"),
+            day: t("calendar.day"),
+            list: t("calendar.list"),
           }}
-          noEventsText="Sem aulas neste período"
+          noEventsText={t("classes.noClassesCalendar")}
           locale="pt"
           firstDay={1}
           slotMinTime="07:00:00"
@@ -168,15 +168,15 @@ export function ClassCalendar({
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded bg-blue-500" />
-            Inscrito (Teórica)
+            {t("calendar.enrolled.theory")}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded bg-emerald-500" />
-            Inscrito (Prática)
+            {t("calendar.enrolled.practical")}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded bg-blue-300" />
-            Disponível
+            {t("calendar.availableLabel")}
           </span>
         </div>
       )}

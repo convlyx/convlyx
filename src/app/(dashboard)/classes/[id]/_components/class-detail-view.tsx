@@ -45,7 +45,7 @@ export function ClassDetailView({
 
   const enrollMutation = trpc.enrollment.enroll.useMutation({
     onSuccess: () => {
-      toast.success("Aluno inscrito com sucesso");
+      toast.success(t("toast.studentEnrolled"));
       utils.class.getById.invalidate({ id: classId });
       setSelectedStudents([]);
       setShowAddStudent(false);
@@ -55,7 +55,7 @@ export function ClassDetailView({
 
   const cancelEnrollmentMutation = trpc.enrollment.cancel.useMutation({
     onSuccess: () => {
-      toast.success("Inscrição removida");
+      toast.success(t("toast.enrollmentRemoved"));
       utils.class.getById.invalidate({ id: classId });
     },
     onError: (error) => toast.error(error.message),
@@ -63,7 +63,7 @@ export function ClassDetailView({
 
   const markAttendanceMutation = trpc.enrollment.markAttendance.useMutation({
     onSuccess: () => {
-      toast.success("Presença registada");
+      toast.success(t("toast.attendanceRecorded"));
       utils.class.getById.invalidate({ id: classId });
     },
     onError: (error) => toast.error(error.message),
@@ -71,7 +71,7 @@ export function ClassDetailView({
 
   const cancelClassMutation = trpc.class.cancel.useMutation({
     onSuccess: () => {
-      toast.success("Aula cancelada");
+      toast.success(t("toast.classCancelled"));
       utils.class.getById.invalidate({ id: classId });
       utils.class.list.invalidate();
     },
@@ -171,10 +171,10 @@ export function ClassDetailView({
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard icon={Users} label="Inscritos" value={enrolledStudents.length} description={`de ${classDetail.capacity}`} />
-        <StatCard icon={CheckCircle} label="Presenças" value={attendedStudents.length} />
-        <StatCard icon={XCircle} label="Faltas" value={noShowStudents.length} />
-        <StatCard icon={CalendarDays} label="Vagas" value={spotsLeft > 0 ? spotsLeft : 0} />
+        <StatCard icon={Users} label={t("dashboard.enrolled")} value={enrolledStudents.length} description={t("classes.spotsOf", { capacity: classDetail.capacity })} />
+        <StatCard icon={CheckCircle} label={t("dashboard.attendances")} value={attendedStudents.length} />
+        <StatCard icon={XCircle} label={t("dashboard.absences")} value={noShowStudents.length} />
+        <StatCard icon={CalendarDays} label={t("dashboard.vacancies")} value={spotsLeft > 0 ? spotsLeft : 0} />
       </div>
 
       {/* Add student */}
@@ -183,7 +183,7 @@ export function ClassDetailView({
           {showAddStudent ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold">Adicionar aluno</h3>
+                <h3 className="text-sm font-semibold">{t("classes.addStudent")}</h3>
                 <Button variant="ghost" size="sm" onClick={() => { setShowAddStudent(false); setSelectedStudents([]); }}>
                   {t("common.cancel")}
                 </Button>
@@ -204,14 +204,14 @@ export function ClassDetailView({
                     });
                   }}
                 >
-                  {enrollMutation.isPending ? t("common.loading") : `Inscrever ${selectedStudents.length} ${selectedStudents.length === 1 ? "aluno" : "alunos"}`}
+                  {enrollMutation.isPending ? t("common.loading") : t("classes.enrollCount", { count: selectedStudents.length })}
                 </Button>
               )}
             </div>
           ) : (
             <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowAddStudent(true)}>
               <UserPlus className="h-4 w-4" />
-              Adicionar aluno
+              {t("classes.addStudent")}
             </Button>
           )}
         </div>
@@ -222,7 +222,7 @@ export function ClassDetailView({
         <h2 className="text-base font-semibold">{t("nav.students")} ({classDetail.enrollments.length})</h2>
 
         {classDetail.enrollments.length === 0 ? (
-          <EmptyState icon={Users} message="Sem alunos inscritos" />
+          <EmptyState icon={Users} message={t("classes.noStudents")} />
         ) : (
           <div className="space-y-2">
             {classDetail.enrollments.map((enrollment) => (
@@ -243,9 +243,11 @@ export function ClassDetailView({
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{enrollment.student.email}</p>
                   <p className="text-xs text-muted-foreground">
-                    Inscrito {format.dateTime(new Date(enrollment.enrolledAt), {
-                      day: "2-digit", month: "2-digit", year: "numeric",
-                      hour: "2-digit", minute: "2-digit",
+                    {t("classes.enrolledAt", {
+                      date: format.dateTime(new Date(enrollment.enrolledAt), {
+                        day: "2-digit", month: "2-digit", year: "numeric",
+                        hour: "2-digit", minute: "2-digit",
+                      }),
                     })}
                   </p>
                 </div>
@@ -297,7 +299,7 @@ export function ClassDetailView({
       {/* Class meta info */}
       {classDetail.createdBy && (
         <div className="text-xs text-muted-foreground">
-          Criada por {classDetail.createdBy.name}
+          {t("classes.createdBy", { name: classDetail.createdBy.name })}
         </div>
       )}
 
@@ -308,8 +310,8 @@ export function ClassDetailView({
           cancelClassMutation.mutate({ id: classDetail.id });
           setCancelClassConfirm(false);
         }}
-        title="Cancelar aula"
-        message="Tem a certeza que pretende cancelar esta aula? Todos os alunos inscritos serão notificados."
+        title={t("classes.cancelClassConfirmTitle")}
+        message={t("classes.cancelClassConfirmMessage")}
         loading={cancelClassMutation.isPending}
       />
 
@@ -320,8 +322,8 @@ export function ClassDetailView({
           if (removeEnrollmentId) cancelEnrollmentMutation.mutate({ enrollmentId: removeEnrollmentId });
           setRemoveEnrollmentId(null);
         }}
-        title="Remover aluno"
-        message="Tem a certeza que pretende remover este aluno da aula?"
+        title={t("classes.removeStudentTitle")}
+        message={t("classes.removeStudentMessage")}
         loading={cancelEnrollmentMutation.isPending}
       />
     </div>

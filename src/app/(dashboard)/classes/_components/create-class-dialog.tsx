@@ -89,7 +89,7 @@ export function CreateClassDialog() {
 
   const createMutation = trpc.class.create.useMutation({
     onSuccess: () => {
-      toast.success("Aula criada com sucesso");
+      toast.success(t("toast.classCreated"));
       utils.class.list.invalidate();
       setOpen(false);
       reset();

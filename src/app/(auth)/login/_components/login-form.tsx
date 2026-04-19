@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -58,9 +59,17 @@ export function LoginForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password" className="text-sm font-medium">
-          {t("password")}
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="password" className="text-sm font-medium">
+            {t("password")}
+          </label>
+          <Link
+            href="/reset-password"
+            className="text-xs text-primary hover:underline"
+          >
+            {t("forgotPassword")}
+          </Link>
+        </div>
         <input
           id="password"
           type="password"
