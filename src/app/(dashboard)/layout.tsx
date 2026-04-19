@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
 import { Sidebar } from "./_components/sidebar";
@@ -29,12 +30,21 @@ export default async function DashboardLayout({
       role: true,
       tenantId: true,
       schoolId: true,
-      tenant: { select: { name: true } },
+      tenant: { select: { name: true, subdomain: true } },
       school: { select: { name: true } },
     },
   });
 
   if (!user) {
+    redirect("/login");
+  }
+
+  // Validate subdomain matches user's tenant
+  const headersList = await headers();
+  const subdomain = headersList.get("x-tenant-subdomain");
+  if (subdomain && user.tenant.subdomain !== subdomain) {
+    // User doesn't belong to this tenant — sign them out and redirect
+    await supabase.auth.signOut();
     redirect("/login");
   }
 
