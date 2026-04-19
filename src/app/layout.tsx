@@ -14,7 +14,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Convlyx",
+  title: {
+    default: "Convlyx",
+    template: "%s | Convlyx",
+  },
   description: "Gestão de escolas de condução",
 };
 
