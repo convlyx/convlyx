@@ -55,34 +55,41 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
               key={enrollment.id}
               className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[enrollment.session.classType]}`}>
-                    <BookOpen className="h-5 w-5" />
+              <div className="flex items-start gap-3">
+                <div className={`flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[enrollment.session.classType]}`}>
+                  <BookOpen className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <p className="font-medium truncate">{enrollment.session.title}</p>
+                    <Badge variant="secondary">{t(typeKeys[enrollment.session.classType])}</Badge>
+                    <Badge variant={enrollmentStatusVariant[enrollment.status] ?? "outline"}>
+                      {t(enrollmentStatusKeys[enrollment.status] ?? enrollment.status)}
+                    </Badge>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{enrollment.session.title}</p>
-                      <Badge variant="secondary">{t(typeKeys[enrollment.session.classType])}</Badge>
-                      <Badge variant={enrollmentStatusVariant[enrollment.status] ?? "outline"}>
-                        {t(enrollmentStatusKeys[enrollment.status] ?? enrollment.status)}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
-                      <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{enrollment.session.instructor.name}</span>
-                      <span className="flex items-center gap-1">
-                        <CalendarDays className="h-3.5 w-3.5" />
-                        {format.dateTime(new Date(enrollment.session.startsAt), { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                        {" · "}
-                        {format.dateTime(new Date(enrollment.session.endsAt), { hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                    </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground mt-1">
+                    <span className="flex items-center gap-1 truncate"><Users className="h-3.5 w-3.5 shrink-0" />{enrollment.session.instructor.name}</span>
+                    <span className="flex items-center gap-1">
+                      <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                      {format.dateTime(new Date(enrollment.session.startsAt), { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                      {" · "}
+                      {format.dateTime(new Date(enrollment.session.endsAt), { hour: "2-digit", minute: "2-digit" })}
+                    </span>
                   </div>
+                  {canCancel(enrollment) && (
+                    <div className="mt-2 sm:hidden">
+                      <Button variant="destructive" size="sm" className="w-full" disabled={cancelMutation.isPending} onClick={() => cancelMutation.mutate({ enrollmentId: enrollment.id })}>
+                        {t("enrollment.cancel")}
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 {canCancel(enrollment) && (
-                  <Button variant="destructive" size="sm" disabled={cancelMutation.isPending} onClick={() => cancelMutation.mutate({ enrollmentId: enrollment.id })}>
-                    {t("enrollment.cancel")}
-                  </Button>
+                  <div className="hidden sm:block shrink-0">
+                    <Button variant="destructive" size="sm" disabled={cancelMutation.isPending} onClick={() => cancelMutation.mutate({ enrollmentId: enrollment.id })}>
+                      {t("enrollment.cancel")}
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
