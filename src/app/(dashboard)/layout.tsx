@@ -43,7 +43,6 @@ export default async function DashboardLayout({
   const headersList = await headers();
   const subdomain = headersList.get("x-tenant-subdomain");
   if (subdomain && user.tenant.subdomain !== subdomain) {
-    // User doesn't belong to this tenant — sign them out and redirect
     await supabase.auth.signOut();
     redirect("/login");
   }

@@ -67,6 +67,7 @@
     "minChars": "Mínimo 6 caracteres",
     "loginDescription": "Inicie sessão para continuar",
     "enterCredentials": "Introduza as suas credenciais para aceder à plataforma",
+    "invalidCredentials": "Credenciais inválidas. Verifique o email e a palavra-passe.",
     "welcomeBack": "Bem-vindo/a de volta",
     "welcomeMessage": "A sua escola de condução, sempre consigo.",
     "copyright": "© {year} Convlyx. Todos os direitos reservados.",

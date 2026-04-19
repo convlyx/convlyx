@@ -25,16 +25,38 @@ export function LoginForm() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (authError) {
-      setError(authError.message);
-      toast.error(authError.message);
+      setError(t("invalidCredentials"));
+      toast.error(t("invalidCredentials"));
       setLoading(false);
       return;
+    }
+
+    // Validate user belongs to this tenant (if on a subdomain)
+    const hostname = window.location.hostname;
+    const parts = hostname.split(".");
+    const subdomain = parts.length >= 3 ? parts[0] : null;
+
+    if (subdomain && data.user) {
+      try {
+        const res = await fetch(`/api/trpc/user.me?batch=1&input=${encodeURIComponent('{"0":{"json":null}}')}`);
+        const json = await res.json();
+        // If tRPC returns an error (UNAUTHORIZED), the user doesn't belong to this tenant
+        if (json?.[0]?.error || !json?.[0]?.result?.data) {
+          await supabase.auth.signOut();
+          setError(t("invalidCredentials"));
+          toast.error(t("invalidCredentials"));
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // If check fails, let the server-side validation handle it
+      }
     }
 
     window.location.href = redirectTo;
