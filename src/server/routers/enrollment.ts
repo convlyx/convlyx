@@ -45,6 +45,17 @@ export const enrollmentRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "classes.notFound" });
       }
 
+      // Verify student belongs to this tenant (when enrolling someone else)
+      if (studentId !== ctx.user.id) {
+        const student = await ctx.db.user.findFirst({
+          where: { id: studentId, tenantId: ctx.tenantId, role: "STUDENT", status: "ACTIVE" },
+          select: { id: true },
+        });
+        if (!student) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "user.notFound" });
+        }
+      }
+
       if (session.status !== "SCHEDULED") {
         throw new TRPCError({
           code: "BAD_REQUEST",

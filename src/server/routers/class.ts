@@ -216,8 +216,8 @@ export const classRouter = router({
         });
       }
 
-      return ctx.db.classSession.update({
-        where: { id: input.id },
+      await ctx.db.classSession.updateMany({
+        where: { id: input.id, tenantId: ctx.tenantId },
         data: {
           instructorId: input.instructorId,
           title: input.title,
@@ -226,8 +226,9 @@ export const classRouter = router({
           endsAt: new Date(input.endsAt),
           updatedById: ctx.user.id,
         },
-        select: { id: true, title: true },
       });
+
+      return { id: input.id, title: input.title };
     }),
 
   cancel: roleProtectedProcedure(["ADMIN", "SECRETARY"])
@@ -262,12 +263,12 @@ export const classRouter = router({
       const timeStr = formatClassTime(new Date(session.startsAt));
 
       await ctx.db.$transaction([
-        ctx.db.classSession.update({
-          where: { id: input.id },
+        ctx.db.classSession.updateMany({
+          where: { id: input.id, tenantId: ctx.tenantId },
           data: { status: "CANCELLED", updatedById: ctx.user.id },
         }),
         ctx.db.enrollment.updateMany({
-          where: { sessionId: input.id, status: "ENROLLED" },
+          where: { sessionId: input.id, status: "ENROLLED", tenantId: ctx.tenantId },
           data: { status: "CANCELLED" },
         }),
       ]);
@@ -330,12 +331,12 @@ export const classRouter = router({
       const timeStr = formatClassTime(new Date(session.startsAt));
 
       await ctx.db.$transaction([
-        ctx.db.classSession.update({
-          where: { id: input.id },
+        ctx.db.classSession.updateMany({
+          where: { id: input.id, tenantId: ctx.tenantId },
           data: { status: "CANCELLED", updatedById: ctx.user.id },
         }),
         ctx.db.enrollment.updateMany({
-          where: { sessionId: input.id, status: "ENROLLED" },
+          where: { sessionId: input.id, status: "ENROLLED", tenantId: ctx.tenantId },
           data: { status: "CANCELLED" },
         }),
       ]);
