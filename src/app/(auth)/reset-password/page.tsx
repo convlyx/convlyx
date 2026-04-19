@@ -1,28 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { AuthLayout } from "../_components/auth-layout";
 import { ResetPasswordForm } from "./_components/reset-password-form";
 
 export default function ResetPasswordPage() {
   const t = useTranslations();
-  const [tenantName, setTenantName] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/tenant")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.name) {
-          setTenantName(data.name);
-          document.title = `${data.name} | Convlyx`;
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   return (
-    <AuthLayout tenantName={tenantName}>
+    <AuthLayout>
       <div className="text-center space-y-1 lg:hidden">
         <img src="/favicon.png" alt="" width={56} height={56} className="mx-auto mb-3" />
       </div>

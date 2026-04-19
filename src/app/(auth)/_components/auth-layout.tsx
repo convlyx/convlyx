@@ -2,13 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-export function AuthLayout({
-  children,
-  tenantName,
-}: {
-  children: React.ReactNode;
-  tenantName?: string | null;
-}) {
+export function AuthLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations();
 
   return (
@@ -21,28 +15,16 @@ export function AuthLayout({
         <div className="absolute top-1/2 left-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/5 blur-3xl" />
 
         <div className="relative flex flex-col justify-between p-12 w-full">
-          {/* Top — logo */}
           <div className="flex items-center gap-3">
             <img src="/favicon.png" alt="" width={40} height={40} className="brightness-0 invert opacity-90" />
             <span className="text-xl font-bold">{t("common.appName")}</span>
           </div>
 
-          {/* Center */}
           <div className="space-y-4 max-w-md">
-            {tenantName ? (
-              <>
-                <h2 className="text-4xl font-bold leading-tight">{tenantName}</h2>
-                <p className="text-lg opacity-80">{t("auth.welcomeMessage")}</p>
-              </>
-            ) : (
-              <>
-                <h2 className="text-4xl font-bold leading-tight">{t("auth.welcomeBack")}</h2>
-                <p className="text-lg opacity-80">{t("auth.welcomeMessage")}</p>
-              </>
-            )}
+            <h2 className="text-4xl font-bold leading-tight">{t("auth.welcomeBack")}</h2>
+            <p className="text-lg opacity-80">{t("auth.welcomeMessage")}</p>
           </div>
 
-          {/* Bottom */}
           <p className="text-xs opacity-50">
             {t("auth.copyright", { year: new Date().getFullYear().toString() })}
           </p>
