@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
@@ -29,10 +28,6 @@ export function Header({
 }: HeaderProps) {
   const t = useTranslations();
   const router = useRouter();
-
-  useEffect(() => {
-    document.title = `${tenantName} | Convlyx`;
-  }, [tenantName]);
 
   async function handleLogout() {
     const supabase = createClient();

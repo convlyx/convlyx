@@ -6,6 +6,7 @@ import { Sidebar } from "./_components/sidebar";
 import { MobileNav } from "./_components/mobile-nav";
 import { Header } from "./_components/header";
 import { MobileLayout } from "./_components/mobile-layout";
+import { PageTitle } from "@/components/page-title";
 
 export default async function DashboardLayout({
   children,
@@ -48,6 +49,8 @@ export default async function DashboardLayout({
   }
 
   // Student and Instructor get mobile-first layout
+  const pageTitle = `${user.tenant.name} | Convlyx`;
+
   if (user.role === "STUDENT" || user.role === "INSTRUCTOR") {
     return (
       <MobileLayout
@@ -56,6 +59,7 @@ export default async function DashboardLayout({
         userRole={user.role}
         tenantName={user.tenant.name}
       >
+        <PageTitle title={pageTitle} />
         {children}
       </MobileLayout>
     );
@@ -64,6 +68,7 @@ export default async function DashboardLayout({
   // Admin and Secretary get the backoffice layout
   return (
     <div className="flex h-screen">
+      <PageTitle title={pageTitle} />
       <Sidebar userRole={user.role} tenantName={user.tenant.name} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
