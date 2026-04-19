@@ -1,152 +1,35 @@
-"use client";
+import { redirect, notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { db } from "@/server/db";
+import { StudentDetailPage } from "./_components/student-detail-page";
 
-import { use } from "react";
-import { useTranslations, useFormatter } from "next-intl";
-import Link from "next/link";
-import { trpc } from "@/lib/trpc";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  ArrowLeft,
-  BookOpen,
-  BookCheck,
-  XCircle,
-  CalendarDays,
-  Clock,
-  GraduationCap,
-  Mail,
-  Building2,
-  Camera,
-} from "lucide-react";
-import { Loading } from "@/components/loading";
-import { StatCard } from "@/components/stat-card";
-import { EmptyState } from "@/components/empty-state";
-import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant } from "@/lib/constants/class";
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export default function StudentDetailPage({
+export default async function StudentPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = use(params);
-  const t = useTranslations();
-  const format = useFormatter();
+  const { id } = await params;
 
-  const { data: student, isLoading } = trpc.user.studentProfile.useQuery({ id });
+  if (!UUID_REGEX.test(id)) notFound();
 
-  if (isLoading) {
-    return <Loading />;
-  }
+  const supabase = await createClient();
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  if (!authUser) redirect("/login");
 
-  if (!student) {
-    return <p className="text-sm text-destructive p-6">{t("users.notFound")}</p>;
-  }
+  const user = await db.user.findUnique({
+    where: { id: authUser.id },
+    select: { role: true, tenantId: true },
+  });
+  if (!user) redirect("/login");
+  if (!["ADMIN", "SECRETARY", "INSTRUCTOR"].includes(user.role)) redirect("/");
 
-  return (
-    <div className="space-y-6">
-      <Link href="/students" className="inline-flex">
-        <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" />
-          {t("common.back")}
-        </Button>
-      </Link>
+  const studentExists = await db.user.findFirst({
+    where: { id, tenantId: user.tenantId, role: "STUDENT" },
+    select: { id: true },
+  });
+  if (!studentExists) notFound();
 
-      {/* Profile header */}
-      <div className="flex items-start gap-6 rounded-xl border bg-card p-6 card-shadow">
-        {/* Photo placeholder */}
-        <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <GraduationCap className="h-8 w-8" />
-          <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-muted border-2 border-card">
-            <Camera className="h-3 w-3 text-muted-foreground" />
-          </div>
-        </div>
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">{student.name}</h1>
-            <Badge variant={student.status === "ACTIVE" ? "default" : "destructive"}>
-              {student.status === "ACTIVE" ? t("common.active") : t("common.inactive")}
-            </Badge>
-          </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <Mail className="h-3.5 w-3.5" />
-              {student.email}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Building2 className="h-3.5 w-3.5" />
-              {student.school.name}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5" />
-              {t("users.memberSince")} {format.dateTime(new Date(student.createdAt), { month: "long", year: "numeric" })}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard icon={CalendarDays} label={t("users.upcomingClasses")} value={student.stats.upcoming} />
-        <StatCard icon={BookCheck} label={t("users.classesAttended")} value={student.stats.totalAttended} />
-        <StatCard icon={XCircle} label={t("users.classesMissed")} value={student.stats.totalNoShow} />
-        <StatCard icon={BookOpen} label={t("enrollment.enrolled")} value={student.stats.totalEnrolled} />
-      </div>
-
-      {/* Progress breakdown */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border bg-card p-5 card-shadow">
-          <h3 className="text-sm font-medium text-muted-foreground mb-3">{t("users.theoryProgress")}</h3>
-          <p className="text-3xl font-bold">{student.stats.theoryAttended}</p>
-          <p className="text-xs text-muted-foreground">{t("users.classesAttended").toLowerCase()}</p>
-        </div>
-        <div className="rounded-xl border bg-card p-5 card-shadow">
-          <h3 className="text-sm font-medium text-muted-foreground mb-3">{t("users.practicalProgress")}</h3>
-          <p className="text-3xl font-bold">{student.stats.practicalAttended}</p>
-          <p className="text-xs text-muted-foreground">{t("users.classesAttended").toLowerCase()}</p>
-        </div>
-      </div>
-
-      {/* Enrollment history */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold">{t("users.enrollmentHistory")}</h2>
-        {student.enrollments.length === 0 ? (
-          <EmptyState icon={BookOpen} message={t("users.noHistory")} />
-        ) : (
-          <div className="space-y-2">
-            {student.enrollments.map((enrollment) => (
-              <div
-                key={enrollment.id}
-                className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
-              >
-                <div className="flex items-center gap-3">
-                  <Badge variant="secondary">
-                    {t(typeKeys[enrollment.session.classType])}
-                  </Badge>
-                  <div>
-                    <p className="text-sm font-medium">{enrollment.session.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {enrollment.session.instructor.name}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className="text-sm">
-                      {format.dateTime(new Date(enrollment.session.startsAt), {
-                        day: "2-digit", month: "2-digit", year: "numeric",
-                        hour: "2-digit", minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                  <Badge variant={enrollmentStatusVariant[enrollment.status] ?? "outline"}>
-                    {t(enrollmentStatusKeys[enrollment.status] ?? enrollment.status)}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  return <StudentDetailPage id={id} />;
 }

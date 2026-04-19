@@ -17,6 +17,7 @@ import {
   ArrowLeft, BookOpen, CalendarDays, Clock, Users, UserPlus,
   CheckCircle, XCircle, Building2,
 } from "lucide-react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 import { useState } from "react";
 import type { UserRole } from "@/generated/prisma/enums";
@@ -33,8 +34,13 @@ export function ClassDetailView({
   const utils = trpc.useUtils();
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  const [cancelClassConfirm, setCancelClassConfirm] = useState(false);
+  const [removeEnrollmentId, setRemoveEnrollmentId] = useState<string | null>(null);
 
-  const { data: classDetail, isLoading } = trpc.class.getById.useQuery({ id: classId });
+  const { data: classDetail, isLoading, isError } = trpc.class.getById.useQuery(
+    { id: classId },
+    { retry: false }
+  );
   const { data: allStudents } = trpc.user.list.useQuery({ role: "STUDENT" });
 
   const enrollMutation = trpc.enrollment.enroll.useMutation({
@@ -73,7 +79,19 @@ export function ClassDetailView({
   });
 
   if (isLoading) return <Loading />;
-  if (!classDetail) return <EmptyState icon={BookOpen} message={t("classes.notFound")} />;
+  if (isError || !classDetail) {
+    return (
+      <div className="space-y-4">
+        <Link href="/classes" className="inline-flex">
+          <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" />
+            {t("common.back")}
+          </Button>
+        </Link>
+        <EmptyState icon={BookOpen} message={t("classes.notFound")} />
+      </div>
+    );
+  }
 
   const enrolledStudents = classDetail.enrollments.filter((e) => e.status === "ENROLLED");
   const attendedStudents = classDetail.enrollments.filter((e) => e.status === "ATTENDED");
@@ -143,7 +161,7 @@ export function ClassDetailView({
               variant="destructive"
               size="sm"
               disabled={cancelClassMutation.isPending}
-              onClick={() => cancelClassMutation.mutate({ id: classDetail.id })}
+              onClick={() => setCancelClassConfirm(true)}
             >
 {t("classes.cancelClass")}
             </Button>
@@ -263,9 +281,7 @@ export function ClassDetailView({
                       size="sm"
                       variant="destructive"
                       disabled={cancelEnrollmentMutation.isPending}
-                      onClick={() => cancelEnrollmentMutation.mutate({
-                        enrollmentId: enrollment.id,
-                      })}
+                      onClick={() => setRemoveEnrollmentId(enrollment.id)}
                     >
                       <span className="hidden sm:inline">{t("enrollment.remove")}</span>
                       <span className="sm:hidden">×</span>
@@ -284,6 +300,30 @@ export function ClassDetailView({
           Criada por {classDetail.createdBy.name}
         </div>
       )}
+
+      <ConfirmDialog
+        open={cancelClassConfirm}
+        onClose={() => setCancelClassConfirm(false)}
+        onConfirm={() => {
+          cancelClassMutation.mutate({ id: classDetail.id });
+          setCancelClassConfirm(false);
+        }}
+        title="Cancelar aula"
+        message="Tem a certeza que pretende cancelar esta aula? Todos os alunos inscritos serão notificados."
+        loading={cancelClassMutation.isPending}
+      />
+
+      <ConfirmDialog
+        open={removeEnrollmentId !== null}
+        onClose={() => setRemoveEnrollmentId(null)}
+        onConfirm={() => {
+          if (removeEnrollmentId) cancelEnrollmentMutation.mutate({ enrollmentId: removeEnrollmentId });
+          setRemoveEnrollmentId(null);
+        }}
+        title="Remover aluno"
+        message="Tem a certeza que pretende remover este aluno da aula?"
+        loading={cancelEnrollmentMutation.isPending}
+      />
     </div>
   );
 }

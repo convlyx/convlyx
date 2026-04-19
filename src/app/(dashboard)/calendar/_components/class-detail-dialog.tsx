@@ -8,7 +8,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { typeKeys, statusKeys, enrollmentStatusKeys } from "@/lib/constants/class";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export function ClassDetailDialog({
   classId,
@@ -24,6 +26,9 @@ export function ClassDetailDialog({
   const t = useTranslations();
   const format = useFormatter();
   const utils = trpc.useUtils();
+  const [confirmRemoveEnrollmentId, setConfirmRemoveEnrollmentId] = useState<string | null>(null);
+  const [confirmCancelOwn, setConfirmCancelOwn] = useState(false);
+  const [confirmUnavailable, setConfirmUnavailable] = useState(false);
 
   const { data: classDetail } = trpc.class.getById.useQuery(
     { id: classId! },
@@ -185,9 +190,7 @@ export function ClassDetailDialog({
                             size="sm"
                             variant="destructive"
                             disabled={cancelEnrollmentMutation.isPending}
-                            onClick={() => cancelEnrollmentMutation.mutate({
-                              enrollmentId: enrollment.id,
-                            })}
+                            onClick={() => setConfirmRemoveEnrollmentId(enrollment.id)}
                           >
                             {t("enrollment.remove")}
                           </Button>
@@ -209,9 +212,7 @@ export function ClassDetailDialog({
                 <Button
                   variant="destructive"
                   disabled={cancelEnrollmentMutation.isPending}
-                  onClick={() => cancelEnrollmentMutation.mutate({
-                    enrollmentId: myEnrollment.id,
-                  })}
+                  onClick={() => setConfirmCancelOwn(true)}
                 >
                   {cancelEnrollmentMutation.isPending ? t("common.loading") : t("enrollment.cancel")}
                 </Button>
@@ -232,7 +233,7 @@ export function ClassDetailDialog({
             <Button
               variant="destructive"
               disabled={instructorUnavailableMutation.isPending}
-              onClick={() => instructorUnavailableMutation.mutate({ id: classDetail.id })}
+              onClick={() => setConfirmUnavailable(true)}
             >
               {instructorUnavailableMutation.isPending ? t("common.loading") : t("classes.markUnavailable")}
             </Button>
@@ -242,6 +243,42 @@ export function ClassDetailDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <ConfirmDialog
+        open={confirmRemoveEnrollmentId !== null}
+        onClose={() => setConfirmRemoveEnrollmentId(null)}
+        onConfirm={() => {
+          if (confirmRemoveEnrollmentId) cancelEnrollmentMutation.mutate({ enrollmentId: confirmRemoveEnrollmentId });
+          setConfirmRemoveEnrollmentId(null);
+        }}
+        title="Remover aluno"
+        message="Tem a certeza que pretende remover este aluno da aula?"
+        loading={cancelEnrollmentMutation.isPending}
+      />
+
+      <ConfirmDialog
+        open={confirmCancelOwn}
+        onClose={() => setConfirmCancelOwn(false)}
+        onConfirm={() => {
+          if (myEnrollment) cancelEnrollmentMutation.mutate({ enrollmentId: myEnrollment.id });
+          setConfirmCancelOwn(false);
+        }}
+        title="Cancelar inscrição"
+        message="Tem a certeza que pretende cancelar a sua inscrição?"
+        loading={cancelEnrollmentMutation.isPending}
+      />
+
+      <ConfirmDialog
+        open={confirmUnavailable}
+        onClose={() => setConfirmUnavailable(false)}
+        onConfirm={() => {
+          instructorUnavailableMutation.mutate({ id: classDetail.id });
+          setConfirmUnavailable(false);
+        }}
+        title="Cancelar aula"
+        message="Tem a certeza? A aula será cancelada e todos os alunos serão notificados."
+        loading={instructorUnavailableMutation.isPending}
+      />
     </Dialog>
   );
 }

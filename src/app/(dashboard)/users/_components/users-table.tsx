@@ -20,6 +20,7 @@ import { EmptyState } from "@/components/empty-state";
 import { UserAvatar } from "@/components/user-avatar";
 import { roleColorMap } from "@/lib/constants/class";
 import { EditUserDialog } from "./edit-user-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 import type { UserRole } from "@/generated/prisma/enums";
 
@@ -47,6 +48,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
   const [roleFilter, setRoleFilter] = useState<string>(searchParams.get("role") ?? "ALL");
   const [schoolFilter, setSchoolFilter] = useState<string>(searchParams.get("school") ?? "ALL");
   const [editUser, setEditUser] = useState<typeof filteredUsers[number] | null>(null);
+  const [deactivateUserId, setDeactivateUserId] = useState<string | null>(null);
 
   const { data: schools } = trpc.school.list.useQuery();
 
@@ -173,7 +175,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
                       <Pencil className="h-3.5 w-3.5 mr-1" />{t("common.edit")}
                     </Button>
                     {canDeactivate && (user.status === "ACTIVE" ? (
-                      <Button variant="destructive" size="sm" className="flex-1" disabled={deactivateMutation.isPending} onClick={() => deactivateMutation.mutate({ id: user.id })}>
+                      <Button variant="destructive" size="sm" className="flex-1" disabled={deactivateMutation.isPending} onClick={() => setDeactivateUserId(user.id)}>
                         {t("users.deactivate")}
                       </Button>
                     ) : (
@@ -189,7 +191,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
                   {canDeactivate && (user.status === "ACTIVE" ? (
-                    <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => deactivateMutation.mutate({ id: user.id })}>
+                    <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => setDeactivateUserId(user.id)}>
                       {t("users.deactivate")}
                     </Button>
                   ) : (
@@ -233,7 +235,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                       {canDeactivate && (user.status === "ACTIVE" ? (
-                        <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => deactivateMutation.mutate({ id: user.id })}>
+                        <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => setDeactivateUserId(user.id)}>
                           {t("users.deactivate")}
                         </Button>
                       ) : (
@@ -257,6 +259,18 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
           onClose={() => setEditUser(null)}
         />
       )}
+
+      <ConfirmDialog
+        open={deactivateUserId !== null}
+        onClose={() => setDeactivateUserId(null)}
+        onConfirm={() => {
+          if (deactivateUserId) deactivateMutation.mutate({ id: deactivateUserId });
+          setDeactivateUserId(null);
+        }}
+        title="Desativar utilizador"
+        message="Tem a certeza que pretende desativar este utilizador?"
+        loading={deactivateMutation.isPending}
+      />
     </div>
   );
 }
