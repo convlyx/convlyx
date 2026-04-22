@@ -8,33 +8,58 @@ import { Header } from "./_components/header";
 import { MobileLayout } from "./_components/mobile-layout";
 import { PageTitle } from "@/components/page-title";
 
+async function getAuthUser() {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    return { supabase, user };
+  } catch {
+    return { supabase: null, user: null };
+  }
+}
+
+async function getDbUser(authUserId: string) {
+  // Retry once on connection failure
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await db.user.findUnique({
+        where: { id: authUserId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          tenantId: true,
+          schoolId: true,
+          tenant: { select: { name: true, subdomain: true } },
+          school: { select: { name: true } },
+        },
+      });
+    } catch (error) {
+      if (attempt === 0) {
+        // Wait briefly and retry
+        await new Promise((r) => setTimeout(r, 500));
+        continue;
+      }
+      console.error("[Dashboard] DB query failed:", error);
+      return null;
+    }
+  }
+  return null;
+}
+
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+  const { supabase, user: authUser } = await getAuthUser();
 
-  if (!authUser) {
+  if (!authUser || !supabase) {
     redirect("/login");
   }
 
-  const user = await db.user.findUnique({
-    where: { id: authUser.id },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      tenantId: true,
-      schoolId: true,
-      tenant: { select: { name: true, subdomain: true } },
-      school: { select: { name: true } },
-    },
-  });
+  const user = await getDbUser(authUser.id);
 
   if (!user) {
     redirect("/login");
@@ -48,9 +73,9 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // Student and Instructor get mobile-first layout
   const pageTitle = `${user.tenant.name} | Convlyx`;
 
+  // Student and Instructor get mobile-first layout
   if (user.role === "STUDENT" || user.role === "INSTRUCTOR") {
     return (
       <MobileLayout

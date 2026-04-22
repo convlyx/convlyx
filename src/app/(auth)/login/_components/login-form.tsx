@@ -60,6 +60,8 @@ export function LoginForm() {
       }
     }
 
+    // Brief delay to ensure auth cookies are fully committed before navigation
+    await new Promise((r) => setTimeout(r, 300));
     window.location.href = redirectTo;
   }
 

@@ -2,24 +2,22 @@ import { PrismaClient } from "@/generated/prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 
+// In serverless, each invocation might reuse the global scope.
+// We cache the client and pool to reuse across warm invocations.
+// On cold starts, a new pool + client is created.
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
-  pool: Pool | undefined;
 };
 
-function createPrismaClient() {
-  if (globalForPrisma.pool) {
-    globalForPrisma.pool.end().catch(() => {});
-  }
-
+function createPrismaClient(): PrismaClient {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    max: 1, // single connection per serverless instance
+    max: 1,
     idleTimeoutMillis: 10000,
-    connectionTimeoutMillis: 10000,
+    connectionTimeoutMillis: 15000,
   });
 
-  globalForPrisma.pool = pool;
   const adapter = new PrismaPg(pool);
 
   return new PrismaClient({
@@ -30,6 +28,8 @@ function createPrismaClient() {
   });
 }
 
-export const db = globalForPrisma.prisma ?? createPrismaClient();
+if (!globalForPrisma.prisma) {
+  globalForPrisma.prisma = createPrismaClient();
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+export const db: PrismaClient = globalForPrisma.prisma;
