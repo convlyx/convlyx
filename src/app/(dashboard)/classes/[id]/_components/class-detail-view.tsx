@@ -13,10 +13,12 @@ import { StudentPicker } from "@/components/student-picker";
 import {
   typeKeys, statusKeys, statusVariant, enrollmentStatusKeys, enrollmentStatusVariant,
 } from "@/lib/constants/class";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft, BookOpen, CalendarDays, Clock, Users, UserPlus,
-  CheckCircle, XCircle, Building2,
+  CheckCircle, XCircle, Building2, Pencil, CheckCheck, FileDown,
 } from "lucide-react";
+import { exportClassAttendancePDF } from "@/lib/pdf-export";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -36,6 +38,8 @@ export function ClassDetailView({
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [cancelClassConfirm, setCancelClassConfirm] = useState(false);
   const [removeEnrollmentId, setRemoveEnrollmentId] = useState<string | null>(null);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [noteText, setNoteText] = useState("");
 
   const { data: classDetail, isLoading, isError } = trpc.class.getById.useQuery(
     { id: classId },
@@ -74,6 +78,24 @@ export function ClassDetailView({
       toast.success(t("toast.classCancelled"));
       utils.class.getById.invalidate({ id: classId });
       utils.class.list.invalidate();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const bulkAttendanceMutation = trpc.enrollment.bulkMarkAttendance.useMutation({
+    onSuccess: () => {
+      toast.success(t("enrollment.allMarkedPresent"));
+      utils.class.getById.invalidate({ id: classId });
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const addNoteMutation = trpc.enrollment.addNote.useMutation({
+    onSuccess: () => {
+      toast.success(t("enrollment.noteSaved"));
+      utils.class.getById.invalidate({ id: classId });
+      setEditingNoteId(null);
+      setNoteText("");
     },
     onError: (error) => toast.error(error.message),
   });
@@ -156,16 +178,27 @@ export function ClassDetailView({
               </div>
             </div>
           </div>
-          {isActive && (
+          <div className="flex flex-col sm:flex-row gap-2 shrink-0">
             <Button
-              variant="destructive"
+              variant="outline"
               size="sm"
-              disabled={cancelClassMutation.isPending}
-              onClick={() => setCancelClassConfirm(true)}
+              className="gap-1.5"
+              onClick={() => exportClassAttendancePDF(classDetail)}
             >
-{t("classes.cancelClass")}
+              <FileDown className="h-3.5 w-3.5" />
+              {t("common.exportPDF")}
             </Button>
-          )}
+            {isActive && (
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={cancelClassMutation.isPending}
+                onClick={() => setCancelClassConfirm(true)}
+              >
+                {t("classes.cancelClass")}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -219,7 +252,21 @@ export function ClassDetailView({
 
       {/* Enrolled students */}
       <div className="space-y-3">
-        <h2 className="text-base font-semibold">{t("nav.students")} ({classDetail.enrollments.length})</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold">{t("nav.students")} ({classDetail.enrollments.length})</h2>
+          {isActive && enrolledStudents.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              disabled={bulkAttendanceMutation.isPending}
+              onClick={() => bulkAttendanceMutation.mutate({ sessionId: classDetail.id, status: "ATTENDED" })}
+            >
+              <CheckCheck className="h-4 w-4" />
+              {t("enrollment.markAllPresent")}
+            </Button>
+          )}
+        </div>
 
         {classDetail.enrollments.length === 0 ? (
           <EmptyState icon={Users} message={t("classes.noStudents")} />
@@ -250,6 +297,46 @@ export function ClassDetailView({
                       }),
                     })}
                   </p>
+                  {/* Notes display and editing */}
+                  {editingNoteId === enrollment.id ? (
+                    <div className="mt-2 space-y-1.5">
+                      <Textarea
+                        value={noteText}
+                        onChange={(e) => setNoteText(e.target.value)}
+                        placeholder={t("enrollment.notePlaceholder")}
+                        className="text-xs min-h-[60px]"
+                      />
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={addNoteMutation.isPending}
+                          onClick={() => addNoteMutation.mutate({ enrollmentId: enrollment.id, notes: noteText })}
+                        >
+                          {t("common.save")}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => { setEditingNoteId(null); setNoteText(""); }}>
+                          {t("common.cancel")}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-1 flex items-start gap-1">
+                      {enrollment.notes ? (
+                        <p className="text-xs text-muted-foreground italic">{enrollment.notes}</p>
+                      ) : null}
+                      {userRole === "INSTRUCTOR" && (
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-foreground transition-colors p-0.5 shrink-0"
+                          onClick={() => { setEditingNoteId(enrollment.id); setNoteText(enrollment.notes ?? ""); }}
+                          title={enrollment.notes ? t("enrollment.editNote") : t("enrollment.addNote")}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions */}

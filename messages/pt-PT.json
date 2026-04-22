@@ -2,6 +2,7 @@
   "common": {
     "appName": "Convlyx",
     "appDescription": "Gestão de escolas de condução",
+    "exportPDF": "Exportar PDF",
     "loading": "A carregar...",
     "save": "Guardar",
     "cancel": "Cancelar",
@@ -161,6 +162,7 @@
     "notFound": "Aula não encontrada",
     "cannotEditFinished": "Não é possível editar aulas concluídas ou canceladas",
     "cannotCancelCompleted": "Não é possível cancelar aulas concluídas",
+    "scheduleConflict": "O instrutor já tem uma aula agendada neste horário",
     "assignStudents": "Atribuir alunos",
     "markUnavailable": "Não posso dar esta aula",
     "upcoming": "Próximas",
@@ -197,6 +199,12 @@
     "notFound": "Inscrição não encontrada",
     "notActive": "Esta inscrição não está ativa",
     "classNotAvailable": "Esta aula não está disponível para inscrição",
+    "addNote": "Adicionar nota",
+    "editNote": "Editar nota",
+    "noteSaved": "Nota guardada",
+    "notePlaceholder": "Notas sobre o desempenho do aluno...",
+    "markAllPresent": "Marcar todos presentes",
+    "allMarkedPresent": "Todos marcados como presentes",
     "myEnrollments": "As minhas inscrições",
     "enrollmentsShort": "Inscrições"
   },
@@ -221,6 +229,9 @@
     "attendanceWasRecorded": "Presença registada",
     "instructorWasUnavailable": "Instrutor indisponível",
     "accountWasDeactivated": "Conta desativada",
+    "classReminder": "Lembrete de aula",
+    "classReminderMessage": "Amanhã tem aula: {title} · {time}",
+    "classReminderInstructor": "Amanhã tem aula para dar: {title} · {time}",
     "statusAttended": "presente",
     "statusNoShow": "ausente"
   },

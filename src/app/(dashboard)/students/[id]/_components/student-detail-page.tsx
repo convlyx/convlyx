@@ -14,13 +14,16 @@ import {
   Clock,
   GraduationCap,
   Mail,
+  Phone,
   Building2,
   Camera,
+  FileDown,
 } from "lucide-react";
 import { Loading } from "@/components/loading";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
 import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant } from "@/lib/constants/class";
+import { exportStudentProgressPDF } from "@/lib/pdf-export";
 
 export function StudentDetailPage({
   id,
@@ -59,17 +62,34 @@ export function StudentDetailPage({
           </div>
         </div>
         <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">{student.name}</h1>
-            <Badge variant={student.status === "ACTIVE" ? "default" : "destructive"}>
-              {student.status === "ACTIVE" ? t("common.active") : t("common.inactive")}
-            </Badge>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold">{student.name}</h1>
+              <Badge variant={student.status === "ACTIVE" ? "default" : "destructive"}>
+                {student.status === "ACTIVE" ? t("common.active") : t("common.inactive")}
+              </Badge>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 shrink-0"
+              onClick={() => exportStudentProgressPDF(student)}
+            >
+              <FileDown className="h-3.5 w-3.5" />
+              {t("common.exportPDF")}
+            </Button>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <Mail className="h-3.5 w-3.5" />
               {student.email}
             </span>
+            {student.phone && (
+              <span className="flex items-center gap-1.5">
+                <Phone className="h-3.5 w-3.5" />
+                {student.phone}
+              </span>
+            )}
             <span className="flex items-center gap-1.5">
               <Building2 className="h-3.5 w-3.5" />
               {student.school.name}

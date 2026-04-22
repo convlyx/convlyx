@@ -13,6 +13,7 @@ import {
   Clock,
   Users,
   Mail,
+  Phone,
   Building2,
   Camera,
   XCircle,
@@ -69,6 +70,12 @@ export function InstructorDetailPage({
               <Mail className="h-3.5 w-3.5" />
               {instructor.email}
             </span>
+            {instructor.phone && (
+              <span className="flex items-center gap-1.5">
+                <Phone className="h-3.5 w-3.5" />
+                {instructor.phone}
+              </span>
+            )}
             <span className="flex items-center gap-1.5">
               <Building2 className="h-3.5 w-3.5" />
               {instructor.school.name}

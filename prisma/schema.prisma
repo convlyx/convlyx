@@ -88,6 +88,7 @@ model User {
   schoolId  String     @map("school_id") @db.Uuid
   email     String
   name      String
+  phone     String?
   role      UserRole
   status    UserStatus @default(ACTIVE)
   createdAt DateTime   @default(now()) @map("created_at")
@@ -146,6 +147,7 @@ model Enrollment {
   sessionId  String           @map("session_id") @db.Uuid
   studentId  String           @map("student_id") @db.Uuid
   status     EnrollmentStatus @default(ENROLLED)
+  notes      String?          // Instructor notes about the student's performance
   enrolledAt DateTime         @default(now()) @map("enrolled_at")
   updatedAt  DateTime         @updatedAt @map("updated_at")
 

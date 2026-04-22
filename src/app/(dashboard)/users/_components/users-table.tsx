@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { trpc } from "@/lib/trpc";
-import { Users, Mail, Building2, Search, Pencil } from "lucide-react";
+import { Users, Mail, Building2, Search, Pencil, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -168,6 +168,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground mt-0.5">
                     <span className="flex items-center gap-1 truncate"><Mail className="h-3.5 w-3.5 shrink-0" />{user.email}</span>
+                    {user.phone && <span className="flex items-center gap-1 truncate"><Phone className="h-3.5 w-3.5 shrink-0" />{user.phone}</span>}
                     <span className="flex items-center gap-1 truncate"><Building2 className="h-3.5 w-3.5 shrink-0" />{user.school.name}</span>
                   </div>
                   <div className="mt-2 flex gap-2 sm:hidden">

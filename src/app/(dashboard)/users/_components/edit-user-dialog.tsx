@@ -23,6 +23,7 @@ type UserData = {
   id: string;
   name: string;
   email: string;
+  phone?: string | null;
   role: string;
   status: string;
   school: { id: string; name: string };
@@ -45,6 +46,7 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
     defaultValues: {
       id: userData.id,
       name: userData.name,
+      phone: userData.phone ?? undefined,
       role: userData.role as UpdateUserInput["role"],
       schoolId: userData.school.id,
     },
@@ -55,6 +57,7 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
       reset({
         id: userData.id,
         name: userData.name,
+        phone: userData.phone ?? undefined,
         role: userData.role as UpdateUserInput["role"],
         schoolId: userData.school.id,
       });
@@ -91,6 +94,11 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
                 <Label htmlFor="edit-user-name">{t("common.name")}</Label>
                 <Input id="edit-user-name" {...register("name")} />
                 {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="edit-user-phone">{t("common.phone")}</Label>
+                <Input id="edit-user-phone" type="tel" {...register("phone")} />
               </div>
 
               <div className="grid gap-2">

@@ -64,7 +64,7 @@ export const classRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      return ctx.db.classSession.findFirst({
+      const result = await ctx.db.classSession.findFirst({
         where: { id: input.id, tenantId: ctx.tenantId },
         select: {
           id: true,
@@ -82,12 +82,23 @@ export const classRouter = router({
             select: {
               id: true,
               status: true,
+              notes: true,
               enrolledAt: true,
               student: { select: { id: true, name: true, email: true } },
             },
           },
         },
       });
+
+      // Strip internal notes from student view
+      if (result && ctx.user.role === "STUDENT") {
+        return {
+          ...result,
+          enrollments: result.enrollments.map((e) => ({ ...e, notes: null })),
+        };
+      }
+
+      return result;
     }),
 
   create: roleProtectedProcedure(["ADMIN", "SECRETARY"])
@@ -121,6 +132,29 @@ export const classRouter = router({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "classes.instructorNotFound",
+        });
+      }
+
+      // Check for schedule conflicts
+      const conflict = await ctx.db.classSession.findFirst({
+        where: {
+          tenantId: ctx.tenantId,
+          instructorId: input.instructorId,
+          status: { not: "CANCELLED" },
+          OR: [
+            {
+              startsAt: { lt: new Date(input.endsAt) },
+              endsAt: { gt: new Date(input.startsAt) },
+            },
+          ],
+        },
+        select: { id: true, title: true, startsAt: true },
+      });
+
+      if (conflict) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "classes.scheduleConflict",
         });
       }
 
@@ -213,6 +247,30 @@ export const classRouter = router({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "classes.cannotEditFinished",
+        });
+      }
+
+      // Check for schedule conflicts (excluding the class being updated)
+      const conflict = await ctx.db.classSession.findFirst({
+        where: {
+          tenantId: ctx.tenantId,
+          instructorId: input.instructorId,
+          id: { not: input.id },
+          status: { not: "CANCELLED" },
+          OR: [
+            {
+              startsAt: { lt: new Date(input.endsAt) },
+              endsAt: { gt: new Date(input.startsAt) },
+            },
+          ],
+        },
+        select: { id: true },
+      });
+
+      if (conflict) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "classes.scheduleConflict",
         });
       }
 

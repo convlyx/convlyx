@@ -3,6 +3,7 @@ import { z } from "zod/v4";
 export const createUserSchema = z.object({
   email: z.email("Email inválido"),
   name: z.string().min(1, "O nome é obrigatório"),
+  phone: z.string().optional(),
   role: z.enum(["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"]),
   schoolId: z.string().uuid(),
 });
@@ -10,6 +11,7 @@ export const createUserSchema = z.object({
 export const updateUserSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, "O nome é obrigatório"),
+  phone: z.string().optional(),
   role: z.enum(["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"]),
   schoolId: z.string().uuid(),
 });

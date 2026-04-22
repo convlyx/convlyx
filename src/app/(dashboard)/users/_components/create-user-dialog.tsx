@@ -78,6 +78,10 @@ export function CreateUserDialog() {
                   {t("users.inviteInfo")}
                 </p>
                 <div className="grid gap-2">
+                  <Label htmlFor="user-phone">{t("common.phone")}</Label>
+                  <Input id="user-phone" type="tel" {...register("phone")} />
+                </div>
+                <div className="grid gap-2">
                   <Label>{t("common.role")}</Label>
                   <Controller
                     control={control}

@@ -37,7 +37,8 @@ Living document of everything the app can do, organized by area.
 - List users with filters (role, school) and search
 - Card + table view toggle
 - Invite user via email — Supabase sends password setup link (admin, secretary)
-- Edit user (name, role, school)
+- Edit user (name, phone, role, school)
+- Phone number field on user creation and editing (optional)
 - Deactivate / activate user (admin only) with confirmation dialog
 - Role-colored avatars (purple=admin, blue=secretary, green=instructor, primary=student)
 
@@ -50,6 +51,7 @@ Living document of everything the app can do, organized by area.
 - Practical classes: capacity limited to 1-2 students, assign students on creation via searchable picker
 - Theory classes: configurable capacity, students self-enroll
 - Edit class (instructor, title, capacity, date/time) with confirmation
+- Schedule conflict detection: prevents creating/editing classes when instructor already has a class at that time
 - Cancel class with confirmation dialog (cascades to all enrollments)
 - Class detail page (`/classes/[id]`) for secretary/admin: full class info, student list, add/remove students, attendance, cancel class
 - Auto status management: SCHEDULED → IN_PROGRESS → COMPLETED based on time
@@ -65,7 +67,9 @@ Living document of everything the app can do, organized by area.
 - Duplicate prevention — unique constraint on session+student
 - Re-enrollment after cancellation
 - Attendance marking: Present / No-show (admin, secretary, instructor)
+- Bulk attendance: "Mark all present" button marks all enrolled students as attended in one action
 - Enrollment status tracking: ENROLLED → ATTENDED / NO_SHOW / CANCELLED
+- Instructor notes on enrollments: only instructors can write/edit, admin/secretary can view, hidden from students
 - Instructor can flag unavailability with confirmation — cancels the class and all enrollments
 - Secretary/admin can cancel individual student enrollments from class detail
 
@@ -98,7 +102,7 @@ Living document of everything the app can do, organized by area.
 
 ## Student Profiles (`/students/[id]`)
 - Server-side UUID validation + existence check (404 for invalid)
-- Profile header with avatar, name, email, school, member since
+- Profile header with avatar, name, email, phone, school, member since
 - Photo placeholder (camera icon for future upload)
 - Stat cards: upcoming, attended, no-shows, enrolled
 - Theory/practical progress breakdown
@@ -106,7 +110,7 @@ Living document of everything the app can do, organized by area.
 
 ## Instructor Profiles (`/instructors/[id]`)
 - Server-side UUID validation + existence check (404 for invalid)
-- Profile header with avatar, name, email, school, member since
+- Profile header with avatar, name, email, phone, school, member since
 - Photo placeholder
 - Stat cards: upcoming, completed, total, students taught
 - Theory/practical class breakdown
@@ -191,6 +195,17 @@ Living document of everything the app can do, organized by area.
 - Indexed foreign keys
 - Soft delete (user/tenant status: ACTIVE/INACTIVE, class: CANCELLED)
 - Seed script with demo data (4 users, one per role)
+
+## PDF Export
+- Class attendance sheet: exports class info + student list with attendance status and notes
+- Student progress report: exports student info, stats (attendance rate, theory/practical counts), full class history
+- Green branded header with Convlyx branding
+- Auto-generated filename with class/student name and date
+- Download button on class detail page and student profile
+
+## Cron Jobs
+- Daily class reminder: runs at 20:00 UTC via Vercel Cron, notifies students and instructors about tomorrow's classes
+- Secured via `CRON_SECRET` Bearer token
 
 ## Infrastructure
 - Next.js 15 (App Router) deployed on Vercel

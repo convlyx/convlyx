@@ -242,6 +242,59 @@ export const enrollmentRouter = router({
       return result;
     }),
 
+  /** Add or update instructor notes on an enrollment */
+  addNote: roleProtectedProcedure(["INSTRUCTOR"])
+    .input(z.object({
+      enrollmentId: z.string().uuid(),
+      notes: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const enrollment = await ctx.db.enrollment.findFirst({
+        where: { id: input.enrollmentId, tenantId: ctx.tenantId },
+        select: { id: true },
+      });
+
+      if (!enrollment) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "enrollment.notFound" });
+      }
+
+      await ctx.db.enrollment.update({
+        where: { id: input.enrollmentId },
+        data: { notes: input.notes },
+      });
+
+      return { success: true };
+    }),
+
+  /** Bulk mark attendance for all enrolled students in a session */
+  bulkMarkAttendance: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
+    .input(z.object({
+      sessionId: z.string().uuid(),
+      status: z.enum(["ATTENDED", "NO_SHOW"]),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Verify session belongs to tenant
+      const session = await ctx.db.classSession.findFirst({
+        where: { id: input.sessionId, tenantId: ctx.tenantId },
+        select: { id: true },
+      });
+
+      if (!session) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "classes.notFound" });
+      }
+
+      const result = await ctx.db.enrollment.updateMany({
+        where: {
+          sessionId: input.sessionId,
+          tenantId: ctx.tenantId,
+          status: "ENROLLED",
+        },
+        data: { status: input.status },
+      });
+
+      return { count: result.count };
+    }),
+
   /** List enrollments for a student (own) or all (admin/secretary) */
   listByStudent: protectedProcedure
     .input(z.object({ studentId: z.string().uuid().optional() }).optional())
