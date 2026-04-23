@@ -6,6 +6,9 @@ const publicPaths = ["/login", "/register", "/reset-password", "/update-password
 // Root domains that should not serve the app (no subdomain)
 const ROOT_DOMAINS = ["convlyx.com", "www.convlyx.com"];
 
+// Reserved subdomains that are not real schools
+const RESERVED_SUBDOMAINS = ["admin", "www", "api"];
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "";
@@ -17,11 +20,17 @@ export async function middleware(request: NextRequest) {
   // 2. Block root domain — app requires a subdomain in production
   const isRootDomain = ROOT_DOMAINS.some((d) => hostname === d || hostname === `${d}:443`);
   if (isRootDomain && !pathname.startsWith("/api/")) {
-    // Rewrite to a landing/no-tenant page
     return NextResponse.rewrite(new URL("/no-tenant", request.url));
   }
 
-  if (subdomain) {
+  // 3. Platform admin subdomain — rewrite to /platform-admin routes
+  if (subdomain === "admin") {
+    if (!pathname.startsWith("/platform-admin") && !pathname.startsWith("/login") && !pathname.startsWith("/api/")) {
+      return NextResponse.rewrite(new URL(`/platform-admin${pathname === "/" ? "" : pathname}`, request.url));
+    }
+  }
+
+  if (subdomain && !RESERVED_SUBDOMAINS.includes(subdomain)) {
     response.headers.set("x-tenant-subdomain", subdomain);
   }
 

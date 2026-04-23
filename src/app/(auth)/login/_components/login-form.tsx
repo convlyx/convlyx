@@ -41,7 +41,7 @@ export function LoginForm() {
     const parts = hostname.split(".");
     const subdomain = parts.length >= 3 ? parts[0] : null;
 
-    if (subdomain) {
+    if (subdomain && subdomain !== "admin") {
       try {
         const res = await fetch("/api/auth/verify-school");
         const { valid, subdomain: userSubdomain } = await res.json();
