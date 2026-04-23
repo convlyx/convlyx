@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { AdminLogout } from "./_components/admin-logout";
 
 const ADMIN_EMAILS = (process.env.PLATFORM_ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
 
@@ -29,11 +30,7 @@ export default async function PlatformAdminLayout({
             <span className="font-bold">Convlyx Admin</span>
             <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full font-medium">Platform</span>
           </div>
-          <form action="/api/auth/signout" method="POST">
-            <button className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-              Sair
-            </button>
-          </form>
+          <AdminLogout />
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-6 py-8">
