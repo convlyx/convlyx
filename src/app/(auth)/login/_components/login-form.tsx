@@ -43,7 +43,7 @@ export function LoginForm() {
 
     if (subdomain) {
       try {
-        const res = await fetch("/api/auth/verify-tenant");
+        const res = await fetch("/api/auth/verify-school");
         const { valid, subdomain: userSubdomain } = await res.json();
 
         if (!valid || userSubdomain !== subdomain) {
