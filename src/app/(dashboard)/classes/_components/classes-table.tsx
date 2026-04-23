@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { trpc } from "@/lib/trpc";
@@ -47,23 +47,11 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
   const [view, setView] = useViewMode("/classes", initialView);
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [typeFilter, setTypeFilter] = useState<string>(searchParams.get("type") ?? "ALL");
-  const [schoolFilter, setSchoolFilter] = useState<string>(searchParams.get("school") ?? "ALL");
   const [cancelId, setCancelId] = useState<string | null>(null);
   const [editClass, setEditClass] = useState<typeof filteredClasses[number] | null>(null);
 
-  const { data: schools } = trpc.school.list.useQuery();
-
-  // Auto-select when only one school
-  useEffect(() => {
-    if (schoolFilter === "ALL" && schools?.length === 1) {
-      handleSchoolChange(schools[0].id);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schools]);
-
   const { data: classes, isLoading } = trpc.class.list.useQuery({
     ...(typeFilter !== "ALL" && { classType: typeFilter as "THEORY" | "PRACTICAL" }),
-    ...(schoolFilter !== "ALL" && { schoolId: schoolFilter }),
   });
 
   const utils = trpc.useUtils();
@@ -98,11 +86,6 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
   function handleTypeChange(value: string) {
     setTypeFilter(value);
     updateParams("type", value);
-  }
-
-  function handleSchoolChange(value: string) {
-    setSchoolFilter(value);
-    updateParams("school", value);
   }
 
   function handleViewChange(mode: "cards" | "table") {
@@ -154,19 +137,6 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
               <SelectItem value="ALL">{t("classes.allTypes")}</SelectItem>
               <SelectItem value="THEORY">{t("classes.theory")}</SelectItem>
               <SelectItem value="PRACTICAL">{t("classes.practical")}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={schoolFilter} onValueChange={handleSchoolChange}>
-            <SelectTrigger className="w-auto min-w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">{t("schools.allSchools")}</SelectItem>
-              {schools?.map((school) => (
-                <SelectItem key={school.id} value={school.id}>
-                  {school.name}
-                </SelectItem>
-              ))}
             </SelectContent>
           </Select>
         </div>

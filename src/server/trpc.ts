@@ -36,7 +36,7 @@ export const createTRPCContext = async (opts: {
       tenantId: true,
       schoolId: true,
       status: true,
-      tenant: { select: { subdomain: true } },
+      school: { select: { subdomain: true } },
     },
   });
 
@@ -46,7 +46,7 @@ export const createTRPCContext = async (opts: {
 
   // Validate subdomain matches user's tenant (if subdomain is present)
   const subdomain = opts.headers.get("x-tenant-subdomain");
-  if (subdomain && user.tenant.subdomain !== subdomain) {
+  if (subdomain && user.school.subdomain !== subdomain) {
     return { db, tenantId: null, user: null };
   }
 

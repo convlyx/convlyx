@@ -31,8 +31,8 @@ async function getDbUser(authUserId: string) {
           role: true,
           tenantId: true,
           schoolId: true,
-          tenant: { select: { name: true, subdomain: true } },
-          school: { select: { name: true } },
+          tenant: { select: { name: true } },
+          school: { select: { name: true, subdomain: true } },
         },
       });
     } catch (error) {
@@ -68,12 +68,12 @@ export default async function DashboardLayout({
   // Validate subdomain matches user's tenant
   const headersList = await headers();
   const subdomain = headersList.get("x-tenant-subdomain");
-  if (subdomain && user.tenant.subdomain !== subdomain) {
+  if (subdomain && user.school.subdomain !== subdomain) {
     await supabase.auth.signOut();
     redirect("/login");
   }
 
-  const pageTitle = `${user.tenant.name} | Convlyx`;
+  const pageTitle = `${user.school.name} | Convlyx`;
 
   // Student and Instructor get mobile-first layout
   if (user.role === "STUDENT" || user.role === "INSTRUCTOR") {
@@ -82,7 +82,7 @@ export default async function DashboardLayout({
         userId={user.id}
         userName={user.name}
         userRole={user.role}
-        tenantName={user.tenant.name}
+        tenantName={user.school.name}
       >
         <PageTitle title={pageTitle} />
         {children}
@@ -94,13 +94,13 @@ export default async function DashboardLayout({
   return (
     <div className="flex h-screen">
       <PageTitle title={pageTitle} />
-      <Sidebar userRole={user.role} tenantName={user.tenant.name} />
+      <Sidebar userRole={user.role} tenantName={user.school.name} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
           userId={user.id}
           userName={user.name}
           userRole={user.role}
-          userMobileNav={<MobileNav userRole={user.role} tenantName={user.tenant.name} />}
+          userMobileNav={<MobileNav userRole={user.role} tenantName={user.school.name} />}
           tenantName={user.tenant.name}
           schoolName={user.school.name}
         />

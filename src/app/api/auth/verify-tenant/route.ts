@@ -13,7 +13,7 @@ export async function GET() {
 
     const dbUser = await db.user.findUnique({
       where: { id: user.id },
-      select: { tenant: { select: { subdomain: true } } },
+      select: { school: { select: { subdomain: true } } },
     });
 
     if (!dbUser) {
@@ -22,7 +22,7 @@ export async function GET() {
 
     return NextResponse.json({
       valid: true,
-      subdomain: dbUser.tenant.subdomain,
+      subdomain: dbUser.school.subdomain,
     });
   } catch {
     return NextResponse.json({ valid: false });

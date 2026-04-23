@@ -113,22 +113,23 @@ function setTime(date: Date, hours: number, minutes: number): Date {
 async function main() {
   console.log("🚀 Seeding demo data...\n");
 
-  // Get or create tenant
-  let tenant = await db.tenant.findUnique({ where: { subdomain: "demo" } });
+  // Get or create tenant (tenant no longer has subdomain)
+  let tenant = await db.tenant.findFirst({ where: { name: "Grupo Demo" } });
   if (!tenant) {
     tenant = await db.tenant.create({
-      data: { name: "Grupo Demo", subdomain: "demo" },
+      data: { name: "Grupo Demo" },
     });
   }
   console.log(`Tenant: ${tenant.name}\n`);
 
-  // Get or create school
-  let school = await db.school.findFirst({ where: { tenantId: tenant.id } });
+  // Get or create school (subdomain now lives on School)
+  let school = await db.school.findUnique({ where: { subdomain: "demo" } });
   if (!school) {
     school = await db.school.create({
       data: {
         tenantId: tenant.id,
         name: "Escola de Condução Demo",
+        subdomain: "demo",
         address: "Av. da Liberdade, 120, 1250-146 Lisboa",
         phone: "+351 210 123 456",
       },

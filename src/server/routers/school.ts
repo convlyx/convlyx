@@ -9,6 +9,7 @@ export const schoolRouter = router({
       select: {
         id: true,
         name: true,
+        subdomain: true,
         address: true,
         phone: true,
         createdAt: true,
@@ -26,6 +27,7 @@ export const schoolRouter = router({
         select: {
           id: true,
           name: true,
+          subdomain: true,
           address: true,
           phone: true,
           createdAt: true,
@@ -40,6 +42,7 @@ export const schoolRouter = router({
         data: {
           tenantId: ctx.tenantId,
           name: input.name,
+          subdomain: input.subdomain,
           address: input.address,
           phone: input.phone,
         },

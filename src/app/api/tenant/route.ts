@@ -24,10 +24,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ name: null });
   }
 
-  const tenant = await db.tenant.findUnique({
+  const school = await db.school.findUnique({
     where: { subdomain },
     select: { name: true },
   });
 
-  return NextResponse.json({ name: tenant?.name ?? null });
+  return NextResponse.json({ name: school?.name ?? null });
 }

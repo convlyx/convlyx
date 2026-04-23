@@ -42,24 +42,23 @@ const seedUsers = [
 async function main() {
   console.log("Seeding database...");
 
-  // 1. Create tenant
-  const tenant = await db.tenant.upsert({
-    where: { subdomain: "demo" },
-    update: {},
-    create: {
-      name: "Grupo Demo",
-      subdomain: "demo",
-    },
-  });
+  // 1. Create tenant (find by name since tenant no longer has subdomain)
+  let tenant = await db.tenant.findFirst({ where: { name: "Grupo Demo" } });
+  if (!tenant) {
+    tenant = await db.tenant.create({
+      data: { name: "Grupo Demo" },
+    });
+  }
   console.log(`Tenant: ${tenant.name} (${tenant.id})`);
 
-  // 2. Create school
+  // 2. Create school (subdomain now lives on School)
   const school = await db.school.upsert({
-    where: { id: tenant.id }, // Will fail on first run, that's fine
+    where: { subdomain: "demo" },
     update: {},
     create: {
       tenantId: tenant.id,
       name: "Escola de Condução Demo",
+      subdomain: "demo",
       address: "Rua do Exemplo, 123, Lisboa",
       phone: "+351 210 000 000",
     },
