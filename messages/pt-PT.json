@@ -343,7 +343,9 @@
     "tenantInfo": "Informação do grupo",
     "tenantUpdated": "Grupo atualizado com sucesso",
     "groupName": "Nome do grupo",
-    "passwordError": "Erro ao atualizar palavra-passe"
+    "passwordError": "Erro ao atualizar palavra-passe",
+    "pushNotifications": "Notificações push",
+    "pushDescription": "Receba notificações no seu dispositivo, mesmo quando não está a usar a aplicação."
   },
   "days": {
     "0": "Segunda-feira",

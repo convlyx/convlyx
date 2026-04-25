@@ -96,8 +96,9 @@ model User {
 
   tenant        Tenant         @relation(fields: [tenantId], references: [id])
   school        School         @relation(fields: [schoolId], references: [id])
-  enrollments   Enrollment[]
-  notifications Notification[]
+  enrollments       Enrollment[]
+  notifications     Notification[]
+  pushSubscriptions PushSubscription[]
 
   // Classes where this user is the instructor
   instructedSessions ClassSession[] @relation("InstructorSessions")
@@ -178,4 +179,19 @@ model Notification {
   @@index([userId, read])
   @@index([createdAt])
   @@map("notifications")
+}
+
+model PushSubscription {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  endpoint       String
+  p256dh         String
+  auth           String
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, endpoint])
+  @@index([userId])
+  @@map("push_subscriptions")
 }

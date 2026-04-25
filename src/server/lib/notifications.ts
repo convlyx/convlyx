@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma/client";
+import { sendPushToUser, sendPushToUsers } from "./push";
 
 /** Format a date for notification params: "20/04 às 09:00" */
 export function formatClassTime(startsAt: Date): string {
@@ -14,12 +15,13 @@ type CreateNotificationParams = {
   tenantId: string;
   userId: string;
   type: string;
-  /** Translation key for the title, e.g. "notifications.classWasCancelled" */
   titleKey: string;
-  /** Translation key for the message, e.g. "notifications.classCancelled" */
   messageKey: string;
-  /** Params for the message template, e.g. { title: "Aula Prática", time: "20/04 às 09:00" } */
   params?: Record<string, string>;
+  /** Plain-text title for push notification (OS-rendered, not i18n) */
+  pushTitle?: string;
+  /** Plain-text body for push notification */
+  pushBody?: string;
 };
 
 /**
@@ -35,9 +37,11 @@ export async function createNotification({
   titleKey,
   messageKey,
   params,
+  pushTitle,
+  pushBody,
 }: CreateNotificationParams) {
   try {
-    return await db.notification.create({
+    const result = await db.notification.create({
       data: {
         tenantId,
         userId,
@@ -47,6 +51,17 @@ export async function createNotification({
         ...(params && { data: params as object }),
       },
     });
+
+    // Also send push notification if text provided
+    if (pushTitle || pushBody) {
+      sendPushToUser(db, userId, {
+        title: pushTitle ?? "Convlyx",
+        body: pushBody ?? "",
+        url: "/",
+      }).catch(() => {});
+    }
+
+    return result;
   } catch (error) {
     console.error("[Notification] Failed to create:", error);
     throw error;
@@ -61,10 +76,12 @@ export async function createNotifications({
   titleKey,
   messageKey,
   params,
+  pushTitle,
+  pushBody,
 }: Omit<CreateNotificationParams, "userId"> & { userIds: string[] }) {
   if (userIds.length === 0) return;
   try {
-    return await db.notification.createMany({
+    const result = await db.notification.createMany({
       data: userIds.map((userId) => ({
         tenantId,
         userId,
@@ -74,6 +91,17 @@ export async function createNotifications({
         ...(params && { data: params as object }),
       })),
     });
+
+    // Also send push notifications
+    if (pushTitle || pushBody) {
+      sendPushToUsers(db, userIds, {
+        title: pushTitle ?? "Convlyx",
+        body: pushBody ?? "",
+        url: "/",
+      }).catch(() => {});
+    }
+
+    return result;
   } catch (error) {
     console.error("[Notification] Failed to create many:", error);
     throw error;

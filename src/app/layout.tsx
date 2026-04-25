@@ -19,6 +19,13 @@ export const metadata: Metadata = {
     template: "%s | Convlyx",
   },
   description: "Gestão de escolas de condução",
+  manifest: "/manifest.json",
+  themeColor: "#16a34a",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Convlyx",
+  },
 };
 
 export default async function RootLayout({

@@ -51,6 +51,8 @@ export async function GET(request: NextRequest) {
         titleKey: "notifications.classReminder",
         messageKey: "notifications.classReminderMessage",
         params: { title: cls.title, time: timeStr },
+        pushTitle: "Lembrete de aula",
+        pushBody: `Amanhã: ${cls.title} · ${timeStr}`,
       });
       notificationCount += studentIds.length;
     }
@@ -64,6 +66,8 @@ export async function GET(request: NextRequest) {
       titleKey: "notifications.classReminder",
       messageKey: "notifications.classReminderInstructor",
       params: { title: cls.title, time: timeStr },
+      pushTitle: "Lembrete de aula",
+      pushBody: `Amanhã: ${cls.title} · ${timeStr}`,
     });
     notificationCount += 1;
   }

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { PushManager } from "@/components/push-manager";
 
 type SettingsFormProps = {
   user: {
@@ -176,6 +177,13 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
             {passwordLoading ? tc("loading") : t("changePassword")}
           </Button>
         </form>
+      </section>
+
+      {/* Push notifications */}
+      <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
+        <h2 className="text-lg font-semibold">{t("pushNotifications")}</h2>
+        <p className="text-sm text-muted-foreground">{t("pushDescription")}</p>
+        <PushManager userId={user.id} />
       </section>
 
       {/* Section B: School (ADMIN + SECRETARY) */}
