@@ -2,11 +2,14 @@ import webpush from "web-push";
 import type { PrismaClient } from "@/generated/prisma/client";
 
 // Configure web-push with VAPID keys
-if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+const VAPID_PUBLIC = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
+
+if (VAPID_PUBLIC && VAPID_PRIVATE) {
   webpush.setVapidDetails(
     `mailto:${process.env.VAPID_CONTACT_EMAIL ?? "convlyx@gmail.com"}`,
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
+    VAPID_PUBLIC,
+    VAPID_PRIVATE
   );
 }
 
@@ -20,14 +23,17 @@ export async function sendPushToUser(
   userId: string,
   payload: { title: string; body: string; url?: string }
 ) {
-  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
-    return; // Push not configured
+  if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
+    console.log("[Push] VAPID keys not configured, skipping");
+    return;
   }
 
   const subscriptions = await db.pushSubscription.findMany({
     where: { userId },
     select: { id: true, endpoint: true, p256dh: true, auth: true },
   });
+
+  console.log(`[Push] Sending to ${subscriptions.length} subscription(s) for user ${userId}`);
 
   for (const sub of subscriptions) {
     try {
@@ -38,9 +44,10 @@ export async function sendPushToUser(
         },
         JSON.stringify(payload)
       );
+      console.log(`[Push] Sent successfully to ${sub.endpoint.slice(0, 50)}...`);
     } catch (error: unknown) {
-      // Remove expired/invalid subscriptions
       const statusCode = (error as { statusCode?: number })?.statusCode;
+      console.error(`[Push] Failed: status=${statusCode}`, (error as Error)?.message);
       if (statusCode === 404 || statusCode === 410) {
         await db.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
       }
