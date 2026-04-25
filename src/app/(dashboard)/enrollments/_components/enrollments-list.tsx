@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import { trpc } from "@/lib/trpc";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ClipboardList, BookOpen, CalendarDays, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
   });
 
   const [timeTab, setTimeTab] = useState<"current" | "past">("current");
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
 
   const canCancel = (enrollment: { status: string; session: { status: string } }) =>
     userRole === "STUDENT" && enrollment.status === "ENROLLED" && enrollment.session.status === "SCHEDULED";
@@ -107,7 +109,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
                   </div>
                   {canCancel(enrollment) && (
                     <div className="mt-2 sm:hidden">
-                      <Button variant="destructive" size="sm" className="w-full" disabled={cancelMutation.isPending} onClick={() => cancelMutation.mutate({ enrollmentId: enrollment.id })}>
+                      <Button variant="destructive" size="sm" className="w-full" disabled={cancelMutation.isPending} onClick={() => setConfirmCancelId(enrollment.id)}>
                         {t("enrollment.cancel")}
                       </Button>
                     </div>
@@ -115,7 +117,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
                 </div>
                 {canCancel(enrollment) && (
                   <div className="hidden sm:block shrink-0">
-                    <Button variant="destructive" size="sm" disabled={cancelMutation.isPending} onClick={() => cancelMutation.mutate({ enrollmentId: enrollment.id })}>
+                    <Button variant="destructive" size="sm" disabled={cancelMutation.isPending} onClick={() => setConfirmCancelId(enrollment.id)}>
                       {t("enrollment.cancel")}
                     </Button>
                   </div>
@@ -156,7 +158,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
                   {userRole === "STUDENT" && (
                     <TableCell>
                       {canCancel(enrollment) && (
-                        <Button variant="destructive" size="sm" disabled={cancelMutation.isPending} onClick={() => cancelMutation.mutate({ enrollmentId: enrollment.id })}>
+                        <Button variant="destructive" size="sm" disabled={cancelMutation.isPending} onClick={() => setConfirmCancelId(enrollment.id)}>
                           {t("enrollment.cancel")}
                         </Button>
                       )}
@@ -168,6 +170,18 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
           </Table>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmCancelId !== null}
+        onClose={() => setConfirmCancelId(null)}
+        onConfirm={() => {
+          cancelMutation.mutate({ enrollmentId: confirmCancelId! });
+          setConfirmCancelId(null);
+        }}
+        title={t("classes.cancelOwnEnrollmentTitle")}
+        message={t("classes.cancelOwnEnrollmentMessage")}
+        loading={cancelMutation.isPending}
+      />
     </div>
   );
 }

@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { createNotification, createNotifications, formatClassTime } from "@/server/lib/notifications";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret to prevent unauthorized calls
+  // Rate limit: 2 requests per minute
+  const ip = getClientIp(request.headers);
+  const { success } = rateLimit({ key: `cron:${ip}`, limit: 2, windowMs: 60000 });
+  if (!success) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
+  // Verify cron secret
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { StudentPicker } from "@/components/student-picker";
 import {
-  typeKeys, statusKeys, statusVariant, enrollmentStatusKeys, enrollmentStatusVariant,
+  typeKeys, statusKeys, statusVariant, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap,
 } from "@/lib/constants/class";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -139,11 +139,7 @@ export function ClassDetailView({
       <div className="rounded-2xl border bg-card p-6 card-shadow">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${
-              classDetail.classType === "THEORY"
-                ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                : "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
-            }`}>
+            <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${classTypeColorMap[classDetail.classType]}`}>
               <BookOpen className="h-7 w-7" />
             </div>
             <div>
