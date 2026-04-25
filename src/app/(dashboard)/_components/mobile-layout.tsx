@@ -82,7 +82,7 @@ export function MobileLayout({
       </header>
 
       {/* Content area */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden">
         <div className="px-4 py-4 pb-20">
           {children}
         </div>

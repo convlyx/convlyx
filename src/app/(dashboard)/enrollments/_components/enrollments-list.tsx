@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import { trpc } from "@/lib/trpc";
 import { ClipboardList, BookOpen, CalendarDays, Users } from "lucide-react";
@@ -34,23 +35,51 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
     },
   });
 
+  const [timeTab, setTimeTab] = useState<"current" | "past">("current");
+
   const canCancel = (enrollment: { status: string; session: { status: string } }) =>
     userRole === "STUDENT" && enrollment.status === "ENROLLED" && enrollment.session.status === "SCHEDULED";
 
+  const now = new Date();
+  const filteredEnrollments = enrollments?.filter((e) => {
+    if (timeTab === "current") {
+      return e.status === "ENROLLED" && new Date(e.session.startsAt as unknown as string) >= now;
+    }
+    return e.status !== "ENROLLED" || new Date(e.session.startsAt as unknown as string) < now;
+  }) ?? [];
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">{t("enrollment.myEnrollments")}</h1>
         <ViewToggle view={view} onChange={setView} />
       </div>
 
+      {/* Time tabs */}
+      <div className="flex items-center gap-1 rounded-lg border p-0.5 w-fit">
+        <Button
+          variant={timeTab === "current" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => setTimeTab("current")}
+        >
+          {t("classes.upcoming")}
+        </Button>
+        <Button
+          variant={timeTab === "past" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => setTimeTab("past")}
+        >
+          {t("classes.past")}
+        </Button>
+      </div>
+
       {isLoading ? (
         <Loading />
-      ) : !enrollments || enrollments.length === 0 ? (
+      ) : filteredEnrollments.length === 0 ? (
         <EmptyState icon={ClipboardList} message={t("common.noResults")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
-          {enrollments.map((enrollment) => (
+          {filteredEnrollments.map((enrollment) => (
             <div
               key={enrollment.id}
               className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
@@ -109,7 +138,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {enrollments.map((enrollment) => (
+              {filteredEnrollments.map((enrollment) => (
                 <TableRow key={enrollment.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">{enrollment.session.title}</TableCell>
                   <TableCell><Badge variant="secondary">{t(typeKeys[enrollment.session.classType])}</Badge></TableCell>
