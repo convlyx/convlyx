@@ -133,9 +133,13 @@
 }
 
 @layer base {
-  /* Smooth transitions globally */
+  /* Smooth transitions + tap feedback globally */
   a, button, [role="button"] {
-    @apply transition-colors duration-150;
+    @apply transition-all duration-150;
+    -webkit-tap-highlight-color: transparent;
+  }
+  a:active, button:active, [role="button"]:active {
+    @apply scale-[0.97] opacity-80;
   }
 }
 

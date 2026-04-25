@@ -23,17 +23,12 @@ export async function sendPushToUser(
   userId: string,
   payload: { title: string; body: string; url?: string }
 ) {
-  if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
-    console.log("[Push] VAPID keys not configured, skipping");
-    return;
-  }
+  if (!VAPID_PUBLIC || !VAPID_PRIVATE) return;
 
   const subscriptions = await db.pushSubscription.findMany({
     where: { userId },
     select: { id: true, endpoint: true, p256dh: true, auth: true },
   });
-
-  console.log(`[Push] Sending to ${subscriptions.length} subscription(s) for user ${userId}`);
 
   for (const sub of subscriptions) {
     try {
@@ -44,10 +39,8 @@ export async function sendPushToUser(
         },
         JSON.stringify(payload)
       );
-      console.log(`[Push] Sent successfully to ${sub.endpoint.slice(0, 50)}...`);
     } catch (error: unknown) {
       const statusCode = (error as { statusCode?: number })?.statusCode;
-      console.error(`[Push] Failed: status=${statusCode}`, (error as Error)?.message);
       if (statusCode === 404 || statusCode === 410) {
         await db.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
       }

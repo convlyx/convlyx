@@ -6,6 +6,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { Bell, CheckCheck } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
+import { Loading } from "@/components/loading";
 import { createClient } from "@/lib/supabase/client";
 
 /** Resolve a notification's stored params, handling nested translation keys */
@@ -46,7 +47,7 @@ export function NotificationBell({ userId }: { userId: string }) {
     refetchInterval: 30000,
   });
 
-  const { data: notifications } = trpc.notification.list.useQuery(
+  const { data: notifications, isLoading: notificationsLoading } = trpc.notification.list.useQuery(
     { limit: 15 },
     { enabled: open }
   );
@@ -133,7 +134,9 @@ export function NotificationBell({ userId }: { userId: string }) {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {!notifications || notifications.length === 0 ? (
+            {notificationsLoading ? (
+              <Loading />
+            ) : !notifications || notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                 <Bell className="h-8 w-8 mb-2 opacity-30" />
                 <p className="text-xs">{t("notifications.empty")}</p>
