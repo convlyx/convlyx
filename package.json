@@ -8,13 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
-    "db:push": "prisma db push",
+    "db:push": "dotenv -e .env -- prisma db push",
     "db:push:prod": "dotenv -e .env.prod -- prisma db push",
-    "db:generate": "prisma generate",
-    "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:generate": "dotenv -e .env -- prisma generate",
+    "db:studio": "dotenv -e .env -- prisma studio",
+    "db:seed": "dotenv -e .env -- tsx prisma/seed.ts",
     "db:seed:prod": "dotenv -e .env.prod -- tsx prisma/seed.ts",
-    "db:seed-demo": "tsx prisma/seed-demo.ts",
+    "db:seed-demo": "dotenv -e .env -- tsx prisma/seed-demo.ts",
     "db:seed-demo:prod": "dotenv -e .env.prod -- tsx prisma/seed-demo.ts"
   },
   "dependencies": {
