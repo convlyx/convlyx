@@ -7,7 +7,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
-import type { EventClickArg, DatesSetArg } from "@fullcalendar/core";
+import type { EventClickArg } from "@fullcalendar/core";
 import { trpc } from "@/lib/trpc";
 import { ClassDetailDialog } from "./class-detail-dialog";
 
@@ -51,7 +51,7 @@ export function ClassCalendar({
     ...(dateRange?.to && { to: dateRange.to }),
   }), [filter, dateRange]);
 
-  const { data: classes } = trpc.class.list.useQuery(queryInput);
+  const { data: classes, isFetching } = trpc.class.list.useQuery(queryInput);
 
   // For students: fetch enrollments to highlight enrolled classes
   const isStudent = userRole === "STUDENT";
@@ -109,59 +109,60 @@ export function ClassCalendar({
     setSelectedClassId(info.event.id);
   }
 
-  function handleDatesSet(dateInfo: DatesSetArg) {
+  function handleDatesSet(dateInfo: { start: Date; end: Date }) {
     setDateRange({
       from: dateInfo.start.toISOString(),
       to: dateInfo.end.toISOString(),
     });
   }
 
+
   return (
     <div className="space-y-4">
       <div className="fc-wrapper">
-        <FullCalendar
-          plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
-          initialView="timeGridWeek"
-          headerToolbar={{
-            left: "prev,next today",
-            center: "title",
-            right: "timeGridWeek,timeGridDay,dayGridMonth,listMonth",
-          }}
-          buttonText={{
-            today: t("calendar.today"),
-            month: t("calendar.month"),
-            week: t("calendar.week"),
-            day: t("calendar.day"),
-            list: t("calendar.list"),
-          }}
-          noEventsText={t("classes.noClassesCalendar")}
-          locale="pt"
-          firstDay={1}
-          slotMinTime="07:00:00"
-          slotMaxTime="22:00:00"
-          allDaySlot={false}
-          nowIndicator
-          selectable={false}
-          events={events}
-          eventClick={handleEventClick}
-          datesSet={handleDatesSet}
-          height="auto"
-          eventContent={(arg) => {
-            const props = arg.event.extendedProps;
-            return (
-              <div className="p-1 text-xs leading-tight overflow-hidden">
-                <div className="flex items-center gap-1">
-                  {props.isEnrolled && (
-                    <span className="flex h-1.5 w-1.5 rounded-full bg-white shrink-0" />
-                  )}
-                  <span className="font-medium truncate">{arg.event.title}</span>
+          <FullCalendar
+            plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
+            initialView="timeGridWeek"
+            headerToolbar={{
+              left: "prev,next today",
+              center: "title",
+              right: "timeGridWeek,timeGridDay,dayGridMonth,listMonth",
+            }}
+            buttonText={{
+              today: t("calendar.today"),
+              month: t("calendar.month"),
+              week: t("calendar.week"),
+              day: t("calendar.day"),
+              list: t("calendar.list"),
+            }}
+            noEventsText={isFetching ? t("common.loading") : t("classes.noClassesCalendar")}
+            locale="pt"
+            firstDay={1}
+            slotMinTime="07:00:00"
+            slotMaxTime="22:00:00"
+            allDaySlot={false}
+            nowIndicator
+            selectable={false}
+            events={events}
+            eventClick={handleEventClick}
+            datesSet={handleDatesSet}
+            height="auto"
+            eventContent={(arg) => {
+              const props = arg.event.extendedProps;
+              return (
+                <div className="p-1 text-xs leading-tight overflow-hidden">
+                  <div className="flex items-center gap-1">
+                    {props.isEnrolled && (
+                      <span className="flex h-1.5 w-1.5 rounded-full bg-white shrink-0" />
+                    )}
+                    <span className="font-medium truncate">{arg.event.title}</span>
+                  </div>
+                  <div className="opacity-80 truncate">{props.instructor}</div>
                 </div>
-                <div className="opacity-80 truncate">{props.instructor}</div>
-              </div>
-            );
-          }}
-        />
-      </div>
+              );
+            }}
+          />
+        </div>
 
       {/* Legend for students */}
       {isStudent && (

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations, useFormatter } from "next-intl";
+import Link from "next/link";
 import { trpc } from "@/lib/trpc";
 import { Loading } from "@/components/loading";
 import { Badge } from "@/components/ui/badge";
@@ -121,9 +122,10 @@ export function DashboardView({
         ) : (
           <div className="grid gap-3">
             {upcomingClasses.slice(0, 10).map((cls) => (
-              <div
+              <Link
                 key={cls.id}
-                className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
+                href={`/classes/${cls.id}`}
+                className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover hover:border-primary/20 transition-all block group"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -132,7 +134,7 @@ export function DashboardView({
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium">{cls.title}</p>
+                        <p className="font-medium group-hover:text-primary transition-colors">{cls.title}</p>
                         <Badge variant="secondary">{t(typeKeys[cls.classType])}</Badge>
                       </div>
                       <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
@@ -157,7 +159,7 @@ export function DashboardView({
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

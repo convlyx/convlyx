@@ -24,7 +24,7 @@ export function CreateUserDialog() {
   const [open, setOpen] = useState(false);
   const utils = trpc.useUtils();
 
-  const { data: schools } = trpc.school.list.useQuery();
+  const { data: schools, isLoading: schoolsLoading } = trpc.school.list.useQuery();
 
   const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm<CreateUserInput>({
     resolver: zodResolver(createUserSchema),
@@ -131,7 +131,7 @@ export function CreateUserDialog() {
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 {t("common.cancel")}
               </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
+              <Button type="submit" disabled={createMutation.isPending || schoolsLoading}>
                 {createMutation.isPending ? t("common.loading") : t("common.save")}
               </Button>
             </DialogFooter>

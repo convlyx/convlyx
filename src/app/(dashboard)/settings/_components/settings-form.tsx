@@ -116,23 +116,27 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
       <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
         <h2 className="text-lg font-semibold">{t("profile")}</h2>
 
-        <form
-          onSubmit={profileForm.handleSubmit((data) =>
-            updateProfileMutation.mutate({ name: data.name })
-          )}
-          className="space-y-3"
-        >
-          <div className="grid gap-2">
-            <Label htmlFor="profile-name">{tc("name")}</Label>
-            <Input id="profile-name" {...profileForm.register("name")} />
-            {profileForm.formState.errors.name && <p className="text-sm text-destructive">{profileForm.formState.errors.name.message}</p>}
-          </div>
-          <Button type="submit" disabled={updateProfileMutation.isPending}>
-            {updateProfileMutation.isPending ? tc("loading") : t("updateName")}
-          </Button>
-        </form>
+        {canEditSchool && (
+          <>
+            <form
+              onSubmit={profileForm.handleSubmit((data) =>
+                updateProfileMutation.mutate({ name: data.name })
+              )}
+              className="space-y-3"
+            >
+              <div className="grid gap-2">
+                <Label htmlFor="profile-name">{tc("name")}</Label>
+                <Input id="profile-name" {...profileForm.register("name")} />
+                {profileForm.formState.errors.name && <p className="text-sm text-destructive">{profileForm.formState.errors.name.message}</p>}
+              </div>
+              <Button type="submit" disabled={updateProfileMutation.isPending}>
+                {updateProfileMutation.isPending ? tc("loading") : t("updateName")}
+              </Button>
+            </form>
 
-        <hr />
+            <hr />
+          </>
+        )}
 
         <form onSubmit={handlePasswordChange} className="space-y-3">
           <h3 className="text-sm font-medium">{t("changePassword")}</h3>
@@ -141,6 +145,7 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
             <Input
               id="current-password"
               type="password"
+              required
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
             />
@@ -150,6 +155,8 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
             <Input
               id="new-password"
               type="password"
+              required
+              minLength={6}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
             />
@@ -159,6 +166,8 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
             <Input
               id="confirm-password"
               type="password"
+              required
+              minLength={6}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />

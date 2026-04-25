@@ -39,7 +39,7 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
   const t = useTranslations();
   const utils = trpc.useUtils();
 
-  const { data: schools } = trpc.school.list.useQuery();
+  const { data: schools, isLoading: schoolsLoading } = trpc.school.list.useQuery();
 
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm<UpdateUserInput>({
     resolver: zodResolver(updateUserSchema),
@@ -152,7 +152,7 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
             <Button type="button" variant="outline" onClick={onClose}>
               {t("common.cancel")}
             </Button>
-            <Button type="submit" disabled={updateMutation.isPending}>
+            <Button type="submit" disabled={updateMutation.isPending || schoolsLoading}>
               {updateMutation.isPending ? t("common.loading") : t("common.save")}
             </Button>
           </DialogFooter>

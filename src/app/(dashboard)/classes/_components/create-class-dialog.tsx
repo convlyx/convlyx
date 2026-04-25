@@ -45,9 +45,10 @@ export function CreateClassDialog() {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const utils = trpc.useUtils();
 
-  const { data: schools } = trpc.school.list.useQuery();
-  const { data: instructors } = trpc.user.list.useQuery({ role: "INSTRUCTOR" });
-  const { data: students } = trpc.user.list.useQuery({ role: "STUDENT" });
+  const { data: schools, isLoading: schoolsLoading } = trpc.school.list.useQuery();
+  const { data: instructors, isLoading: instructorsLoading } = trpc.user.list.useQuery({ role: "INSTRUCTOR" });
+  const { data: students, isLoading: studentsLoading } = trpc.user.list.useQuery({ role: "STUDENT" });
+  const dataLoading = schoolsLoading || instructorsLoading || studentsLoading;
 
   const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm<CreateClassFormData>({
     resolver: zodResolver(createClassFormSchema),
@@ -389,7 +390,7 @@ export function CreateClassDialog() {
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 {t("common.cancel")}
               </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
+              <Button type="submit" disabled={createMutation.isPending || dataLoading}>
                 {createMutation.isPending ? t("common.loading") : t("common.save")}
               </Button>
             </DialogFooter>
