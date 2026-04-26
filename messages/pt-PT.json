@@ -215,6 +215,7 @@
     "scheduleConflict": "O instrutor já tem uma aula agendada neste horário",
     "assignStudents": "Atribuir alunos",
     "markUnavailable": "Não posso dar esta aula",
+    "viewDetails": "Ver detalhes",
     "upcoming": "Próximas",
     "past": "Anteriores",
     "cancelClass": "Cancelar aula",

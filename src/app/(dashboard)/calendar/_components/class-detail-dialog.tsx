@@ -6,12 +6,13 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { typeKeys, statusKeys, enrollmentStatusKeys } from "@/lib/constants/class";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { useState } from "react";
+import Link from "next/link";
 
 export function ClassDetailDialog({
   classId,
@@ -232,6 +233,9 @@ export function ClassDetailDialog({
               {instructorUnavailableMutation.isPending ? t("common.loading") : t("classes.markUnavailable")}
             </Button>
           )}
+          <Link href={`/classes/${classDetail.id}`} className={buttonVariants({ variant: "outline" })}>
+            {t("classes.viewDetails")}
+          </Link>
           <Button variant="outline" onClick={onClose}>
             {t("common.back")}
           </Button>
