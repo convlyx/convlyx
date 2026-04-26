@@ -38,14 +38,29 @@ export function DashboardView({
 
   const { data: upcomingClasses, isLoading } = trpc.class.list.useQuery(dateRange);
 
+  const { data: students } = trpc.user.list.useQuery(
+    { role: "STUDENT" },
+    { enabled: userRole === "ADMIN" || userRole === "SECRETARY" }
+  );
+  const activeStudentCount = students?.filter((s) => s.status === "ACTIVE").length ?? 0;
+
   const { data: enrollments } = trpc.enrollment.listByStudent.useQuery(
     undefined,
     { enabled: userRole === "STUDENT" }
   );
 
-  const scheduledCount = upcomingClasses?.filter((c) => c.status === "SCHEDULED").length ?? 0;
-  const inProgressCount = upcomingClasses?.filter((c) => c.status === "IN_PROGRESS").length ?? 0;
-  const totalStudents = upcomingClasses?.reduce((acc, c) => acc + c._count.enrollments, 0) ?? 0;
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const todayClasses = upcomingClasses?.filter((c) => {
+    const classDate = new Date(c.startsAt as unknown as string);
+    return classDate >= startOfToday && classDate <= today;
+  }) ?? [];
+
+  const scheduledToday = todayClasses.filter((c) => c.status === "SCHEDULED").length;
+  const inProgressCount = todayClasses.filter((c) => c.status === "IN_PROGRESS").length;
   const activeEnrollments = enrollments?.filter((e) => e.status === "ENROLLED").length ?? 0;
 
   return (
@@ -55,26 +70,25 @@ export function DashboardView({
       </h1>
 
       {/* Stats cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {(userRole === "ADMIN" || userRole === "SECRETARY") && (
           <>
             <StatCard
               icon={CalendarDays}
               label={t("classes.scheduled")}
-              value={scheduledCount}
-              description={t("dashboard.next7Days")}
+              value={scheduledToday}
+              description={t("dashboard.today")}
             />
             <StatCard
               icon={Clock}
               label={t("classes.inProgress")}
               value={inProgressCount}
-              description={t("dashboard.happeningNow")}
+              description={t("dashboard.today")}
             />
             <StatCard
               icon={Users}
-              label={t("nav.students")}
-              value={totalStudents}
-              description={t("dashboard.activeEnrollments")}
+              label={t("dashboard.activeStudents")}
+              value={activeStudentCount}
             />
           </>
         )}
@@ -83,14 +97,14 @@ export function DashboardView({
             <StatCard
               icon={CalendarDays}
               label={t("classes.scheduled")}
-              value={scheduledCount}
-              description={t("dashboard.next7Days")}
+              value={scheduledToday}
+              description={t("dashboard.today")}
             />
             <StatCard
               icon={Clock}
               label={t("classes.inProgress")}
               value={inProgressCount}
-              description={t("dashboard.happeningNow")}
+              description={t("dashboard.today")}
             />
           </>
         )}
@@ -105,7 +119,7 @@ export function DashboardView({
             <StatCard
               icon={CalendarDays}
               label={t("classes.scheduled")}
-              value={scheduledCount}
+              value={scheduledToday}
               description={t("dashboard.availableThisWeek")}
             />
           </>
