@@ -30,8 +30,9 @@ export default function LandingPage() {
             <button onClick={() => scrollTo("features")} className="text-sm text-muted-foreground hover:text-primary transition-colors hidden sm:block px-3 py-1.5">
               {t("landing.seeFeatures")}
             </button>
-            <Button onClick={() => scrollTo("demo")} className="gap-1.5 shadow-md shadow-primary/20 px-5">
-              {t("landing.requestDemo")}
+            <Button onClick={() => scrollTo("demo")} size="sm" className="gap-1.5 shadow-md shadow-primary/20">
+              <span className="hidden sm:inline">{t("landing.requestDemo")}</span>
+              <span className="sm:hidden">{t("landing.demoCTA")}</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </div>

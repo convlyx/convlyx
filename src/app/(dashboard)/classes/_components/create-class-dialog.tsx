@@ -176,28 +176,8 @@ export function CreateClassDialog() {
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label>{t("common.school")}</Label>
-              <Controller
-                control={control}
-                name="schoolId"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder={t("common.school")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {schools?.map((school) => (
-                        <SelectItem key={school.id} value={school.id}>
-                          {school.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.schoolId && <p className="text-sm text-destructive">{errors.schoolId.message}</p>}
-            </div>
+            {/* School is auto-set from the user's school — hidden field */}
+            <input type="hidden" {...register("schoolId")} />
 
             <div className="grid gap-2">
               <Label>{t("classes.instructor")}</Label>

@@ -32,10 +32,6 @@ type SettingsFormProps = {
   };
 };
 
-const profileFormSchema = z.object({
-  name: z.string().min(1, "O nome é obrigatório"),
-});
-
 const schoolFormSchema = z.object({
   name: z.string().min(1, "O nome é obrigatório"),
   address: z.string(),
@@ -53,13 +49,6 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
   const isAdmin = user.role === "ADMIN";
   const isSecretary = user.role === "SECRETARY";
   const canEditSchool = isAdmin || isSecretary;
-
-  // --- Profile section ---
-  const profileForm = useForm({ resolver: zodResolver(profileFormSchema), defaultValues: { name: user.name } });
-  const updateProfileMutation = trpc.user.updateProfile.useMutation({
-    onSuccess: () => toast.success(t("profileUpdated")),
-    onError: (error) => toast.error(error.message),
-  });
 
   // --- Password section ---
   const [currentPassword, setCurrentPassword] = useState("");
@@ -116,28 +105,6 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
       {/* Section A: Profile */}
       <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
         <h2 className="text-lg font-semibold">{t("profile")}</h2>
-
-        {canEditSchool && (
-          <>
-            <form
-              onSubmit={profileForm.handleSubmit((data) =>
-                updateProfileMutation.mutate({ name: data.name })
-              )}
-              className="space-y-3"
-            >
-              <div className="grid gap-2">
-                <Label htmlFor="profile-name">{tc("name")}</Label>
-                <Input id="profile-name" {...profileForm.register("name")} />
-                {profileForm.formState.errors.name && <p className="text-sm text-destructive">{profileForm.formState.errors.name.message}</p>}
-              </div>
-              <Button type="submit" disabled={updateProfileMutation.isPending}>
-                {updateProfileMutation.isPending ? tc("loading") : t("updateName")}
-              </Button>
-            </form>
-
-            <hr />
-          </>
-        )}
 
         <form onSubmit={handlePasswordChange} className="space-y-3">
           <h3 className="text-sm font-medium">{t("changePassword")}</h3>
