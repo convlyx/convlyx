@@ -21,9 +21,11 @@ import {
 } from "lucide-react";
 import { typeKeys, classTypeColorMap } from "@/lib/constants/class";
 import { toast } from "sonner";
+import { useTranslatedError } from "@/hooks/use-translated-error";
 
 export function StudentHome({ userName }: { userName: string }) {
   const t = useTranslations();
+  const { onError } = useTranslatedError();
   const format = useFormatter();
 
   function getGreeting(): string {
@@ -64,7 +66,7 @@ export function StudentHome({ userName }: { userName: string }) {
       utils.class.list.invalidate();
       utils.enrollment.listByStudent.invalidate();
     },
-    onError: (error) => toast.error(error.message),
+    onError,
   });
 
   const allEnrollments = enrollments ?? [];

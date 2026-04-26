@@ -25,12 +25,14 @@ import { typeKeys, statusKeys, statusVariant, classTypeColorMap } from "@/lib/co
 import { Pagination } from "@/components/pagination";
 import { EditClassDialog } from "./edit-class-dialog";
 import { toast } from "sonner";
+import { useTranslatedError } from "@/hooks/use-translated-error";
 import type { UserRole } from "@/generated/prisma/enums";
 
 const ITEMS_PER_PAGE = 10;
 
 export function ClassesTable({ userRole }: { userRole: UserRole }) {
   const t = useTranslations();
+  const { onError } = useTranslatedError();
   const format = useFormatter();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -65,9 +67,7 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
       utils.class.list.invalidate();
       setCancelId(null);
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError,
   });
 
   const canManage = userRole === "ADMIN" || userRole === "SECRETARY";

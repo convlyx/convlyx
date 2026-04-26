@@ -19,9 +19,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useTranslatedError } from "@/hooks/use-translated-error";
 
 export function CreateSchoolDialog() {
   const t = useTranslations();
+  const { onError } = useTranslatedError();
   const [open, setOpen] = useState(false);
   const utils = trpc.useUtils();
 
@@ -42,9 +44,7 @@ export function CreateSchoolDialog() {
       setOpen(false);
       reset();
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError,
   });
 
   function onSubmit(data: CreateSchoolInput) {

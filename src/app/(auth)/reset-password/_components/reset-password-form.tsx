@@ -9,9 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslatedError } from "@/hooks/use-translated-error";
 
 export function ResetPasswordForm() {
   const t = useTranslations("auth");
+  const { onError } = useTranslatedError();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -26,7 +28,7 @@ export function ResetPasswordForm() {
     });
 
     if (error) {
-      toast.error(error.message);
+      onError(error);
       setLoading(false);
       return;
     }

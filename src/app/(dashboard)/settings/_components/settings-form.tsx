@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useTranslatedError } from "@/hooks/use-translated-error";
 import { PushManager } from "@/components/push-manager";
 
 type SettingsFormProps = {
@@ -47,6 +48,7 @@ const tenantFormSchema = z.object({
 export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
   const t = useTranslations("settings");
   const tc = useTranslations("common");
+  const { onError } = useTranslatedError();
 
   const isAdmin = user.role === "ADMIN";
   const isSecretary = user.role === "SECRETARY";
@@ -90,14 +92,14 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
   });
   const updateSchoolMutation = trpc.school.update.useMutation({
     onSuccess: () => toast.success(t("schoolUpdated")),
-    onError: (error) => toast.error(error.message),
+    onError,
   });
 
   // --- Tenant section ---
   const tenantForm = useForm({ resolver: zodResolver(tenantFormSchema), defaultValues: { name: tenant.name } });
   const updateTenantMutation = trpc.school.updateTenant.useMutation({
     onSuccess: () => toast.success(t("tenantUpdated")),
-    onError: (error) => toast.error(error.message),
+    onError,
   });
 
   return (

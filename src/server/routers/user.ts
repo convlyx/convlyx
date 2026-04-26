@@ -139,7 +139,7 @@ export const userRouter = router({
       if (input.id === ctx.user.id) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "user.cannotDeactivateSelf",
+          message: "users.cannotDeactivateSelf",
         });
       }
 
@@ -232,7 +232,7 @@ export const userRouter = router({
       });
 
       if (!student) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "user.notFound" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
       }
 
       const enrollments = student.enrollments;
@@ -280,7 +280,7 @@ export const userRouter = router({
       });
 
       if (!instructor) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "user.notFound" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
       }
 
       const sessions = instructor.instructedSessions;

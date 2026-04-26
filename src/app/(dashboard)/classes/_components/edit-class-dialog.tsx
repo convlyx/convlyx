@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/radix-select";
 import { DatePicker, TimePicker } from "@/components/date-picker";
 import { toast } from "sonner";
+import { useTranslatedError } from "@/hooks/use-translated-error";
 
 type ClassData = {
   id: string;
@@ -65,6 +66,7 @@ export function EditClassDialog({
   onClose: () => void;
 }) {
   const t = useTranslations();
+  const { onError } = useTranslatedError();
   const utils = trpc.useUtils();
 
   const { data: instructors } = trpc.user.list.useQuery({ role: "INSTRUCTOR" });
@@ -102,9 +104,7 @@ export function EditClassDialog({
       utils.class.list.invalidate();
       onClose();
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError,
   });
 
   function onSubmit(data: EditClassFormData) {

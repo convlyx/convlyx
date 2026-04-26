@@ -16,6 +16,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
 import { toast } from "sonner";
+import { useTranslatedError } from "@/hooks/use-translated-error";
 import type { UserRole } from "@/generated/prisma/enums";
 
 const ROLES = ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"] as const;
@@ -29,6 +30,7 @@ type CreateUserDialogProps = {
 
 export function CreateUserDialog({ fixedRole, buttonLabel }: CreateUserDialogProps = {}) {
   const t = useTranslations();
+  const { onError } = useTranslatedError();
   const [open, setOpen] = useState(false);
   const utils = trpc.useUtils();
 
@@ -59,9 +61,7 @@ export function CreateUserDialog({ fixedRole, buttonLabel }: CreateUserDialogPro
       setOpen(false);
       reset({ name: "", email: "", role: defaultRole, schoolId: schools?.length === 1 ? schools[0].id : "" });
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError,
   });
 
   function onSubmit(data: CreateUserInput) {

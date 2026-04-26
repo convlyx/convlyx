@@ -18,6 +18,7 @@ import {
 import { StudentPicker } from "@/components/student-picker";
 import { DatePicker, TimePicker } from "@/components/date-picker";
 import { toast } from "sonner";
+import { useTranslatedError } from "@/hooks/use-translated-error";
 
 const createClassFormSchema = z.object({
   classType: z.enum(["THEORY", "PRACTICAL"]),
@@ -39,6 +40,7 @@ const DAYS_OF_WEEK = [0, 1, 2, 3, 4, 5, 6] as const;
 
 export function CreateClassDialog() {
   const t = useTranslations();
+  const { onError } = useTranslatedError();
   const [open, setOpen] = useState(false);
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>("one-off");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
@@ -98,9 +100,7 @@ export function CreateClassDialog() {
       setSelectedDays([]);
       setSelectedStudents([]);
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError,
   });
 
   function onSubmit(data: CreateClassFormData) {

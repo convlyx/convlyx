@@ -16,12 +16,14 @@ import { EmptyState } from "@/components/empty-state";
 import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap } from "@/lib/constants/class";
 import { Pagination } from "@/components/pagination";
 import { toast } from "sonner";
+import { useTranslatedError } from "@/hooks/use-translated-error";
 import type { UserRole } from "@/generated/prisma/enums";
 
 const ITEMS_PER_PAGE = 10;
 
 export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
   const t = useTranslations();
+  const { onError } = useTranslatedError();
   const format = useFormatter();
   const [view, setView] = useViewMode("/enrollments");
   const utils = trpc.useUtils();
@@ -34,9 +36,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
       utils.enrollment.listByStudent.invalidate();
       utils.class.list.invalidate();
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError,
   });
 
   const [timeTab, setTimeTab] = useState<"current" | "past">("current");

@@ -23,6 +23,7 @@ import { Pagination } from "@/components/pagination";
 import { EditUserDialog } from "./edit-user-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
+import { useTranslatedError } from "@/hooks/use-translated-error";
 import type { UserRole } from "@/generated/prisma/enums";
 
 const ITEMS_PER_PAGE = 10;
@@ -30,6 +31,7 @@ const ROLES = ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"] as const;
 
 export function UsersTable({ userRole }: { userRole: UserRole }) {
   const t = useTranslations();
+  const { onError } = useTranslatedError();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -62,18 +64,14 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
       toast.success(t("toast.userDeactivated"));
       utils.user.list.invalidate();
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError,
   });
   const activateMutation = trpc.user.activate.useMutation({
     onSuccess: () => {
       toast.success(t("toast.userActivated"));
       utils.user.list.invalidate();
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError,
   });
 
   const canDeactivate = userRole === "ADMIN";

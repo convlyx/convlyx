@@ -52,7 +52,7 @@ export const enrollmentRouter = router({
           select: { id: true },
         });
         if (!student) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "user.notFound" });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "users.notFound" });
         }
       }
 

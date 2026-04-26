@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { typeKeys, statusKeys, enrollmentStatusKeys } from "@/lib/constants/class";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
+import { useTranslatedError } from "@/hooks/use-translated-error";
 import { useState } from "react";
 
 export function ClassDetailDialog({
@@ -24,6 +25,7 @@ export function ClassDetailDialog({
   userRole: string;
 }) {
   const t = useTranslations();
+  const { onError } = useTranslatedError();
   const format = useFormatter();
   const utils = trpc.useUtils();
   const [confirmRemoveEnrollmentId, setConfirmRemoveEnrollmentId] = useState<string | null>(null);
@@ -42,9 +44,7 @@ export function ClassDetailDialog({
       utils.class.list.invalidate();
       utils.enrollment.listByStudent.invalidate();
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError,
   });
 
   const cancelEnrollmentMutation = trpc.enrollment.cancel.useMutation({
@@ -54,9 +54,7 @@ export function ClassDetailDialog({
       utils.class.list.invalidate();
       utils.enrollment.listByStudent.invalidate();
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError,
   });
 
   const markAttendanceMutation = trpc.enrollment.markAttendance.useMutation({
@@ -64,9 +62,7 @@ export function ClassDetailDialog({
       toast.success(t("toast.attendanceRecorded"));
       utils.class.getById.invalidate({ id: classId! });
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError,
   });
 
   const instructorUnavailableMutation = trpc.class.instructorUnavailable.useMutation({
@@ -76,9 +72,7 @@ export function ClassDetailDialog({
       utils.class.list.invalidate();
       onClose();
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError,
   });
 
   if (!classDetail) return null;

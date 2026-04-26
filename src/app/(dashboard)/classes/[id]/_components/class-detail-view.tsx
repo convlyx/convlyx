@@ -21,6 +21,7 @@ import {
 import { exportClassAttendancePDF } from "@/lib/pdf-export";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
+import { useTranslatedError } from "@/hooks/use-translated-error";
 import { useState } from "react";
 import type { UserRole } from "@/generated/prisma/enums";
 
@@ -32,6 +33,7 @@ export function ClassDetailView({
   userRole: UserRole;
 }) {
   const t = useTranslations();
+  const { onError } = useTranslatedError();
   const format = useFormatter();
   const utils = trpc.useUtils();
   const [showAddStudent, setShowAddStudent] = useState(false);
@@ -54,7 +56,7 @@ export function ClassDetailView({
       setSelectedStudents([]);
       setShowAddStudent(false);
     },
-    onError: (error) => toast.error(error.message),
+    onError,
   });
 
   const cancelEnrollmentMutation = trpc.enrollment.cancel.useMutation({
@@ -62,7 +64,7 @@ export function ClassDetailView({
       toast.success(t("toast.enrollmentRemoved"));
       utils.class.getById.invalidate({ id: classId });
     },
-    onError: (error) => toast.error(error.message),
+    onError,
   });
 
   const markAttendanceMutation = trpc.enrollment.markAttendance.useMutation({
@@ -70,7 +72,7 @@ export function ClassDetailView({
       toast.success(t("toast.attendanceRecorded"));
       utils.class.getById.invalidate({ id: classId });
     },
-    onError: (error) => toast.error(error.message),
+    onError,
   });
 
   const cancelClassMutation = trpc.class.cancel.useMutation({
@@ -79,7 +81,7 @@ export function ClassDetailView({
       utils.class.getById.invalidate({ id: classId });
       utils.class.list.invalidate();
     },
-    onError: (error) => toast.error(error.message),
+    onError,
   });
 
   const bulkAttendanceMutation = trpc.enrollment.bulkMarkAttendance.useMutation({
@@ -87,7 +89,7 @@ export function ClassDetailView({
       toast.success(t("enrollment.allMarkedPresent"));
       utils.class.getById.invalidate({ id: classId });
     },
-    onError: (error) => toast.error(error.message),
+    onError,
   });
 
   const addNoteMutation = trpc.enrollment.addNote.useMutation({
@@ -97,7 +99,7 @@ export function ClassDetailView({
       setEditingNoteId(null);
       setNoteText("");
     },
-    onError: (error) => toast.error(error.message),
+    onError,
   });
 
   if (isLoading) return <Loading />;

@@ -16,6 +16,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
 import { toast } from "sonner";
+import { useTranslatedError } from "@/hooks/use-translated-error";
 
 const ROLES = ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"] as const;
 
@@ -37,6 +38,7 @@ type EditUserDialogProps = {
 
 export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps) {
   const t = useTranslations();
+  const { onError } = useTranslatedError();
   const utils = trpc.useUtils();
 
   const { data: schools, isLoading: schoolsLoading } = trpc.school.list.useQuery();
@@ -70,9 +72,7 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
       utils.user.list.invalidate();
       onClose();
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError,
   });
 
   function onSubmit(data: UpdateUserInput) {
