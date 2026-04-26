@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
@@ -21,7 +22,10 @@ import {
 import { Loading } from "@/components/loading";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
+import { Pagination } from "@/components/pagination";
 import { typeKeys, statusKeys, statusVariant } from "@/lib/constants/class";
+
+const HISTORY_PER_PAGE = 10;
 
 export function InstructorDetailPage({
   id,
@@ -31,6 +35,7 @@ export function InstructorDetailPage({
   const t = useTranslations();
   const format = useFormatter();
 
+  const [historyPage, setHistoryPage] = useState(1);
   const { data: instructor, isLoading } = trpc.user.instructorProfile.useQuery({ id });
 
   if (isLoading) {
@@ -122,37 +127,47 @@ export function InstructorDetailPage({
         {instructor.instructedSessions.length === 0 ? (
           <EmptyState icon={BookOpen} message={t("users.noHistory")} />
         ) : (
-          <div className="space-y-2">
-            {instructor.instructedSessions.slice(0, 20).map((session) => (
-              <div
-                key={session.id}
-                className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
-              >
-                <div className="flex items-center gap-3">
-                  <Badge variant="secondary">
-                    {t(typeKeys[session.classType])}
-                  </Badge>
-                  <div>
-                    <p className="text-sm font-medium">{session.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {session._count.enrollments}/{session.capacity} {t("nav.students").toLowerCase()}
+          <>
+            <div className="space-y-2">
+              {instructor.instructedSessions
+                .slice((historyPage - 1) * HISTORY_PER_PAGE, historyPage * HISTORY_PER_PAGE)
+                .map((session) => (
+                <div
+                  key={session.id}
+                  className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <Badge variant="secondary">
+                      {t(typeKeys[session.classType])}
+                    </Badge>
+                    <div>
+                      <p className="text-sm font-medium">{session.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {session._count.enrollments}/{session.capacity} {t("nav.students").toLowerCase()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm text-right">
+                      {format.dateTime(new Date(session.startsAt), {
+                        day: "2-digit", month: "2-digit", year: "numeric",
+                        hour: "2-digit", minute: "2-digit",
+                      })}
                     </p>
+                    <Badge variant={statusVariant[session.status] ?? "outline"}>
+                      {t(statusKeys[session.status] ?? session.status)}
+                    </Badge>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <p className="text-sm text-right">
-                    {format.dateTime(new Date(session.startsAt), {
-                      day: "2-digit", month: "2-digit", year: "numeric",
-                      hour: "2-digit", minute: "2-digit",
-                    })}
-                  </p>
-                  <Badge variant={statusVariant[session.status] ?? "outline"}>
-                    {t(statusKeys[session.status] ?? session.status)}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            <Pagination
+              page={historyPage}
+              totalPages={Math.ceil(instructor.instructedSessions.length / HISTORY_PER_PAGE)}
+              total={instructor.instructedSessions.length}
+              onPageChange={setHistoryPage}
+            />
+          </>
         )}
       </div>
     </div>

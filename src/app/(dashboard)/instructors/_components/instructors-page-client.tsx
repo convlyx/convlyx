@@ -16,6 +16,7 @@ import {
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
 import { Pagination } from "@/components/pagination";
+import { CreateUserDialog } from "@/app/(dashboard)/users/_components/create-user-dialog";
 const ITEMS_PER_PAGE = 10;
 
 export function InstructorsPageClient() {
@@ -74,6 +75,7 @@ export function InstructorsPageClient() {
             />
           </div>
           <ViewToggle view={view} onChange={handleViewChange} />
+          <CreateUserDialog fixedRole="INSTRUCTOR" buttonLabel={t("users.createInstructor")} />
         </div>
       </div>
 

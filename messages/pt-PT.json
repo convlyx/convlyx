@@ -178,6 +178,8 @@
     "classHistory": "Histórico de aulas",
     "enrollmentHistory": "Histórico de inscrições",
     "noHistory": "Sem histórico",
+    "createStudent": "Criar aluno",
+    "createInstructor": "Criar instrutor",
     "deactivateTitle": "Desativar utilizador",
     "deactivateMessage": "Tem a certeza que pretende desativar este utilizador?"
   },

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
@@ -22,8 +23,11 @@ import {
 import { Loading } from "@/components/loading";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
+import { Pagination } from "@/components/pagination";
 import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant } from "@/lib/constants/class";
 import { exportStudentProgressPDF } from "@/lib/pdf-export";
+
+const HISTORY_PER_PAGE = 10;
 
 export function StudentDetailPage({
   id,
@@ -33,6 +37,7 @@ export function StudentDetailPage({
   const t = useTranslations();
   const format = useFormatter();
 
+  const [historyPage, setHistoryPage] = useState(1);
   const { data: student, isLoading } = trpc.user.studentProfile.useQuery({ id });
 
   if (isLoading) {
@@ -130,39 +135,49 @@ export function StudentDetailPage({
         {student.enrollments.length === 0 ? (
           <EmptyState icon={BookOpen} message={t("users.noHistory")} />
         ) : (
-          <div className="space-y-2">
-            {student.enrollments.map((enrollment) => (
-              <div
-                key={enrollment.id}
-                className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
-              >
-                <div className="flex items-center gap-3">
-                  <Badge variant="secondary">
-                    {t(typeKeys[enrollment.session.classType])}
-                  </Badge>
-                  <div>
-                    <p className="text-sm font-medium">{enrollment.session.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {enrollment.session.instructor.name}
-                    </p>
+          <>
+            <div className="space-y-2">
+              {student.enrollments
+                .slice((historyPage - 1) * HISTORY_PER_PAGE, historyPage * HISTORY_PER_PAGE)
+                .map((enrollment) => (
+                <div
+                  key={enrollment.id}
+                  className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <Badge variant="secondary">
+                      {t(typeKeys[enrollment.session.classType])}
+                    </Badge>
+                    <div>
+                      <p className="text-sm font-medium">{enrollment.session.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {enrollment.session.instructor.name}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="text-sm">
+                        {format.dateTime(new Date(enrollment.session.startsAt), {
+                          day: "2-digit", month: "2-digit", year: "numeric",
+                          hour: "2-digit", minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                    <Badge variant={enrollmentStatusVariant[enrollment.status] ?? "outline"}>
+                      {t(enrollmentStatusKeys[enrollment.status] ?? enrollment.status)}
+                    </Badge>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className="text-sm">
-                      {format.dateTime(new Date(enrollment.session.startsAt), {
-                        day: "2-digit", month: "2-digit", year: "numeric",
-                        hour: "2-digit", minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                  <Badge variant={enrollmentStatusVariant[enrollment.status] ?? "outline"}>
-                    {t(enrollmentStatusKeys[enrollment.status] ?? enrollment.status)}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            <Pagination
+              page={historyPage}
+              totalPages={Math.ceil(student.enrollments.length / HISTORY_PER_PAGE)}
+              total={student.enrollments.length}
+              onPageChange={setHistoryPage}
+            />
+          </>
         )}
       </div>
     </div>

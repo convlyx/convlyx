@@ -41,6 +41,7 @@ Living document of everything the app can do, organized by area.
 - Phone number field on user creation and editing (optional)
 - Deactivate / activate user (admin only) with confirmation dialog
 - Role-colored avatars (purple=admin, blue=secretary, green=instructor, primary=student)
+- Create user directly from students page ("Criar aluno") and instructors page ("Criar instrutor") with pre-locked role
 
 ## Classes
 - List classes with filters (type, school) and search

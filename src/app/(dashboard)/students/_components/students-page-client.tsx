@@ -16,9 +16,13 @@ import {
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
 import { Pagination } from "@/components/pagination";
+import { CreateUserDialog } from "@/app/(dashboard)/users/_components/create-user-dialog";
 const ITEMS_PER_PAGE = 10;
 
-export function StudentsPageClient() {
+import type { UserRole } from "@/generated/prisma/enums";
+
+export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
+  const canCreate = userRole === "ADMIN" || userRole === "SECRETARY";
   const t = useTranslations();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -74,6 +78,7 @@ export function StudentsPageClient() {
             />
           </div>
           <ViewToggle view={view} onChange={handleViewChange} />
+          {canCreate && <CreateUserDialog fixedRole="STUDENT" buttonLabel={t("users.createStudent")} />}
         </div>
       </div>
 
