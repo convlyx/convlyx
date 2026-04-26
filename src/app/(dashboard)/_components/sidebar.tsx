@@ -32,9 +32,8 @@ export const navItems: NavItem[] = [
   { key: "enrollments", href: "/enrollments", roles: ["STUDENT"], icon: ClipboardList, section: "main" },
   { key: "students", href: "/students", roles: ["ADMIN", "SECRETARY", "INSTRUCTOR"], icon: GraduationCap, section: "main" },
   { key: "instructors", href: "/instructors", roles: ["ADMIN", "SECRETARY"], icon: Users, section: "main" },
-  { key: "schools", href: "/schools", roles: ["ADMIN"], icon: Building2, section: "admin" },
   { key: "users", href: "/users", roles: ["ADMIN", "SECRETARY"], icon: UserCog, section: "admin" },
-  { key: "settings", href: "/settings", roles: ["ADMIN"], icon: Settings, section: "admin" },
+  { key: "settings", href: "/settings", roles: ["ADMIN", "SECRETARY"], icon: Settings, section: "admin" },
 ];
 
 export function Sidebar({ userRole, tenantName }: { userRole: UserRole; tenantName: string }) {

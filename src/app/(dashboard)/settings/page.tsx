@@ -16,7 +16,16 @@ export default async function SettingsPage() {
       name: true,
       email: true,
       role: true,
-      school: { select: { id: true, name: true, address: true, phone: true } },
+      schoolId: true,
+      school: {
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          phone: true,
+          _count: { select: { users: true, sessions: true } },
+        },
+      },
       tenant: { select: { id: true, name: true } },
     },
   });
@@ -36,6 +45,8 @@ export default async function SettingsPage() {
         name: user.school.name,
         address: user.school.address ?? "",
         phone: user.school.phone ?? "",
+        userCount: user.school._count.users,
+        classCount: user.school._count.sessions,
       }}
       tenant={{
         id: user.tenant.id,

@@ -25,6 +25,8 @@ type SettingsFormProps = {
     name: string;
     address: string;
     phone: string;
+    userCount: number;
+    classCount: number;
   };
   tenant: {
     id: string;
@@ -102,12 +104,46 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{t("title")}</h1>
 
-      {/* Section A: Profile */}
+      {/* School info (ADMIN + SECRETARY) */}
+      {canEditSchool && (
+        <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
+          <h2 className="text-lg font-semibold">{t("schoolInfo")}</h2>
+          <form
+            onSubmit={schoolForm.handleSubmit((data) =>
+              updateSchoolMutation.mutate({
+                id: school.id,
+                name: data.name,
+                address: data.address || undefined,
+                phone: data.phone || undefined,
+              })
+            )}
+            className="space-y-3"
+          >
+            <div className="grid gap-2">
+              <Label htmlFor="school-name">{tc("name")}</Label>
+              <Input id="school-name" {...schoolForm.register("name")} />
+              {schoolForm.formState.errors.name && <p className="text-sm text-destructive">{schoolForm.formState.errors.name.message}</p>}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="school-address">{tc("address")}</Label>
+              <Input id="school-address" {...schoolForm.register("address")} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="school-phone">{tc("phone")}</Label>
+              <Input id="school-phone" {...schoolForm.register("phone")} />
+            </div>
+            <Button type="submit" disabled={updateSchoolMutation.isPending}>
+              {updateSchoolMutation.isPending ? tc("loading") : tc("save")}
+            </Button>
+          </form>
+        </section>
+      )}
+
+      {/* Password */}
       <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
-        <h2 className="text-lg font-semibold">{t("profile")}</h2>
+        <h2 className="text-lg font-semibold">{t("changePassword")}</h2>
 
         <form onSubmit={handlePasswordChange} className="space-y-3">
-          <h3 className="text-sm font-medium">{t("changePassword")}</h3>
           <div className="grid gap-2">
             <Label htmlFor="current-password">{t("currentPassword")}</Label>
             <Input
@@ -153,40 +189,6 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
         <PushManager userId={user.id} />
       </section>
 
-      {/* Section B: School (ADMIN + SECRETARY) */}
-      {canEditSchool && (
-        <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
-          <h2 className="text-lg font-semibold">{t("schoolInfo")}</h2>
-          <form
-            onSubmit={schoolForm.handleSubmit((data) =>
-              updateSchoolMutation.mutate({
-                id: school.id,
-                name: data.name,
-                address: data.address || undefined,
-                phone: data.phone || undefined,
-              })
-            )}
-            className="space-y-3"
-          >
-            <div className="grid gap-2">
-              <Label htmlFor="school-name">{tc("name")}</Label>
-              <Input id="school-name" {...schoolForm.register("name")} />
-              {schoolForm.formState.errors.name && <p className="text-sm text-destructive">{schoolForm.formState.errors.name.message}</p>}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="school-address">{tc("address")}</Label>
-              <Input id="school-address" {...schoolForm.register("address")} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="school-phone">{tc("phone")}</Label>
-              <Input id="school-phone" {...schoolForm.register("phone")} />
-            </div>
-            <Button type="submit" disabled={updateSchoolMutation.isPending}>
-              {updateSchoolMutation.isPending ? tc("loading") : tc("save")}
-            </Button>
-          </form>
-        </section>
-      )}
 
       {/* Section C: Tenant (ADMIN only) */}
       {isAdmin && (
