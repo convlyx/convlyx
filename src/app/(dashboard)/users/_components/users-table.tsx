@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { trpc } from "@/lib/trpc";
@@ -19,11 +19,13 @@ import { Loading } from "@/components/loading";
 import { EmptyState } from "@/components/empty-state";
 import { UserAvatar } from "@/components/user-avatar";
 import { roleColorMap } from "@/lib/constants/class";
+import { Pagination } from "@/components/pagination";
 import { EditUserDialog } from "./edit-user-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 import type { UserRole } from "@/generated/prisma/enums";
 
+const ITEMS_PER_PAGE = 10;
 const ROLES = ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"] as const;
 
 export function UsersTable({ userRole }: { userRole: UserRole }) {
@@ -46,6 +48,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
   const [view, setView] = useViewMode("/users", initialView);
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [roleFilter, setRoleFilter] = useState<string>(searchParams.get("role") ?? "ALL");
+  const [page, setPage] = useState(1);
   const [editUser, setEditUser] = useState<typeof filteredUsers[number] | null>(null);
   const [deactivateUserId, setDeactivateUserId] = useState<string | null>(null);
 
@@ -78,6 +81,11 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
   const filteredUsers = users?.filter((user) =>
     user.name.toLowerCase().includes(search.toLowerCase())
   ) ?? [];
+
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const paginatedUsers = filteredUsers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  useEffect(() => setPage(1), [search, roleFilter]);
 
   function handleSearchChange(value: string) {
     setSearch(value);
@@ -128,7 +136,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
         <EmptyState icon={Users} message={t("users.noUsers")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
-          {filteredUsers.map((user) => (
+          {paginatedUsers.map((user) => (
             <div key={user.id} className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all">
               <div className="flex items-center gap-3">
                 <UserAvatar name={user.name} className={`h-10 w-10 sm:h-11 sm:w-11 shrink-0 ${roleColorMap[user.role] ?? "bg-muted text-foreground"}`} />
@@ -191,7 +199,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
+              {paginatedUsers.map((user) => (
                 <TableRow key={user.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
@@ -224,6 +232,13 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
           </Table>
         </div>
       )}
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={filteredUsers.length}
+        onPageChange={setPage}
+      />
 
       {editUser && (
         <EditUserDialog

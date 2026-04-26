@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import { trpc } from "@/lib/trpc";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -14,8 +14,11 @@ import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
 import { EmptyState } from "@/components/empty-state";
 import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap } from "@/lib/constants/class";
+import { Pagination } from "@/components/pagination";
 import { toast } from "sonner";
 import type { UserRole } from "@/generated/prisma/enums";
+
+const ITEMS_PER_PAGE = 10;
 
 export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
   const t = useTranslations();
@@ -37,6 +40,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
   });
 
   const [timeTab, setTimeTab] = useState<"current" | "past">("current");
+  const [page, setPage] = useState(1);
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
 
   const canCancel = (enrollment: { status: string; session: { status: string } }) =>
@@ -49,6 +53,11 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
     }
     return e.status !== "ENROLLED" || new Date(e.session.startsAt as unknown as string) < now;
   }) ?? [];
+
+  const totalPages = Math.ceil(filteredEnrollments.length / ITEMS_PER_PAGE);
+  const paginatedEnrollments = filteredEnrollments.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  useEffect(() => setPage(1), [timeTab]);
 
   return (
     <div className="space-y-4">
@@ -81,7 +90,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
         <EmptyState icon={ClipboardList} message={t("common.noResults")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
-          {filteredEnrollments.map((enrollment) => (
+          {paginatedEnrollments.map((enrollment) => (
             <div
               key={enrollment.id}
               className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
@@ -140,7 +149,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredEnrollments.map((enrollment) => (
+              {paginatedEnrollments.map((enrollment) => (
                 <TableRow key={enrollment.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">{enrollment.session.title}</TableCell>
                   <TableCell><Badge variant="secondary">{t(typeKeys[enrollment.session.classType])}</Badge></TableCell>
@@ -170,6 +179,13 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
           </Table>
         </div>
       )}
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={filteredEnrollments.length}
+        onPageChange={setPage}
+      />
 
       <ConfirmDialog
         open={confirmCancelId !== null}

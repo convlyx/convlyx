@@ -3,6 +3,7 @@
     "appName": "Convlyx",
     "appDescription": "Gestão de escolas de condução",
     "exportPDF": "Exportar PDF",
+    "page": "Página",
     "loading": "A carregar...",
     "save": "Guardar",
     "cancel": "Cancelar",
@@ -372,6 +373,9 @@
     "attendanceRecorded": "Presença registada",
     "instructorUnavailable": "Aula cancelada. Indisponibilidade registada.",
     "studentEnrolled": "Aluno inscrito com sucesso"
+  },
+  "pagination": {
+    "showing": "A mostrar {from}-{to} de {total}"
   },
   "notFound": {
     "title": "Página não encontrada",

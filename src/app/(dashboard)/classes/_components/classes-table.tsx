@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { trpc } from "@/lib/trpc";
@@ -22,9 +22,12 @@ import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
 import { EmptyState } from "@/components/empty-state";
 import { typeKeys, statusKeys, statusVariant, classTypeColorMap } from "@/lib/constants/class";
+import { Pagination } from "@/components/pagination";
 import { EditClassDialog } from "./edit-class-dialog";
 import { toast } from "sonner";
 import type { UserRole } from "@/generated/prisma/enums";
+
+const ITEMS_PER_PAGE = 10;
 
 export function ClassesTable({ userRole }: { userRole: UserRole }) {
   const t = useTranslations();
@@ -47,6 +50,7 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
   const [view, setView] = useViewMode("/classes", initialView);
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [typeFilter, setTypeFilter] = useState<string>(searchParams.get("type") ?? "ALL");
+  const [page, setPage] = useState(1);
   const [cancelId, setCancelId] = useState<string | null>(null);
   const [editClass, setEditClass] = useState<typeof filteredClasses[number] | null>(null);
 
@@ -77,6 +81,11 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
       : new Date(cls.endsAt as unknown as string) < now || cls.status === "COMPLETED" || cls.status === "CANCELLED";
     return matchesSearch && matchesTime;
   }) ?? [];
+
+  const totalPages = Math.ceil(filteredClasses.length / ITEMS_PER_PAGE);
+  const paginatedClasses = filteredClasses.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  useEffect(() => setPage(1), [search, typeFilter, timeTab]);
 
   function handleSearchChange(value: string) {
     setSearch(value);
@@ -149,7 +158,7 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
         <EmptyState icon={BookOpen} message={t("classes.noClasses")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
-          {filteredClasses.map((cls) => {
+          {paginatedClasses.map((cls) => {
             const cardClass = `rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all block ${canManage ? "hover:border-primary/20 group" : ""}`;
             const cardContent = (
                 <div className="flex items-start gap-3">
@@ -222,7 +231,7 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredClasses.map((cls) => (
+              {paginatedClasses.map((cls) => (
                 <TableRow key={cls.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell>
                     {canManage ? (
@@ -256,6 +265,13 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
           </Table>
         </div>
       )}
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={filteredClasses.length}
+        onPageChange={setPage}
+      />
 
       <Dialog open={cancelId !== null} onOpenChange={(val) => { if (!val) setCancelId(null); }}>
         <DialogContent>

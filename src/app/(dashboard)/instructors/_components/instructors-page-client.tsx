@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { trpc } from "@/lib/trpc";
@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/table";
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
+import { Pagination } from "@/components/pagination";
+const ITEMS_PER_PAGE = 10;
+
 export function InstructorsPageClient() {
   const t = useTranslations();
   const searchParams = useSearchParams();
@@ -34,11 +37,17 @@ export function InstructorsPageClient() {
   const initialView = (searchParams.get("view") as "cards" | "table") ?? undefined;
   const [view, setView] = useViewMode("/instructors", initialView);
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
+  const [page, setPage] = useState(1);
   const { data: users, isLoading } = trpc.user.list.useQuery({ role: "INSTRUCTOR" });
 
   const filteredUsers = users?.filter((user) =>
     user.name.toLowerCase().includes(search.toLowerCase())
   ) ?? [];
+
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const paginatedUsers = filteredUsers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  useEffect(() => setPage(1), [search]);
 
   function handleSearchChange(value: string) {
     setSearch(value);
@@ -74,7 +83,7 @@ export function InstructorsPageClient() {
         <EmptyState icon={Users} message={t("common.noResults")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
-          {filteredUsers.map((instructor) => (
+          {paginatedUsers.map((instructor) => (
             <Link
               key={instructor.id}
               href={`/instructors/${instructor.id}`}
@@ -111,7 +120,7 @@ export function InstructorsPageClient() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((instructor) => (
+              {paginatedUsers.map((instructor) => (
                 <TableRow key={instructor.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell>
                     <Link href={`/instructors/${instructor.id}`} className="font-medium text-primary hover:underline">
@@ -131,6 +140,13 @@ export function InstructorsPageClient() {
           </Table>
         </div>
       )}
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={filteredUsers.length}
+        onPageChange={setPage}
+      />
     </div>
   );
 }
