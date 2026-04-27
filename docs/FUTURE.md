@@ -22,6 +22,7 @@ Living document of things to build, improve, or investigate post-MVP.
 - [ ] Push notifications via native push (APNs/FCM)
 
 ## Multi-Tenancy
+- [ ] Same email across multiple tenants — decouple `User.id` from Supabase `auth.id` so one auth account can have a User row per tenant. Login resolves the correct User based on the subdomain. Currently Supabase enforces email uniqueness in `auth.users`, blocking same-email admins across schools.
 - [ ] Multi-school users — instructor/secretary working across schools in same tenant
 - [ ] DB-per-tenant migration when scaling beyond free tier
 - [ ] Per-tenant accent color / branding customization
