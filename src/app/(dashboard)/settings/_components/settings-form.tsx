@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { PushManager } from "@/components/push-manager";
 import { InstallQR } from "./install-qr";
+import { Building2, Lock, Bell, Users2 } from "lucide-react";
 
 type SettingsFormProps = {
   user: {
@@ -111,7 +112,10 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
       {/* School info (ADMIN + SECRETARY) */}
       {canEditSchool && (
         <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
-          <h2 className="text-lg font-semibold">{t("schoolInfo")}</h2>
+          <div className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">{t("schoolInfo")}</h2>
+          </div>
           <form
             onSubmit={schoolForm.handleSubmit((data) =>
               updateSchoolMutation.mutate({
@@ -148,7 +152,10 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
 
       {/* Password */}
       <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
-        <h2 className="text-lg font-semibold">{t("changePassword")}</h2>
+        <div className="flex items-center gap-2">
+          <Lock className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold">{t("changePassword")}</h2>
+        </div>
 
         <form onSubmit={handlePasswordChange} className="space-y-3">
           <div className="grid gap-2">
@@ -191,7 +198,10 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
 
       {/* Push notifications */}
       <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
-        <h2 className="text-lg font-semibold">{t("pushNotifications")}</h2>
+        <div className="flex items-center gap-2">
+          <Bell className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold">{t("pushNotifications")}</h2>
+        </div>
         <p className="text-sm text-muted-foreground">{t("pushDescription")}</p>
         <PushManager userId={user.id} />
       </section>
@@ -200,7 +210,10 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
       {/* Section C: Tenant (ADMIN only) */}
       {isAdmin && (
         <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
-          <h2 className="text-lg font-semibold">{t("tenantInfo")}</h2>
+          <div className="flex items-center gap-2">
+            <Users2 className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">{t("tenantInfo")}</h2>
+          </div>
           <form
             onSubmit={tenantForm.handleSubmit((data) =>
               updateTenantMutation.mutate({ name: data.name })
