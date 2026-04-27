@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -40,6 +41,13 @@ export function Sidebar({ userRole, tenantName }: { userRole: UserRole; tenantNa
   const t = useTranslations();
   const tNav = useTranslations("nav");
   const pathname = usePathname();
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPendingPath(null);
+  }, [pathname]);
+
+  const activePath = pendingPath ?? pathname;
 
   const visibleItems = navItems.filter((item) =>
     item.roles.includes(userRole)
@@ -60,14 +68,15 @@ export function Sidebar({ userRole, tenantName }: { userRole: UserRole; tenantNa
         {mainItems.map((item) => {
           const isActive =
             item.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(item.href);
+              ? activePath === "/"
+              : activePath.startsWith(item.href);
           const Icon = item.icon;
 
           return (
             <Link
               key={item.key}
               href={item.href}
+              onClick={() => setPendingPath(item.href)}
               className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-sidebar-primary"
@@ -84,13 +93,14 @@ export function Sidebar({ userRole, tenantName }: { userRole: UserRole; tenantNa
           <>
             <div className="my-3 border-t border-sidebar-border" />
             {adminItems.map((item) => {
-              const isActive = pathname.startsWith(item.href);
+              const isActive = activePath.startsWith(item.href);
               const Icon = item.icon;
 
               return (
                 <Link
                   key={item.key}
                   href={item.href}
+                  onClick={() => setPendingPath(item.href)}
                   className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-sidebar-primary"

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -49,6 +50,13 @@ export function MobileLayout({
   const tNav = useTranslations("nav");
   const pathname = usePathname();
   const router = useRouter();
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPendingPath(null);
+  }, [pathname]);
+
+  const activePath = pendingPath ?? pathname;
 
   const visibleTabs = tabs.filter((tab) => tab.roles.includes(userRole));
 
@@ -95,13 +103,14 @@ export function MobileLayout({
             const Icon = tab.icon;
             const isActive =
               tab.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(tab.href);
+                ? activePath === "/"
+                : activePath.startsWith(tab.href);
 
             return (
               <Link
                 key={tab.key}
                 href={tab.href}
+                onClick={() => setPendingPath(tab.href)}
                 className={`flex flex-col items-center justify-center gap-0.5 w-full h-full transition-colors ${
                   isActive
                     ? "text-primary"
