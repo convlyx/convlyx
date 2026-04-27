@@ -24,6 +24,7 @@ import { EmptyState } from "@/components/empty-state";
 import { typeKeys, statusKeys, statusVariant, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
 import { Pagination } from "@/components/pagination";
 import { EditClassDialog } from "./edit-class-dialog";
+import { CreateClassDialog } from "./create-class-dialog";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import type { UserRole } from "@/generated/prisma/enums";
@@ -217,7 +218,10 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
             </Select>
           )}
         </div>
-        <ViewToggle view={view} onChange={handleViewChange} />
+        <div className="flex items-center gap-2">
+          <ViewToggle view={view} onChange={handleViewChange} />
+          {canManage && <CreateClassDialog />}
+        </div>
       </div>
 
       {isLoading ? (
