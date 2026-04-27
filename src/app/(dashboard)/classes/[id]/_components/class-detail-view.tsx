@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { StudentPicker } from "@/components/student-picker";
 import {
-  typeKeys, statusKeys, statusVariant, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap,
+  typeKeys, statusKeys, statusVariant, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap, classTypeBadgeClass,
 } from "@/lib/constants/class";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -147,7 +147,7 @@ export function ClassDetailView({
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-bold">{classDetail.title}</h1>
-                <Badge variant="secondary">{t(typeKeys[classDetail.classType])}</Badge>
+                <Badge className={classTypeBadgeClass[classDetail.classType]}>{t(typeKeys[classDetail.classType])}</Badge>
                 <Badge variant={statusVariant[classDetail.status] ?? "outline"}>
                   {t(statusKeys[classDetail.status])}
                 </Badge>
@@ -155,7 +155,9 @@ export function ClassDetailView({
               <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 shrink-0" />
-                  {classDetail.instructor.name}
+                  <Link href={`/instructors/${classDetail.instructor.id}`} className="hover:underline hover:text-foreground transition-colors">
+                    {classDetail.instructor.name}
+                  </Link>
                 </div>
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 shrink-0" />
@@ -281,7 +283,9 @@ export function ClassDetailView({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <p className="text-sm font-semibold truncate">{enrollment.student.name}</p>
+                    <Link href={`/students/${enrollment.student.id}`} className="text-sm font-semibold truncate hover:underline hover:text-primary transition-colors">
+                      {enrollment.student.name}
+                    </Link>
                     <Badge variant={enrollmentStatusVariant[enrollment.status] ?? "outline"}>
                       {t(enrollmentStatusKeys[enrollment.status] ?? enrollment.status)}
                     </Badge>

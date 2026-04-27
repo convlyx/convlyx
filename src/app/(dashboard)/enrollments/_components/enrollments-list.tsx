@@ -13,7 +13,7 @@ import {
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
 import { EmptyState } from "@/components/empty-state";
-import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap } from "@/lib/constants/class";
+import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
 import { Pagination } from "@/components/pagination";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
@@ -102,7 +102,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <p className="font-medium truncate">{enrollment.session.title}</p>
-                    <Badge variant="secondary">{t(typeKeys[enrollment.session.classType])}</Badge>
+                    <Badge className={classTypeBadgeClass[enrollment.session.classType]}>{t(typeKeys[enrollment.session.classType])}</Badge>
                     <Badge variant={enrollmentStatusVariant[enrollment.status] ?? "outline"}>
                       {t(enrollmentStatusKeys[enrollment.status] ?? enrollment.status)}
                     </Badge>
@@ -152,7 +152,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
               {paginatedEnrollments.map((enrollment) => (
                 <TableRow key={enrollment.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">{enrollment.session.title}</TableCell>
-                  <TableCell><Badge variant="secondary">{t(typeKeys[enrollment.session.classType])}</Badge></TableCell>
+                  <TableCell><Badge className={classTypeBadgeClass[enrollment.session.classType]}>{t(typeKeys[enrollment.session.classType])}</Badge></TableCell>
                   <TableCell>{enrollment.session.instructor.name}</TableCell>
                   <TableCell>
                     {format.dateTime(new Date(enrollment.session.startsAt), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}

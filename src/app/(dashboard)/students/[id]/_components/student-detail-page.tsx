@@ -24,7 +24,7 @@ import { Loading } from "@/components/loading";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
-import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant } from "@/lib/constants/class";
+import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeBadgeClass } from "@/lib/constants/class";
 import { exportStudentProgressPDF } from "@/lib/pdf-export";
 
 const HISTORY_PER_PAGE = 10;
@@ -140,12 +140,13 @@ export function StudentDetailPage({
               {student.enrollments
                 .slice((historyPage - 1) * HISTORY_PER_PAGE, historyPage * HISTORY_PER_PAGE)
                 .map((enrollment) => (
-                <div
+                <Link
                   key={enrollment.id}
+                  href={`/classes/${enrollment.session.id}`}
                   className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
                 >
                   <div className="flex items-center gap-3">
-                    <Badge variant="secondary">
+                    <Badge className={classTypeBadgeClass[enrollment.session.classType]}>
                       {t(typeKeys[enrollment.session.classType])}
                     </Badge>
                     <div>
@@ -168,7 +169,7 @@ export function StudentDetailPage({
                       {t(enrollmentStatusKeys[enrollment.status] ?? enrollment.status)}
                     </Badge>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
             <Pagination

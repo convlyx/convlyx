@@ -25,6 +25,7 @@
     "status": "Estado",
     "active": "Ativo",
     "inactive": "Inativo",
+    "all": "Todos",
     "name": "Nome",
     "address": "Morada",
     "phone": "Telefone",
@@ -178,8 +179,8 @@
     "classHistory": "Histórico de aulas",
     "enrollmentHistory": "Histórico de inscrições",
     "noHistory": "Sem histórico",
-    "createStudent": "Criar aluno",
-    "createInstructor": "Criar instrutor",
+    "createStudent": "Adicionar aluno",
+    "createInstructor": "Adicionar instrutor",
     "deactivateTitle": "Desativar utilizador",
     "deactivateMessage": "Tem a certeza que pretende desativar este utilizador?"
   },

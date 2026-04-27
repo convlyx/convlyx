@@ -8,6 +8,9 @@ import Link from "next/link";
 import { Users, ChevronRight, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/radix-select";
 import { EmptyState } from "@/components/empty-state";
 import { UserAvatar } from "@/components/user-avatar";
 import {
@@ -38,8 +41,14 @@ export function InstructorsPageClient() {
   const initialView = (searchParams.get("view") as "cards" | "table") ?? undefined;
   const [view, setView] = useViewMode("/instructors", initialView);
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
+  const [statusFilter, setStatusFilter] = useState<"ACTIVE" | "INACTIVE" | "ALL">(
+    (searchParams.get("status") as "ACTIVE" | "INACTIVE" | "ALL") ?? "ACTIVE"
+  );
   const [page, setPage] = useState(1);
-  const { data: users, isLoading } = trpc.user.list.useQuery({ role: "INSTRUCTOR" });
+  const { data: users, isLoading } = trpc.user.list.useQuery({
+    role: "INSTRUCTOR",
+    ...(statusFilter !== "ALL" && { status: statusFilter }),
+  });
 
   const filteredUsers = users?.filter((user) =>
     user.name.toLowerCase().includes(search.toLowerCase())
@@ -48,11 +57,16 @@ export function InstructorsPageClient() {
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
   const paginatedUsers = filteredUsers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-  useEffect(() => setPage(1), [search]);
+  useEffect(() => setPage(1), [search, statusFilter]);
 
   function handleSearchChange(value: string) {
     setSearch(value);
     updateParams("search", value);
+  }
+
+  function handleStatusChange(value: "ACTIVE" | "INACTIVE" | "ALL") {
+    setStatusFilter(value);
+    updateParams("status", value === "ACTIVE" ? "" : value);
   }
 
   function handleViewChange(mode: "cards" | "table") {
@@ -74,6 +88,16 @@ export function InstructorsPageClient() {
               className="pl-9 w-full sm:w-[200px]"
             />
           </div>
+          <Select value={statusFilter} onValueChange={handleStatusChange}>
+            <SelectTrigger className="w-[130px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ACTIVE">{t("common.active")}</SelectItem>
+              <SelectItem value="INACTIVE">{t("common.inactive")}</SelectItem>
+              <SelectItem value="ALL">{t("common.all")}</SelectItem>
+            </SelectContent>
+          </Select>
           <ViewToggle view={view} onChange={handleViewChange} />
           <CreateUserDialog fixedRole="INSTRUCTOR" buttonLabel={t("users.createInstructor")} />
         </div>

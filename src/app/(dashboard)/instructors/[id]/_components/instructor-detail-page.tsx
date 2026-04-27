@@ -23,7 +23,7 @@ import { Loading } from "@/components/loading";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
-import { typeKeys, statusKeys, statusVariant } from "@/lib/constants/class";
+import { typeKeys, statusKeys, statusVariant, classTypeBadgeClass } from "@/lib/constants/class";
 
 const HISTORY_PER_PAGE = 10;
 
@@ -132,12 +132,13 @@ export function InstructorDetailPage({
               {instructor.instructedSessions
                 .slice((historyPage - 1) * HISTORY_PER_PAGE, historyPage * HISTORY_PER_PAGE)
                 .map((session) => (
-                <div
+                <Link
                   key={session.id}
+                  href={`/classes/${session.id}`}
                   className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
                 >
                   <div className="flex items-center gap-3">
-                    <Badge variant="secondary">
+                    <Badge className={classTypeBadgeClass[session.classType]}>
                       {t(typeKeys[session.classType])}
                     </Badge>
                     <div>
@@ -158,7 +159,7 @@ export function InstructorDetailPage({
                       {t(statusKeys[session.status] ?? session.status)}
                     </Badge>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
             <Pagination

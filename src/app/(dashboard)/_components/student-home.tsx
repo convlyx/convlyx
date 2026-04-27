@@ -19,7 +19,7 @@ import {
   XCircle,
   Sparkles,
 } from "lucide-react";
-import { typeKeys, classTypeColorMap } from "@/lib/constants/class";
+import { typeKeys, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 
@@ -210,7 +210,7 @@ export function StudentHome({ userName }: { userName: string }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-semibold truncate">{enrollment.session.title}</p>
-                    <Badge variant="secondary" className="text-[10px] shrink-0">
+                    <Badge className={`text-[10px] shrink-0 ${classTypeBadgeClass[enrollment.session.classType]}`}>
                       {t(typeKeys[enrollment.session.classType])}
                     </Badge>
                   </div>

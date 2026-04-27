@@ -17,7 +17,7 @@ import {
   Timer,
   Coffee,
 } from "lucide-react";
-import { typeKeys, statusKeys, statusVariant, classTypeColorMap } from "@/lib/constants/class";
+import { typeKeys, statusKeys, statusVariant, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
 
 export function InstructorHome({ userName }: { userName: string }) {
   const t = useTranslations();
@@ -224,7 +224,7 @@ export function InstructorHome({ userName }: { userName: string }) {
                       <p className={`text-sm font-semibold truncate ${isCurrent ? "text-primary" : ""}`}>{cls.title}</p>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                      <Badge className={`text-[10px] px-1.5 py-0 ${classTypeBadgeClass[cls.classType]}`}>
                         {t(typeKeys[cls.classType])}
                       </Badge>
                       <span className="text-xs text-muted-foreground">

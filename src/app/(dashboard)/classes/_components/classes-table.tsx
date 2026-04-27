@@ -21,7 +21,7 @@ import {
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
 import { EmptyState } from "@/components/empty-state";
-import { typeKeys, statusKeys, statusVariant, classTypeColorMap } from "@/lib/constants/class";
+import { typeKeys, statusKeys, statusVariant, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
 import { Pagination } from "@/components/pagination";
 import { EditClassDialog } from "./edit-class-dialog";
 import { toast } from "sonner";
@@ -168,7 +168,7 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <p className={`font-medium truncate ${canManage ? "group-hover:text-primary transition-colors" : ""}`}>{cls.title}</p>
-                      <Badge variant="secondary">{t(typeKeys[cls.classType])}</Badge>
+                      <Badge className={classTypeBadgeClass[cls.classType]}>{t(typeKeys[cls.classType])}</Badge>
                       <Badge variant={statusVariant[cls.status] ?? "outline"}>{t(statusKeys[cls.status])}</Badge>
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground mt-0.5">
@@ -240,7 +240,7 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
                       <span className="font-medium">{cls.title}</span>
                     )}
                   </TableCell>
-                  <TableCell><Badge variant="secondary">{t(typeKeys[cls.classType])}</Badge></TableCell>
+                  <TableCell><Badge className={classTypeBadgeClass[cls.classType]}>{t(typeKeys[cls.classType])}</Badge></TableCell>
                   <TableCell>{cls.instructor.name}</TableCell>
                   <TableCell>
                     {format.dateTime(new Date(cls.startsAt), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}

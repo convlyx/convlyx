@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { typeKeys, statusKeys, enrollmentStatusKeys } from "@/lib/constants/class";
+import { typeKeys, statusKeys, enrollmentStatusKeys, classTypeBadgeClass } from "@/lib/constants/class";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
@@ -98,7 +98,7 @@ export function ClassDetailDialog({
 
         <div className="grid gap-3 text-sm">
           <div className="flex items-center gap-2">
-            <Badge variant="secondary">
+            <Badge className={classTypeBadgeClass[classDetail.classType]}>
               {t(typeKeys[classDetail.classType])}
             </Badge>
             <Badge variant={classDetail.status === "CANCELLED" ? "destructive" : "outline"}>
@@ -233,9 +233,11 @@ export function ClassDetailDialog({
               {instructorUnavailableMutation.isPending ? t("common.loading") : t("classes.markUnavailable")}
             </Button>
           )}
-          <Link href={`/classes/${classDetail.id}`} className={buttonVariants({ variant: "outline" })}>
-            {t("classes.viewDetails")}
-          </Link>
+          {userRole !== "STUDENT" && (
+            <Link href={`/classes/${classDetail.id}`} className={buttonVariants({ variant: "outline" })}>
+              {t("classes.viewDetails")}
+            </Link>
+          )}
           <Button variant="outline" onClick={onClose}>
             {t("common.back")}
           </Button>

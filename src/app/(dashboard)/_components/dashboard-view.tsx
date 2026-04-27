@@ -8,7 +8,7 @@ import { Loading } from "@/components/loading";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state";
 import { StatCard } from "@/components/stat-card";
-import { typeKeys, classTypeColorMap } from "@/lib/constants/class";
+import { typeKeys, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
 import {
   CalendarDays,
   Clock,
@@ -149,7 +149,7 @@ export function DashboardView({
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="font-medium group-hover:text-primary transition-colors">{cls.title}</p>
-                        <Badge variant="secondary">{t(typeKeys[cls.classType])}</Badge>
+                        <Badge className={classTypeBadgeClass[cls.classType]}>{t(typeKeys[cls.classType])}</Badge>
                       </div>
                       <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
                         <span className="flex items-center gap-1">

@@ -49,3 +49,9 @@ export const classTypeColorMap: Record<string, string> = {
   THEORY: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
   PRACTICAL: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400",
 };
+
+// Class type badge classes (for inline badges)
+export const classTypeBadgeClass: Record<string, string> = {
+  THEORY: "bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800",
+  PRACTICAL: "bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800",
+};

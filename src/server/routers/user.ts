@@ -18,6 +18,7 @@ export const userRouter = router({
       z.object({
         schoolId: z.string().uuid().optional(),
         role: z.enum(["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"]).optional(),
+        status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
       }).optional()
     )
     .query(async ({ ctx, input }) => {
@@ -26,6 +27,7 @@ export const userRouter = router({
           tenantId: ctx.tenantId,
           ...(input?.schoolId && { schoolId: input.schoolId }),
           ...(input?.role && { role: input.role }),
+          ...(input?.status && { status: input.status }),
         },
         select: {
           id: true,
