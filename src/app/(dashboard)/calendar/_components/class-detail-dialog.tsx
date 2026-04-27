@@ -80,7 +80,8 @@ export function ClassDetailDialog({
 
   const isFull = classDetail.enrollments.filter((e) => e.status === "ENROLLED").length >= classDetail.capacity;
   const canEnroll = userRole === "STUDENT" && classDetail.status === "SCHEDULED" && !isFull;
-  const canManageAttendance = ["ADMIN", "SECRETARY", "INSTRUCTOR"].includes(userRole);
+  const canMarkAttendance = ["ADMIN", "SECRETARY", "INSTRUCTOR"].includes(userRole)
+    && (classDetail.status === "IN_PROGRESS" || classDetail.status === "COMPLETED");
   const canManage = ["ADMIN", "SECRETARY"].includes(userRole);
   const isInstructor = userRole === "INSTRUCTOR";
 
@@ -154,7 +155,7 @@ export function ClassDetailDialog({
                     </div>
                     {enrollment.status === "ENROLLED" && (
                       <div className="flex gap-1">
-                        {canManageAttendance && (
+                        {canMarkAttendance && (
                           <>
                             <Button
                               size="sm"

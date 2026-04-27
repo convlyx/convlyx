@@ -35,7 +35,7 @@ export const enrollmentRouter = router({
           status: true,
           _count: {
             select: {
-              enrollments: { where: { status: "ENROLLED" } },
+              enrollments: true,
             },
           },
         },
@@ -86,7 +86,7 @@ export const enrollmentRouter = router({
         select: { id: true, status: true },
       });
 
-      if (existing?.status === "ENROLLED" || existing?.status === "ATTENDED") {
+      if (existing) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "enrollment.alreadyEnrolled",
@@ -94,30 +94,6 @@ export const enrollmentRouter = router({
       }
 
       const enrollStatus = session.status === "COMPLETED" ? "ATTENDED" : "ENROLLED";
-
-      // If previously cancelled, re-enroll
-      if (existing) {
-        const result = await ctx.db.enrollment.update({
-          where: { id: existing.id },
-          data: { status: enrollStatus },
-          select: { id: true, status: true },
-        });
-
-        // Notify student if enrolled by someone else
-        if (studentId !== ctx.user.id) {
-          createNotification({
-            db: ctx.db,
-            tenantId: ctx.tenantId,
-            userId: studentId,
-            type: "enrollment.created",
-            titleKey: "notifications.enrollmentWasConfirmed",
-            messageKey: "notifications.classAssigned",
-            params: { title: session.title, time: formatClassTime(new Date(session.startsAt)) },
-          }).catch(() => {});
-        }
-
-        return result;
-      }
 
       const result = await ctx.db.enrollment.create({
         data: {
@@ -181,13 +157,11 @@ export const enrollmentRouter = router({
         });
       }
 
-      const result = await ctx.db.enrollment.update({
+      await ctx.db.enrollment.delete({
         where: { id: input.enrollmentId },
-        data: { status: "CANCELLED" },
-        select: { id: true, status: true },
       });
 
-      // Notify student if cancelled by admin/secretary (not self-cancellation)
+      // Notify student if removed by admin/secretary (not self-cancellation)
       if (enrollment.studentId !== ctx.user.id) {
         createNotification({
           db: ctx.db,
@@ -200,7 +174,7 @@ export const enrollmentRouter = router({
         }).catch(() => {});
       }
 
-      return result;
+      return { success: true };
     }),
 
   /** Mark attendance (instructor, secretary, admin) */

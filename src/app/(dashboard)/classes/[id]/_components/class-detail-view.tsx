@@ -50,7 +50,7 @@ export function ClassDetailView({
     { retry: false }
   );
   const staffRole = userRole === "ADMIN" || userRole === "SECRETARY";
-  const { data: allStudents } = trpc.user.list.useQuery({ role: "STUDENT" }, { enabled: staffRole });
+  const { data: allStudents } = trpc.user.list.useQuery({ role: "STUDENT", status: "ACTIVE" }, { enabled: staffRole });
 
   const enrollMutation = trpc.enrollment.enroll.useMutation({
     onSuccess: () => {
@@ -123,12 +123,12 @@ export function ClassDetailView({
   const enrolledStudents = classDetail.enrollments.filter((e) => e.status === "ENROLLED");
   const attendedStudents = classDetail.enrollments.filter((e) => e.status === "ATTENDED");
   const noShowStudents = classDetail.enrollments.filter((e) => e.status === "NO_SHOW");
-  const cancelledStudents = classDetail.enrollments.filter((e) => e.status === "CANCELLED");
-  const spotsLeft = classDetail.capacity - enrolledStudents.length;
+  const spotsLeft = classDetail.capacity - classDetail.enrollments.length;
   const enrolledStudentIds = new Set(classDetail.enrollments.map((e) => e.student.id));
   const availableStudents = allStudents?.filter((s) => !enrolledStudentIds.has(s.id)) ?? [];
 
   const isActive = classDetail.status === "SCHEDULED" || classDetail.status === "IN_PROGRESS";
+  const canMarkAttendance = classDetail.status === "IN_PROGRESS" || classDetail.status === "COMPLETED";
   const isStaff = userRole === "ADMIN" || userRole === "SECRETARY";
   const canAddStudent = isStaff && classDetail.status !== "CANCELLED";
 
@@ -184,15 +184,17 @@ export function ClassDetailView({
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => exportClassAttendancePDF(classDetail)}
-            >
-              <FileDown className="h-3.5 w-3.5" />
-              {t("common.exportPDF")}
-            </Button>
+            {classDetail.status === "COMPLETED" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => exportClassAttendancePDF(classDetail)}
+              >
+                <FileDown className="h-3.5 w-3.5" />
+                {t("common.exportPDF")}
+              </Button>
+            )}
             {isStaff && isActive && (
               <Button
                 variant="destructive"
@@ -209,7 +211,7 @@ export function ClassDetailView({
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard icon={Users} label={t("dashboard.enrolled")} value={enrolledStudents.length} description={t("classes.spotsOf", { capacity: classDetail.capacity })} />
+        <StatCard icon={Users} label={t("dashboard.enrolled")} value={classDetail.enrollments.length} description={t("classes.spotsOf", { capacity: classDetail.capacity })} />
         <StatCard icon={CheckCircle} label={t("dashboard.attendances")} value={attendedStudents.length} />
         <StatCard icon={XCircle} label={t("dashboard.absences")} value={noShowStudents.length} />
         <StatCard icon={CalendarDays} label={t("dashboard.vacancies")} value={spotsLeft > 0 ? spotsLeft : 0} />
@@ -263,7 +265,7 @@ export function ClassDetailView({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold">{t("nav.students")} ({classDetail.enrollments.length})</h2>
-          {isActive && enrolledStudents.length > 0 && (
+          {canMarkAttendance && enrolledStudents.length > 0 && (
             <Button
               variant="outline"
               size="sm"
@@ -351,7 +353,7 @@ export function ClassDetailView({
                 </div>
 
                 {/* Actions */}
-                {enrollment.status === "ENROLLED" && isActive && (
+                {enrollment.status === "ENROLLED" && canMarkAttendance && (
                   <div className="flex flex-col sm:flex-row gap-1 shrink-0">
                     <Button
                       size="sm"

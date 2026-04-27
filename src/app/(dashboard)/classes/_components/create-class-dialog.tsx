@@ -48,8 +48,8 @@ export function CreateClassDialog() {
   const utils = trpc.useUtils();
 
   const { data: schools, isLoading: schoolsLoading } = trpc.school.list.useQuery();
-  const { data: instructors, isLoading: instructorsLoading } = trpc.user.list.useQuery({ role: "INSTRUCTOR" });
-  const { data: students, isLoading: studentsLoading } = trpc.user.list.useQuery({ role: "STUDENT" });
+  const { data: instructors, isLoading: instructorsLoading } = trpc.user.list.useQuery({ role: "INSTRUCTOR", status: "ACTIVE" });
+  const { data: students, isLoading: studentsLoading } = trpc.user.list.useQuery({ role: "STUDENT", status: "ACTIVE" });
   const dataLoading = schoolsLoading || instructorsLoading || studentsLoading;
 
   const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm<CreateClassFormData>({

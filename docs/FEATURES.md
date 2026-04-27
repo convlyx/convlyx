@@ -66,18 +66,20 @@ Living document of everything the app can do, organized by area.
 - Student self-enrollment in theory classes
 - Secretary assigns students to practical classes on creation
 - Secretary/admin can add students to existing classes via searchable picker
-- Cancel enrollment with confirmation (student cancels own, secretary/admin can cancel any)
+- Remove student from class (hard delete) — student can be re-added afterwards
+- Student picker: checklist with checkboxes (shown on focus), "Selecionar todos" / "Desmarcar todos" respecting capacity
+- Only active students/instructors shown in all selects (create class, edit class, add student)
 - Capacity check — prevents over-enrollment
 - Duplicate prevention — unique constraint on session+student
-- Re-enrollment after cancellation
 - Retroactive enrollment: staff can add students to completed classes — auto-marked as ATTENDED with confirmation modal
 - Retroactive attendance correction: toggle ATTENDED ↔ NO_SHOW on completed classes with confirmation modal
-- Attendance marking: Present / No-show (admin, secretary, instructor)
-- Bulk attendance: "Mark all present" button marks all enrolled students as attended in one action
-- Enrollment status tracking: ENROLLED → ATTENDED / NO_SHOW / CANCELLED
+- Attendance marking: Present / No-show (admin, secretary, instructor) — only for in-progress or completed classes
+- Bulk attendance: "Mark all present" button — only for in-progress or completed classes
+- Enrollment status tracking: ENROLLED → ATTENDED / NO_SHOW
 - Instructor notes on enrollments: only instructors can write/edit, admin/secretary can view, hidden from students
-- Instructor can flag unavailability with confirmation — cancels the class and all enrollments
-- Secretary/admin can cancel individual student enrollments from class detail
+- Instructor can flag unavailability with confirmation — cancels the class and deletes all enrollments
+- Secretary/admin can remove individual students from class detail
+- PDF export (attendance sheet) only available for completed classes
 
 ## Calendar
 - FullCalendar integration (week, day, month, list views)

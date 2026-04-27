@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useTranslations } from "next-intl";
-import { Search, X } from "lucide-react";
+import { Search, X, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 
 type Student = {
@@ -25,6 +26,8 @@ export function StudentPicker({
 }) {
   const t = useTranslations("common");
   const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const blurTimeout = useRef<ReturnType<typeof setTimeout>>(null);
 
   const filtered = students.filter(
     (s) =>
@@ -44,6 +47,30 @@ export function StudentPicker({
 
   function remove(id: string) {
     onChange(selected.filter((s) => s !== id));
+  }
+
+  // Select all visible (unselected) up to max
+  const unselectedVisible = filtered.filter((s) => !selected.includes(s.id));
+  const canSelectMore = max - selected.length;
+  const allVisibleSelected = unselectedVisible.length === 0 && filtered.length > 0;
+
+  function selectAllVisible() {
+    const toAdd = unselectedVisible.slice(0, canSelectMore).map((s) => s.id);
+    onChange([...selected, ...toAdd]);
+  }
+
+  function deselectAllVisible() {
+    const visibleIds = new Set(filtered.map((s) => s.id));
+    onChange(selected.filter((id) => !visibleIds.has(id)));
+  }
+
+  function handleFocus() {
+    if (blurTimeout.current) clearTimeout(blurTimeout.current);
+    setOpen(true);
+  }
+
+  function handleBlur() {
+    blurTimeout.current = setTimeout(() => setOpen(false), 150);
   }
 
   return (
@@ -69,53 +96,68 @@ export function StudentPicker({
         </div>
       )}
 
-      {/* Search input with floating dropdown */}
-      {selected.length < max && (
-        <div className="relative">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder={t("searchStudent")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onBlur={() => setTimeout(() => setSearch(""), 150)}
-              className="pl-8 h-8 text-sm"
-            />
-          </div>
+      {/* Search + select all bar */}
+      <div className="relative flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder={t("searchStudent")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            className="pl-8 h-8 text-sm"
+          />
+        </div>
+        {students.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={allVisibleSelected ? deselectAllVisible : selectAllVisible}
+            disabled={!allVisibleSelected && canSelectMore === 0}
+          >
+            {allVisibleSelected ? t("deselectAll") : t("selectAll")}
+          </Button>
+        )}
 
-          {/* Floating results */}
-          {search.length > 0 && (
-            <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-40 overflow-y-auto rounded-lg border bg-popover shadow-md divide-y">
-              {filtered.length === 0 ? (
-                <p className="text-xs text-muted-foreground p-2 text-center">{t("noResults")}</p>
-              ) : (
-                filtered.slice(0, 10).map((student) => {
-                  const isSelected = selected.includes(student.id);
-                  return (
-                    <button
-                      key={student.id}
-                      type="button"
-                      disabled={isSelected}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => { toggle(student.id); setSearch(""); }}
-                      className="flex items-center gap-2.5 w-full px-2.5 py-2 text-left cursor-pointer hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <UserAvatar name={student.name} className="h-7 w-7 bg-primary/10 text-primary text-[10px]" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{student.name}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">{student.email}</p>
-                      </div>
-                      {isSelected && (
-                        <span className="text-[10px] text-primary font-medium">{t("selected")}</span>
-                      )}
-                    </button>
-                  );
-                })
-              )}
-            </div>
+        {/* Student checklist — shown on focus */}
+        {open && (
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-lg border bg-popover shadow-md divide-y">
+          {filtered.length === 0 ? (
+            <p className="text-xs text-muted-foreground p-3 text-center">{t("noResults")}</p>
+          ) : (
+            filtered.map((student) => {
+              const isSelected = selected.includes(student.id);
+              const isDisabled = !isSelected && selected.length >= max;
+              return (
+                <button
+                  key={student.id}
+                  type="button"
+                  disabled={isDisabled}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => toggle(student.id)}
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-left cursor-pointer hover:bg-muted/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                    isSelected
+                      ? "bg-primary border-primary text-primary-foreground"
+                      : "border-input"
+                  }`}>
+                    {isSelected && <Check className="h-3 w-3" />}
+                  </div>
+                  <UserAvatar name={student.name} className="h-7 w-7 bg-primary/10 text-primary text-[10px]" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{student.name}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{student.email}</p>
+                  </div>
+                </button>
+              );
+            })
           )}
         </div>
-      )}
+        )}
+      </div>
 
       <p className="text-xs text-muted-foreground">
         {t("studentsSelected", { count: selected.length, max })}

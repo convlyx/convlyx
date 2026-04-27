@@ -325,9 +325,8 @@ export const classRouter = router({
           where: { id: input.id, tenantId: ctx.tenantId },
           data: { status: "CANCELLED", updatedById: ctx.user.id },
         }),
-        ctx.db.enrollment.updateMany({
-          where: { sessionId: input.id, status: "ENROLLED", tenantId: ctx.tenantId },
-          data: { status: "CANCELLED" },
+        ctx.db.enrollment.deleteMany({
+          where: { sessionId: input.id, tenantId: ctx.tenantId },
         }),
       ]);
 
@@ -393,9 +392,8 @@ export const classRouter = router({
           where: { id: input.id, tenantId: ctx.tenantId },
           data: { status: "CANCELLED", updatedById: ctx.user.id },
         }),
-        ctx.db.enrollment.updateMany({
-          where: { sessionId: input.id, status: "ENROLLED", tenantId: ctx.tenantId },
-          data: { status: "CANCELLED" },
+        ctx.db.enrollment.deleteMany({
+          where: { sessionId: input.id, tenantId: ctx.tenantId },
         }),
       ]);
 

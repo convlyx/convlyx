@@ -69,7 +69,7 @@ export function EditClassDialog({
   const { onError } = useTranslatedError();
   const utils = trpc.useUtils();
 
-  const { data: instructors } = trpc.user.list.useQuery({ role: "INSTRUCTOR" });
+  const { data: instructors } = trpc.user.list.useQuery({ role: "INSTRUCTOR", status: "ACTIVE" });
 
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm<EditClassFormData>({
     resolver: zodResolver(editClassFormSchema),

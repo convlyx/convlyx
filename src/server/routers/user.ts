@@ -242,7 +242,6 @@ export const userRouter = router({
         totalEnrolled: enrollments.filter((e) => e.status === "ENROLLED").length,
         totalAttended: enrollments.filter((e) => e.status === "ATTENDED").length,
         totalNoShow: enrollments.filter((e) => e.status === "NO_SHOW").length,
-        totalCancelled: enrollments.filter((e) => e.status === "CANCELLED").length,
         theoryAttended: enrollments.filter((e) => e.status === "ATTENDED" && e.session.classType === "THEORY").length,
         practicalAttended: enrollments.filter((e) => e.status === "ATTENDED" && e.session.classType === "PRACTICAL").length,
         upcoming: enrollments.filter((e) => e.status === "ENROLLED" && new Date(e.session.startsAt) > new Date()).length,

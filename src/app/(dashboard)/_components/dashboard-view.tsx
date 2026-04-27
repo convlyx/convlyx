@@ -39,10 +39,10 @@ export function DashboardView({
   const { data: upcomingClasses, isLoading } = trpc.class.list.useQuery(dateRange);
 
   const { data: students } = trpc.user.list.useQuery(
-    { role: "STUDENT" },
+    { role: "STUDENT", status: "ACTIVE" },
     { enabled: userRole === "ADMIN" || userRole === "SECRETARY" }
   );
-  const activeStudentCount = students?.filter((s) => s.status === "ACTIVE").length ?? 0;
+  const activeStudentCount = students?.length ?? 0;
 
   const { data: enrollments } = trpc.enrollment.listByStudent.useQuery(
     undefined,

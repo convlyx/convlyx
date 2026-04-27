@@ -142,7 +142,6 @@ export async function exportClassAttendancePDF(classData: {
     ENROLLED: "Inscrito",
     ATTENDED: "Presente",
     NO_SHOW: "Faltou",
-    CANCELLED: "Cancelado",
   };
 
   // Attendance table
@@ -200,7 +199,6 @@ export async function exportStudentProgressPDF(student: {
     totalEnrolled: number;
     totalAttended: number;
     totalNoShow: number;
-    totalCancelled: number;
     theoryAttended: number;
     practicalAttended: number;
     upcoming: number;
@@ -284,7 +282,6 @@ export async function exportStudentProgressPDF(student: {
     ENROLLED: "Inscrito",
     ATTENDED: "Presente",
     NO_SHOW: "Faltou",
-    CANCELLED: "Cancelado",
   };
 
   const typeLabels: Record<string, string> = {

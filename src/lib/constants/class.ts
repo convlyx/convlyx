@@ -25,7 +25,6 @@ export const enrollmentStatusKeys: Record<string, string> = {
   ENROLLED: "enrollment.enrolled",
   ATTENDED: "enrollment.attended",
   NO_SHOW: "enrollment.noShow",
-  CANCELLED: "common.cancel",
 };
 
 // Enrollment status badge variants
@@ -33,7 +32,6 @@ export const enrollmentStatusVariant: Record<string, "default" | "secondary" | "
   ENROLLED: "default",
   ATTENDED: "secondary",
   NO_SHOW: "destructive",
-  CANCELLED: "outline",
 };
 
 // Role avatar color classes
