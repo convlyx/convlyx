@@ -236,6 +236,7 @@
     "cancelClassConfirmMessage": "Tem a certeza que pretende cancelar esta aula? Todos os alunos inscritos serão notificados.",
     "removeStudentTitle": "Remover aluno",
     "removeStudentMessage": "Tem a certeza que pretende remover este aluno da aula?",
+    "removeStudentCompletedMessage": "Esta aula já foi concluída. Tem a certeza que pretende remover este aluno?",
     "cancelOwnEnrollmentTitle": "Cancelar inscrição",
     "cancelOwnEnrollmentMessage": "Tem a certeza que pretende cancelar a sua inscrição?",
     "unavailableConfirmTitle": "Cancelar aula",

@@ -471,7 +471,9 @@ export function ClassDetailView({
           setRemoveEnrollmentId(null);
         }}
         title={t("classes.removeStudentTitle")}
-        message={t("classes.removeStudentMessage")}
+        message={classDetail.status === "COMPLETED"
+          ? t("classes.removeStudentCompletedMessage")
+          : t("classes.removeStudentMessage")}
         loading={cancelEnrollmentMutation.isPending}
       />
 
