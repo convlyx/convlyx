@@ -56,7 +56,12 @@ export const enrollmentRouter = router({
         }
       }
 
-      if (session.status !== "SCHEDULED") {
+      const isStaff = ["ADMIN", "SECRETARY", "INSTRUCTOR"].includes(ctx.user.role);
+      const allowedStatuses = isStaff
+        ? ["SCHEDULED", "IN_PROGRESS", "COMPLETED"]
+        : ["SCHEDULED"];
+
+      if (!allowedStatuses.includes(session.status)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "enrollment.classNotAvailable",
@@ -81,18 +86,20 @@ export const enrollmentRouter = router({
         select: { id: true, status: true },
       });
 
-      if (existing?.status === "ENROLLED") {
+      if (existing?.status === "ENROLLED" || existing?.status === "ATTENDED") {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "enrollment.alreadyEnrolled",
         });
       }
 
+      const enrollStatus = session.status === "COMPLETED" ? "ATTENDED" : "ENROLLED";
+
       // If previously cancelled, re-enroll
       if (existing) {
         const result = await ctx.db.enrollment.update({
           where: { id: existing.id },
-          data: { status: "ENROLLED" },
+          data: { status: enrollStatus },
           select: { id: true, status: true },
         });
 
@@ -117,6 +124,7 @@ export const enrollmentRouter = router({
           tenantId: ctx.tenantId,
           sessionId: input.sessionId,
           studentId,
+          status: enrollStatus,
         },
         select: { id: true, status: true },
       });
@@ -208,12 +216,12 @@ export const enrollmentRouter = router({
         where: {
           id: input.enrollmentId,
           tenantId: ctx.tenantId,
-          status: "ENROLLED",
+          status: { in: ["ENROLLED", "ATTENDED", "NO_SHOW"] },
         },
         select: {
           id: true,
           studentId: true,
-          session: { select: { id: true, title: true, startsAt: true } },
+          session: { select: { id: true, title: true, startsAt: true, status: true } },
         },
       });
 
@@ -227,17 +235,19 @@ export const enrollmentRouter = router({
         select: { id: true, status: true },
       });
 
-      // Notify student about attendance
-      const timeStr = formatClassTime(new Date(enrollment.session.startsAt));
-      createNotification({
-        db: ctx.db,
-        tenantId: ctx.tenantId,
-        userId: enrollment.studentId,
-        type: "enrollment.attendance",
-        titleKey: "notifications.attendanceWasRecorded",
-        messageKey: "notifications.attendanceMarked",
-        params: { title: enrollment.session.title, time: timeStr, status: input.status },
-      }).catch(() => {});
+      // Only notify student for retroactive changes on completed classes
+      if (enrollment.session.status === "COMPLETED") {
+        const timeStr = formatClassTime(new Date(enrollment.session.startsAt));
+        createNotification({
+          db: ctx.db,
+          tenantId: ctx.tenantId,
+          userId: enrollment.studentId,
+          type: "enrollment.attendance",
+          titleKey: "notifications.attendanceWasUpdated",
+          messageKey: "notifications.attendanceUpdated",
+          params: { title: enrollment.session.title, time: timeStr, status: input.status },
+        }).catch(() => {});
+      }
 
       return result;
     }),

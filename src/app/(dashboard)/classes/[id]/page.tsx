@@ -24,11 +24,15 @@ export default async function ClassDetailPage({
     select: { role: true, tenantId: true },
   });
   if (!user) redirect("/login");
-  if (!["ADMIN", "SECRETARY"].includes(user.role)) redirect("/classes");
+  if (!["ADMIN", "SECRETARY", "INSTRUCTOR"].includes(user.role)) redirect("/classes");
 
-  // Verify the class exists in this tenant
+  // Verify the class exists in this tenant (instructors can only see their own)
   const classExists = await db.classSession.findFirst({
-    where: { id, tenantId: user.tenantId },
+    where: {
+      id,
+      tenantId: user.tenantId,
+      ...(user.role === "INSTRUCTOR" && { instructorId: authUser.id }),
+    },
     select: { id: true },
   });
   if (!classExists) notFound();

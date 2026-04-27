@@ -41,7 +41,8 @@ Living document of everything the app can do, organized by area.
 - Phone number field on user creation and editing (optional)
 - Deactivate / activate user (admin only) with confirmation dialog
 - Role-colored avatars (purple=admin, blue=secretary, green=instructor, primary=student)
-- Create user directly from students page ("Criar aluno") and instructors page ("Criar instrutor") with pre-locked role
+- Create user directly from students page ("Adicionar aluno") and instructors page ("Adicionar instrutor") with pre-locked role
+- Filter students/instructors list by status (Ativo / Inativo / Todos) — defaults to active only
 
 ## Classes
 - List classes with filters (type, school) and search
@@ -55,8 +56,10 @@ Living document of everything the app can do, organized by area.
 - Schedule conflict detection: prevents creating/editing classes when instructor already has a class at that time
 - Cancel class with confirmation dialog (cascades to all enrollments)
 - Class detail page (`/classes/[id]`) for secretary/admin: full class info, student list, add/remove students, attendance, cancel class
+- Instructor access to own class detail pages: view class info, mark attendance, bulk mark, edit notes (no add/remove students or cancel)
+- Student names link to student profile, instructor name links to instructor profile
 - Auto status management: SCHEDULED → IN_PROGRESS → COMPLETED based on time
-- Class type badges (Teórica / Prática)
+- Class type badges color-coded (blue=theory, green=practical) consistently across entire app
 - Status badges (Agendada / Em curso / Concluída / Cancelada)
 
 ## Enrollment
@@ -67,6 +70,8 @@ Living document of everything the app can do, organized by area.
 - Capacity check — prevents over-enrollment
 - Duplicate prevention — unique constraint on session+student
 - Re-enrollment after cancellation
+- Retroactive enrollment: staff can add students to completed classes — auto-marked as ATTENDED with confirmation modal
+- Retroactive attendance correction: toggle ATTENDED ↔ NO_SHOW on completed classes with confirmation modal
 - Attendance marking: Present / No-show (admin, secretary, instructor)
 - Bulk attendance: "Mark all present" button marks all enrolled students as attended in one action
 - Enrollment status tracking: ENROLLED → ATTENDED / NO_SHOW / CANCELLED
@@ -81,6 +86,7 @@ Living document of everything the app can do, organized by area.
 - Student view: enrolled classes highlighted (vivid) vs available (muted)
 - Legend for student calendar
 - Click event → class detail dialog with enrollment/attendance actions
+- "Ver detalhes" link in calendar popup → class detail page (hidden from students)
 - Filters by type and school (admin, secretary)
 - Responsive toolbar for mobile
 
@@ -98,8 +104,9 @@ Living document of everything the app can do, organized by area.
   - Current/next class hero card (pulsing indicator when in progress, gradient change)
   - "All done" state with coffee icon when today's classes are complete
   - Today's progress bar with percentage and mini stats
-  - Today's timeline schedule with dot connectors and status indicators
-  - This week's upcoming classes
+  - Today's timeline schedule with dot connectors and status indicators — clickable to class detail
+  - This week's upcoming classes — clickable to class detail
+  - Clickable class cards in classes tab (own classes only)
 
 ## Student Profiles (`/students/[id]`)
 - Server-side UUID validation + existence check (404 for invalid)
@@ -107,7 +114,7 @@ Living document of everything the app can do, organized by area.
 - Photo placeholder (camera icon for future upload)
 - Stat cards: upcoming, attended, no-shows, enrolled
 - Theory/practical progress breakdown
-- Full enrollment history with type badges and status
+- Full enrollment history with color-coded type badges and status — clickable rows link to class detail page
 
 ## Instructor Profiles (`/instructors/[id]`)
 - Server-side UUID validation + existence check (404 for invalid)
@@ -115,7 +122,7 @@ Living document of everything the app can do, organized by area.
 - Photo placeholder
 - Stat cards: upcoming, completed, total, students taught
 - Theory/practical class breakdown
-- Full class history with enrollment counts and status
+- Full class history with enrollment counts and status — clickable rows link to class detail page
 
 ## Settings
 - Profile section: edit own name
@@ -134,7 +141,7 @@ Living document of everything the app can do, organized by area.
   - Class created → notifies instructor
   - Student enrolled by secretary → notifies student
   - Enrollment cancelled by secretary → notifies student
-  - Attendance marked → notifies student
+  - Attendance updated retroactively on completed class → notifies student (live attendance has no notification)
   - Class cancelled → notifies all enrolled students + instructor
   - Instructor marks unavailable → notifies enrolled students + admins/secretaries
   - Students assigned to practical class → notifies students
@@ -162,7 +169,7 @@ Living document of everything the app can do, organized by area.
 - Confirmation dialogs on all destructive actions
 - Empty states with icons
 - Loading animation (three pulsing dots)
-- Toast notifications on all mutations (success + error)
+- Toast notifications on all mutations (success + error) — tRPC error keys auto-translated via `useTranslatedError` hook
 - URL filter params (shareable, bookmarkable)
 - Auto-select when only one option (school, instructor)
 - Form validation with Zod schemas
@@ -186,7 +193,7 @@ Living document of everything the app can do, organized by area.
 - Supabase JWT auth in tRPC context
 - Subdomain-tenant validation in tRPC context
 - Auto class status sync on list queries
-- Error codes with translatable message keys
+- Error codes with translatable message keys — client-side `useTranslatedError` hook resolves keys to user-facing messages
 
 ## Database
 - Supabase PostgreSQL with Prisma ORM

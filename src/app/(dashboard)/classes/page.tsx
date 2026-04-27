@@ -14,5 +14,5 @@ export default async function ClassesPage() {
   });
   if (!user) redirect("/login");
 
-  return <ClassesPageClient userRole={user.role} />;
+  return <ClassesPageClient userRole={user.role} userId={authUser.id} />;
 }

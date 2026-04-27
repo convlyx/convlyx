@@ -40,6 +40,8 @@ export function ClassDetailView({
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [cancelClassConfirm, setCancelClassConfirm] = useState(false);
   const [removeEnrollmentId, setRemoveEnrollmentId] = useState<string | null>(null);
+  const [confirmCompletedEnroll, setConfirmCompletedEnroll] = useState(false);
+  const [pendingAttendanceChange, setPendingAttendanceChange] = useState<{ enrollmentId: string; status: "ATTENDED" | "NO_SHOW" } | null>(null);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
 
@@ -47,7 +49,8 @@ export function ClassDetailView({
     { id: classId },
     { retry: false }
   );
-  const { data: allStudents } = trpc.user.list.useQuery({ role: "STUDENT" });
+  const staffRole = userRole === "ADMIN" || userRole === "SECRETARY";
+  const { data: allStudents } = trpc.user.list.useQuery({ role: "STUDENT" }, { enabled: staffRole });
 
   const enrollMutation = trpc.enrollment.enroll.useMutation({
     onSuccess: () => {
@@ -126,6 +129,8 @@ export function ClassDetailView({
   const availableStudents = allStudents?.filter((s) => !enrolledStudentIds.has(s.id)) ?? [];
 
   const isActive = classDetail.status === "SCHEDULED" || classDetail.status === "IN_PROGRESS";
+  const isStaff = userRole === "ADMIN" || userRole === "SECRETARY";
+  const canAddStudent = isStaff && classDetail.status !== "CANCELLED";
 
   return (
     <div className="space-y-6">
@@ -188,7 +193,7 @@ export function ClassDetailView({
               <FileDown className="h-3.5 w-3.5" />
               {t("common.exportPDF")}
             </Button>
-            {isActive && (
+            {isStaff && isActive && (
               <Button
                 variant="destructive"
                 size="sm"
@@ -211,7 +216,7 @@ export function ClassDetailView({
       </div>
 
       {/* Add student */}
-      {isActive && spotsLeft > 0 && (
+      {canAddStudent && (
         <div className="rounded-xl border bg-card p-4 card-shadow">
           {showAddStudent ? (
             <div className="space-y-3">
@@ -232,9 +237,13 @@ export function ClassDetailView({
                   size="sm"
                   disabled={enrollMutation.isPending}
                   onClick={() => {
-                    selectedStudents.forEach((studentId) => {
-                      enrollMutation.mutate({ sessionId: classDetail.id, studentId });
-                    });
+                    if (classDetail.status === "COMPLETED") {
+                      setConfirmCompletedEnroll(true);
+                    } else {
+                      selectedStudents.forEach((studentId) => {
+                        enrollMutation.mutate({ sessionId: classDetail.id, studentId });
+                      });
+                    }
                   }}
                 >
                   {enrollMutation.isPending ? t("common.loading") : t("classes.enrollCount", { count: selectedStudents.length })}
@@ -368,15 +377,43 @@ export function ClassDetailView({
                       <XCircle className="h-3.5 w-3.5 sm:mr-1" />
                       <span className="hidden sm:inline">{t("enrollment.noShow")}</span>
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      disabled={cancelEnrollmentMutation.isPending}
-                      onClick={() => setRemoveEnrollmentId(enrollment.id)}
-                    >
-                      <span className="hidden sm:inline">{t("enrollment.remove")}</span>
-                      <span className="sm:hidden">×</span>
-                    </Button>
+                    {isStaff && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={cancelEnrollmentMutation.isPending}
+                        onClick={() => setRemoveEnrollmentId(enrollment.id)}
+                      >
+                        <span className="hidden sm:inline">{t("enrollment.remove")}</span>
+                        <span className="sm:hidden">×</span>
+                      </Button>
+                    )}
+                  </div>
+                )}
+                {classDetail.status === "COMPLETED" && (enrollment.status === "ATTENDED" || enrollment.status === "NO_SHOW") && (
+                  <div className="flex flex-col sm:flex-row gap-1 shrink-0">
+                    {enrollment.status === "NO_SHOW" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={markAttendanceMutation.isPending}
+                        onClick={() => setPendingAttendanceChange({ enrollmentId: enrollment.id, status: "ATTENDED" })}
+                      >
+                        <CheckCircle className="h-3.5 w-3.5 sm:mr-1" />
+                        <span className="hidden sm:inline">{t("enrollment.attended")}</span>
+                      </Button>
+                    )}
+                    {enrollment.status === "ATTENDED" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={markAttendanceMutation.isPending}
+                        onClick={() => setPendingAttendanceChange({ enrollmentId: enrollment.id, status: "NO_SHOW" })}
+                      >
+                        <XCircle className="h-3.5 w-3.5 sm:mr-1" />
+                        <span className="hidden sm:inline">{t("enrollment.noShow")}</span>
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
@@ -414,6 +451,34 @@ export function ClassDetailView({
         title={t("classes.removeStudentTitle")}
         message={t("classes.removeStudentMessage")}
         loading={cancelEnrollmentMutation.isPending}
+      />
+
+      <ConfirmDialog
+        open={confirmCompletedEnroll}
+        onClose={() => setConfirmCompletedEnroll(false)}
+        onConfirm={() => {
+          selectedStudents.forEach((studentId) => {
+            enrollMutation.mutate({ sessionId: classDetail.id, studentId });
+          });
+          setConfirmCompletedEnroll(false);
+        }}
+        title={t("classes.addStudentCompletedTitle")}
+        message={t("classes.addStudentCompletedMessage")}
+        loading={enrollMutation.isPending}
+      />
+
+      <ConfirmDialog
+        open={pendingAttendanceChange !== null}
+        onClose={() => setPendingAttendanceChange(null)}
+        onConfirm={() => {
+          if (pendingAttendanceChange) {
+            markAttendanceMutation.mutate(pendingAttendanceChange);
+          }
+          setPendingAttendanceChange(null);
+        }}
+        title={t("classes.changeAttendanceCompletedTitle")}
+        message={t("classes.changeAttendanceCompletedMessage")}
+        loading={markAttendanceMutation.isPending}
       />
     </div>
   );

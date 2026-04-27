@@ -184,9 +184,10 @@ export function InstructorHome({ userName }: { userName: string }) {
               const isPast = cls.status === "COMPLETED";
               const isCurrent = cls.status === "IN_PROGRESS";
               return (
-                <div
+                <Link
+                  href={`/classes/${cls.id}`}
                   key={cls.id}
-                  className={`relative flex items-center gap-3 rounded-xl border p-3.5 transition-all ${
+                  className={`relative flex items-center gap-3 rounded-xl border p-3.5 transition-all hover:border-primary/20 ${
                     isCurrent
                       ? "border-primary bg-primary/5 card-shadow-hover"
                       : isPast
@@ -237,7 +238,7 @@ export function InstructorHome({ userName }: { userName: string }) {
                       )}
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -255,9 +256,10 @@ export function InstructorHome({ userName }: { userName: string }) {
           </div>
           <div className="space-y-2">
             {weekClasses.filter((cls) => cls.status === "SCHEDULED").slice(0, 4).map((cls) => (
-              <div
+              <Link
                 key={cls.id}
-                className="flex items-center gap-3 rounded-xl border bg-card p-3.5 card-shadow hover:card-shadow-hover transition-all"
+                href={`/classes/${cls.id}`}
+                className="flex items-center gap-3 rounded-xl border bg-card p-3.5 card-shadow hover:card-shadow-hover hover:border-primary/20 transition-all"
               >
                 <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[cls.classType]}`}>
                   <BookOpen className="h-5 w-5" />
@@ -276,7 +278,7 @@ export function InstructorHome({ userName }: { userName: string }) {
                     <span>{cls._count.enrollments}/{cls.capacity}</span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

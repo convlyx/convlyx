@@ -30,7 +30,7 @@ import type { UserRole } from "@/generated/prisma/enums";
 
 const ITEMS_PER_PAGE = 10;
 
-export function ClassesTable({ userRole }: { userRole: UserRole }) {
+export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId: string }) {
   const t = useTranslations();
   const { onError } = useTranslatedError();
   const format = useFormatter();
@@ -71,6 +71,9 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
   });
 
   const canManage = userRole === "ADMIN" || userRole === "SECRETARY";
+  const isInstructor = userRole === "INSTRUCTOR";
+  const canViewDetail = (cls: { instructor: { id: string } }) =>
+    canManage || (isInstructor && cls.instructor.id === userId);
   const [timeTab, setTimeTab] = useState<string>(searchParams.get("time") ?? "upcoming");
 
   const now = new Date();
@@ -159,7 +162,8 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
       ) : view === "cards" ? (
         <div className="grid gap-3">
           {paginatedClasses.map((cls) => {
-            const cardClass = `rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all block ${canManage ? "hover:border-primary/20 group" : ""}`;
+            const isClickable = canViewDetail(cls);
+            const cardClass = `rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all block ${isClickable ? "hover:border-primary/20 group" : ""}`;
             const cardContent = (
                 <div className="flex items-start gap-3">
                   <div className={`flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[cls.classType]}`}>
@@ -167,7 +171,7 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <p className={`font-medium truncate ${canManage ? "group-hover:text-primary transition-colors" : ""}`}>{cls.title}</p>
+                      <p className={`font-medium truncate ${isClickable ? "group-hover:text-primary transition-colors" : ""}`}>{cls.title}</p>
                       <Badge className={classTypeBadgeClass[cls.classType]}>{t(typeKeys[cls.classType])}</Badge>
                       <Badge variant={statusVariant[cls.status] ?? "outline"}>{t(statusKeys[cls.status])}</Badge>
                     </div>
@@ -190,9 +194,9 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
                       </div>
                     )}
                   </div>
-                  {canManage && (
+                  {isClickable && (
                     <div className="hidden sm:flex shrink-0 gap-1 items-center">
-                      {(cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
+                      {canManage && (cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
                         <>
                           <Button variant="outline" size="icon-sm" onClick={(e) => { e.preventDefault(); setEditClass(cls); }} title={t("common.edit")}>
                             <Pencil className="h-3.5 w-3.5" />
@@ -205,7 +209,7 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
                   )}
                 </div>
             );
-            return canManage ? (
+            return isClickable ? (
               <Link key={cls.id} href={`/classes/${cls.id}`} className={cardClass}>
                 {cardContent}
               </Link>
@@ -234,7 +238,7 @@ export function ClassesTable({ userRole }: { userRole: UserRole }) {
               {paginatedClasses.map((cls) => (
                 <TableRow key={cls.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell>
-                    {canManage ? (
+                    {canViewDetail(cls) ? (
                       <Link href={`/classes/${cls.id}`} className="font-medium text-primary hover:underline">{cls.title}</Link>
                     ) : (
                       <span className="font-medium">{cls.title}</span>

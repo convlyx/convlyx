@@ -200,7 +200,7 @@ function NotificationItem({
           <p className="text-sm font-medium">{title}</p>
           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{message}</p>
           <p className="text-[10px] text-muted-foreground mt-1">
-            {format.relativeTime(new Date(n.createdAt))}
+            {format.relativeTime(new Date(n.createdAt), new Date())}
           </p>
         </div>
       </div>

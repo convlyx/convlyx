@@ -5,7 +5,7 @@ import { CreateClassDialog } from "./create-class-dialog";
 import { ClassesTable } from "./classes-table";
 import type { UserRole } from "@/generated/prisma/enums";
 
-export function ClassesPageClient({ userRole }: { userRole: UserRole }) {
+export function ClassesPageClient({ userRole, userId }: { userRole: UserRole; userId: string }) {
   const t = useTranslations("classes");
   const canManage = userRole === "ADMIN" || userRole === "SECRETARY";
 
@@ -15,7 +15,7 @@ export function ClassesPageClient({ userRole }: { userRole: UserRole }) {
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         {canManage && <CreateClassDialog />}
       </div>
-      <ClassesTable userRole={userRole} />
+      <ClassesTable userRole={userRole} userId={userId} />
     </div>
   );
 }
