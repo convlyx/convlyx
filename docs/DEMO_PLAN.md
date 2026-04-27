@@ -2,6 +2,10 @@
 
 Demo curta (~15 min) seguida de teste real da app pelo cliente. Foco nos pontos altos — depois eles exploram sozinhos.
 
+> **Regra de ouro:** durante a demo, **mostrar mas evitar submissões reais que disparem cascatas** (cancelar aulas, mudar instrutor, marcar indisponibilidade). Abrir o modal/diálogo, mostrar a confirmação, e cancelar antes de submeter. Os clientes vão experimentar a sério a seguir nos seus próprios dados.
+>
+> Ações **seguras de fazer ao vivo**: marcar presenças (reversíveis), adicionar aluno a uma aula de teste, inscrever-se como aluno numa aula preparada para isso.
+
 ---
 
 ## Abertura conjunta (1 min)
@@ -13,7 +17,7 @@ Demo curta (~15 min) seguida de teste real da app pelo cliente. Foco nos pontos 
 
 ## Parte 1 — Backoffice (Francisco, ~7 min)
 
-Foco: gestão diária + multi-tenancy + automatização. Não entrar em todas as opções — destacar o que torna o produto especial.
+Foco: gestão diária + multi-tenancy + automatização.
 
 ### 1. Login e painel (1 min)
 - Mostrar URL da escola: `escola.convlyx.com`
@@ -24,21 +28,22 @@ Foco: gestão diária + multi-tenancy + automatização. Não entrar em todas as
 ### 2. Calendário e detalhe de aula (2 min)
 - Calendário com aulas (azul = teórica, verde = prática)
 - Clicar numa aula em curso ou já concluída → detalhe
-- Mostrar lista de alunos + marcar presenças (Presente/Faltou)
-- "Marcar todos presentes" — demonstrar
-- "Adicionar aluno" — mostrar a lista com checkboxes + "Selecionar todos"
+- ✅ **Fazer ao vivo:** marcar uma presença individual (Presente/Faltou) — reversível
+- ✅ **Fazer ao vivo:** "Marcar todos presentes" numa aula de demo preparada
+- ✅ **Fazer ao vivo:** "Adicionar aluno" — mostrar a lista com checkboxes + "Selecionar todos", confirmar a inscrição
 - "Imaginem uma teórica com 25 alunos — não vamos escrever um a um."
 
 ### 3. Criar aula recorrente (1.5 min)
 - Botão "Criar aula"
-- Mostrar criação recorrente (dias da semana + intervalo de datas)
+- Preencher os dados de criação recorrente (dias da semana + intervalo de datas)
 - "Numa escola de condução, as teóricas das segundas e quartas repetem-se durante meses. Em vez de criar 50 aulas, crio uma vez."
-- Detecção de conflitos: tentar duplicar instrutor → erro
-- "Não posso colocar o mesmo instrutor em duas aulas ao mesmo tempo."
+- ✅ **Fazer ao vivo:** detecção de conflitos — tentar criar uma aula que sobreponha um instrutor existente → mostrar erro de conflito
+- ⚠️ **Não submeter** a criação recorrente final — só mostrar o formulário preenchido. "Submetemos depois quando vocês fizerem nas vossas escolas."
 
-### 4. Editar instrutor de uma aula (1 min)
-- Editar uma aula → trocar instrutor
-- "Se um instrutor cai doente, mudo aqui e os alunos recebem notificação push automaticamente — sem chamadas, sem mensagens manuais."
+### 4. Editar uma aula (1 min)
+- Abrir o modal de editar uma aula
+- Mostrar que pode trocar o instrutor / horário
+- ⚠️ **Não guardar** — fechar o modal. "Quando guardo, os alunos inscritos recebem push notification imediatamente — sem chamadas, sem mensagens manuais. Vamos saltar a submissão para não estragar os dados de teste."
 
 ### 5. QR de instalação (1 min)
 - Definições → QR de instalação
@@ -57,7 +62,7 @@ Foco: gestão diária + multi-tenancy + automatização. Não entrar em todas as
 
 ## Parte 2 — Aluno e Instrutor (parceiro, ~6 min)
 
-Foco: a experiência mobile-first. Mostrar como a app é fluida no telemóvel.
+Foco: a experiência mobile-first.
 
 ### 1. Vista do Aluno — Painel (1.5 min)
 - App aberta no telemóvel (ou Chrome em modo mobile)
@@ -69,7 +74,7 @@ Foco: a experiência mobile-first. Mostrar como a app é fluida no telemóvel.
 ### 2. Inscrição numa aula (1 min)
 - Tab Aulas
 - "Limpa, só mostra aulas em que o aluno se pode inscrever — sem aulas passadas, sem aulas em que já está inscrito, sem aulas cheias."
-- Tocar em "Inscrever" → push notification chega no momento
+- ✅ **Fazer ao vivo:** tocar em "Inscrever" numa aula de demo preparada → push notification chega no momento
 - "Inscrição confirmada, recebe a notificação. Tudo automático."
 
 ### 3. Histórico — Inscrições (1 min)
@@ -83,10 +88,11 @@ Foco: a experiência mobile-first. Mostrar como a app é fluida no telemóvel.
 - Timeline do dia
 - "O instrutor olha e sabe exatamente onde tem de estar."
 
-### 5. Marcar presenças e cancelar aula (1 min)
+### 5. Marcar presenças e indisponibilidade (1 min)
 - Tocar numa aula → marcar presenças
-- Mostrar "Não posso dar esta aula"
-- "Se um instrutor adoece de manhã, em três toques cancela a aula e os alunos sabem antes de saírem de casa."
+- ✅ **Fazer ao vivo:** marcar uma presença num aluno
+- Mostrar o botão "Não posso dar esta aula"
+- ⚠️ **Abrir o diálogo de confirmação mas cancelar.** "Se confirmar, a aula é cancelada e todos os alunos inscritos recebem push notification automaticamente. Em três toques o instrutor resolve. Vamos saltar a confirmação."
 
 ---
 
@@ -102,16 +108,32 @@ Foco: a experiência mobile-first. Mostrar como a app é fluida no telemóvel.
 
 ## Notas práticas
 
-- **Antes da demo:**
-  - Preparar dados realistas: 5-10 alunos, 3-4 instrutores, aulas espalhadas pelos próximos dias e algumas no passado
-  - Ter abas separadas para cada papel (admin/instrutor/aluno) para alternar rapidamente
-  - Ativar push notifications nas contas de demo (telemóvel + browser)
-- **Dispositivos:**
-  - Computador a apresentar o backoffice
-  - Telemóvel real (mirror para projector se possível) para a parte do aluno/instrutor
-- **Contas de teste a entregar no fim:**
-  - 1 admin
-  - 1-2 instrutores
-  - 3-4 alunos
-- **Plano B se a internet falhar:** screenshots do fluxo crítico (calendário, detalhe da aula, painel do aluno)
-- **Tempo total:** ~15 min demo + Q&A + tempo livre para experimentarem
+### Estratégia de demo segura
+- **Submeter ao vivo apenas:** marcar presença, adicionar aluno a uma aula de teste, inscrever um aluno numa aula preparada. Tudo reversível.
+- **Não submeter (mostrar o formulário e cancelar):** criar aula recorrente, editar/guardar uma aula, mudar instrutor, cancelar aula, marcar instrutor indisponível.
+- **Razão:** se algo falhar ou se acidentalmente cancelarmos uma aula que precisamos para o resto da demo, parecemos amadores. Os clientes podem fazer tudo a sério a seguir.
+
+### Antes da demo (preparação dos dados)
+- **Aulas dedicadas a cada cenário:**
+  - 1 aula em curso com 4-5 alunos para "marcar presenças" e "marcar todos presentes"
+  - 1 aula concluída com algumas presenças marcadas para mostrar histórico
+  - 1 aula futura com vagas livres e o aluno de demo NÃO inscrito (para a inscrição ao vivo)
+  - 1 aula futura à hora que o instrutor já tem outra (para mostrar conflito)
+- **Utilizadores:** 5-10 alunos, 3-4 instrutores, distribuídos pelas aulas
+- **Push notifications ativadas** nas contas de demo (telemóvel + browser)
+- **Abas separadas** abertas para cada papel para alternar rapidamente
+
+### Dispositivos
+- Computador a apresentar o backoffice (sidebar visível)
+- Telemóvel real (mirror para projector se possível) para a parte do aluno/instrutor
+
+### Contas de teste a entregar no fim
+- 1 admin
+- 1-2 instrutores
+- 3-4 alunos
+
+### Plano B
+Se a internet falhar: screenshots do fluxo crítico (calendário, detalhe da aula, painel do aluno) numa pasta acessível offline.
+
+### Tempo total
+~15 min demo + Q&A + tempo livre para experimentarem.
