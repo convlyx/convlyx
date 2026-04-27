@@ -91,11 +91,13 @@ export const classRouter = router({
         },
       });
 
-      // Strip internal notes from student view
+      // Students only see their own enrollment, with notes stripped
       if (result && ctx.user.role === "STUDENT") {
         return {
           ...result,
-          enrollments: result.enrollments.map((e) => ({ ...e, notes: null })),
+          enrollments: result.enrollments
+            .filter((e) => e.student.id === ctx.user.id)
+            .map((e) => ({ ...e, notes: null })),
         };
       }
 
@@ -136,7 +138,47 @@ export const classRouter = router({
         });
       }
 
-      // Check for schedule conflicts
+      // Recurring creation: generate sessions then check conflicts per occurrence
+      if (input.recurrence) {
+        const recurrenceInput = { ...input, recurrence: input.recurrence };
+        const sessions = generateRecurringSessions(recurrenceInput, ctx.tenantId, ctx.user.id);
+
+        if (sessions.length === 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "classes.noSessionsGenerated",
+          });
+        }
+
+        // Check conflicts across all generated sessions in a single query
+        const conflictAny = await ctx.db.classSession.findFirst({
+          where: {
+            tenantId: ctx.tenantId,
+            instructorId: input.instructorId,
+            status: { not: "CANCELLED" },
+            OR: sessions.map((s) => ({
+              startsAt: { lt: s.endsAt },
+              endsAt: { gt: s.startsAt },
+            })),
+          },
+          select: { id: true },
+        });
+
+        if (conflictAny) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "classes.scheduleConflict",
+          });
+        }
+
+        const created = await ctx.db.classSession.createMany({
+          data: sessions,
+        });
+
+        return { count: created.count };
+      }
+
+      // One-off: check conflict for the single occurrence
       const conflict = await ctx.db.classSession.findFirst({
         where: {
           tenantId: ctx.tenantId,
@@ -157,25 +199,6 @@ export const classRouter = router({
           code: "BAD_REQUEST",
           message: "classes.scheduleConflict",
         });
-      }
-
-      // Recurring creation: generate multiple sessions
-      if (input.recurrence) {
-        const recurrenceInput = { ...input, recurrence: input.recurrence };
-        const sessions = generateRecurringSessions(recurrenceInput, ctx.tenantId, ctx.user.id);
-
-        if (sessions.length === 0) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "classes.noSessionsGenerated",
-          });
-        }
-
-        const created = await ctx.db.classSession.createMany({
-          data: sessions,
-        });
-
-        return { count: created.count };
       }
 
       // One-off creation

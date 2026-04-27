@@ -16,5 +16,5 @@ export default async function CalendarPage() {
 
   if (!user) redirect("/login");
 
-  return <CalendarView userRole={user.role} />;
+  return <CalendarView userRole={user.role} userId={authUser.id} />;
 }

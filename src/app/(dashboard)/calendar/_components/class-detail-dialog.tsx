@@ -3,7 +3,7 @@
 import { useTranslations, useFormatter } from "next-intl";
 import { trpc } from "@/lib/trpc";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogBody,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -19,11 +19,13 @@ export function ClassDetailDialog({
   open,
   onClose,
   userRole,
+  userId,
 }: {
   classId: string | null;
   open: boolean;
   onClose: () => void;
   userRole: string;
+  userId: string;
 }) {
   const t = useTranslations();
   const { onError } = useTranslatedError();
@@ -87,7 +89,7 @@ export function ClassDetailDialog({
 
   // Check if current student is already enrolled
   const myEnrollment = classDetail.enrollments.find(
-    (e) => e.status === "ENROLLED"
+    (e) => e.status === "ENROLLED" && e.student.id === userId,
   );
 
   return (
@@ -97,6 +99,7 @@ export function ClassDetailDialog({
           <DialogTitle>{classDetail.title}</DialogTitle>
         </DialogHeader>
 
+        <DialogBody>
         <div className="grid gap-3 text-sm">
           <div className="flex items-center gap-2">
             <Badge className={classTypeBadgeClass[classDetail.classType]}>
@@ -202,6 +205,7 @@ export function ClassDetailDialog({
             </div>
           )}
         </div>
+        </DialogBody>
 
         <DialogFooter>
           {/* Student: enroll or cancel */}

@@ -85,6 +85,7 @@ export function ClassDetailView({
       toast.success(t("toast.classCancelled"));
       utils.class.getById.invalidate({ id: classId });
       utils.class.list.invalidate();
+      setCancelClassConfirm(false);
     },
     onError,
   });
@@ -145,7 +146,7 @@ export function ClassDetailView({
       </Link>
 
       {/* Header card */}
-      <div className="rounded-2xl border bg-card p-6 card-shadow">
+      <div className="rounded-xl border bg-card p-6 card-shadow">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${classTypeColorMap[classDetail.classType]}`}>
@@ -456,7 +457,6 @@ export function ClassDetailView({
         onClose={() => setCancelClassConfirm(false)}
         onConfirm={() => {
           cancelClassMutation.mutate({ id: classDetail.id });
-          setCancelClassConfirm(false);
         }}
         title={t("classes.cancelClassConfirmTitle")}
         message={t("classes.cancelClassConfirmMessage")}

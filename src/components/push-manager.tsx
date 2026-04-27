@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Bell, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 export function PushManager({ userId }: { userId: string }) {
+  const t = useTranslations("settings");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -57,10 +59,10 @@ export function PushManager({ userId }: { userId: string }) {
       });
 
       setIsSubscribed(true);
-      toast.success("Notificações ativadas");
+      toast.success(t("pushEnabled"));
     } catch (error) {
       console.error("Push subscription failed:", error);
-      toast.error("Não foi possível ativar as notificações");
+      toast.error(t("pushEnableError"));
     }
     setLoading(false);
   }
@@ -81,9 +83,9 @@ export function PushManager({ userId }: { userId: string }) {
       }
 
       setIsSubscribed(false);
-      toast.success("Notificações desativadas");
+      toast.success(t("pushDisabled"));
     } catch {
-      toast.error("Erro ao desativar notificações");
+      toast.error(t("pushDisableError"));
     }
     setLoading(false);
   }
@@ -101,12 +103,12 @@ export function PushManager({ userId }: { userId: string }) {
       {isSubscribed ? (
         <>
           <BellOff className="h-3.5 w-3.5" />
-          {loading ? "..." : "Desativar notificações"}
+          {loading ? "..." : t("disablePush")}
         </>
       ) : (
         <>
           <Bell className="h-3.5 w-3.5" />
-          {loading ? "..." : "Ativar notificações"}
+          {loading ? "..." : t("enablePush")}
         </>
       )}
     </Button>

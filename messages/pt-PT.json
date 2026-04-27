@@ -398,6 +398,12 @@
     "passwordError": "Erro ao atualizar palavra-passe",
     "pushNotifications": "Notificações push",
     "pushDescription": "Receba notificações no seu dispositivo, mesmo quando não está a usar a aplicação.",
+    "enablePush": "Ativar notificações",
+    "disablePush": "Desativar notificações",
+    "pushEnabled": "Notificações ativadas",
+    "pushDisabled": "Notificações desativadas",
+    "pushEnableError": "Não foi possível ativar as notificações",
+    "pushDisableError": "Erro ao desativar notificações",
     "installQR": "QR de instalação",
     "installQRDescription": "Imprima ou partilhe este QR para que os alunos instalem a aplicação no telemóvel. O QR aponta para uma página de instalação personalizada.",
     "downloadQR": "Transferir QR"

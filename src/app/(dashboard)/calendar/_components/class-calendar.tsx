@@ -36,9 +36,11 @@ const statusColors: Record<string, { bg: string; border: string }> = {
 export function ClassCalendar({
   filter,
   userRole,
+  userId,
 }: {
   filter?: CalendarFilter;
   userRole: string;
+  userId: string;
 }) {
   const t = useTranslations();
   const [dateRange, setDateRange] = useState<{ from: string; to: string } | null>(null);
@@ -187,6 +189,7 @@ export function ClassCalendar({
         open={selectedClassId !== null}
         onClose={() => setSelectedClassId(null)}
         userRole={userRole}
+        userId={userId}
       />
     </div>
   );

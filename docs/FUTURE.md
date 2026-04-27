@@ -97,6 +97,27 @@ Living document of things to build, improve, or investigate post-MVP.
 - [ ] Structured logging
 - [ ] CI pipeline with lint + type-check + tests on PR
 
+## Code Quality (from audit)
+- [ ] **Instructor authorization scoping** — `enrollment.markAttendance`, `addNote`, `bulkMarkAttendance` allow any instructor in the tenant to act on any class. Add `session: { instructorId: ctx.user.id }` filter when role is INSTRUCTOR.
+- [ ] **Cap `enrollment.addNote` notes length** — currently unbounded `z.string()`; add `.max(2000)`.
+- [ ] **Supabase RLS policies** — defense-in-depth on `enrollments`, `class_sessions`, `users`, `notifications` keyed on `tenant_id`. CLAUDE.md documents this as defense-in-depth but no policies exist.
+- [ ] **Cursor-based pagination** — all list pages currently fetch everything client-side then `.slice()`. Won't scale past a few hundred records per tenant.
+- [ ] **`as unknown as string` casts on Date fields** in 6 places (`classes-table.tsx:102`, `enrollments-list.tsx:52,54`, `dashboard-view.tsx:58`, `class-calendar.tsx:92,93`). Symptom of tRPC superjson types not being trusted.
+- [ ] **Inconsistent error key namespacing** — `users.notFound`, `enrollment.notFound`, `classes.notFound`. Pick one convention (recommend plural).
+- [ ] **Inline Zod schemas scattered across routers** — should live in `src/lib/validations/`. Currently in `enrollment.ts`, `user.ts`, `class.ts`, `notification.ts`.
+- [ ] **`ITEMS_PER_PAGE = 10` duplicated** in 7 components — extract to `src/lib/constants/pagination.ts`.
+- [ ] **`useUrlParam` hook** — extract the URL-param sync pattern (`useState` + `router.replace` + `useEffect(() => setPage(1), [...])`) duplicated across 5 list components.
+- [ ] **16 silent `.catch(() => {})` on notification calls** — no telemetry on failures. Add at least `console.warn` inside catches.
+- [ ] **Notifications fired outside transactions** — DB write succeeds but notification can fail silently, leaving inconsistent state. Consider event-driven pattern post-MVP.
+- [ ] **Default Button size** — bumped to h-9 (36px) for mobile tap target. Still below 44px iOS HIG recommendation. Consider increasing further or using `size="lg"` everywhere on mobile primary actions.
+- [ ] **Calendar event hex colors** (`class-calendar.tsx:21-33`) don't have dark mode variants — events look identical in dark mode. Move to CSS vars.
+- [ ] **Roles "secondary" badges everywhere** — `roleColorMap` is defined and unused. Either use it on user/instructor lists for visual consistency or delete.
+- [ ] **Rebuild `Set` per render in `classes-table.tsx:68`** — wrap `enrolledSessionIds` in `useMemo`.
+- [ ] **`PushSubscription` has no `tenantId` column** — could fire wrong-tenant push if user is moved across tenants.
+- [ ] **Platform-admin admin creation rollback is best-effort** — wrap in Prisma transaction or add proper compensation logic.
+- [ ] **Hardcoded `themeColor: "#16a34a"` in `app/layout.tsx:23`** — doesn't match the actual primary token.
+- [ ] **`<span className="sr-only">Close</span>` in `dialog.tsx:77`** — English leak in a11y label, should use translation key.
+
 ## Legal & Compliance
 - [ ] GDPR data export (all user data as JSON/CSV)
 - [ ] GDPR right to deletion (hard delete path)

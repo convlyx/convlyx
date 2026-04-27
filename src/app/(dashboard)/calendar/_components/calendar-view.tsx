@@ -6,7 +6,7 @@ import { ClassCalendar } from "./class-calendar";
 import { CalendarFilters } from "./calendar-filters";
 import type { UserRole } from "@/generated/prisma/enums";
 
-export function CalendarView({ userRole }: { userRole: UserRole }) {
+export function CalendarView({ userRole, userId }: { userRole: UserRole; userId: string }) {
   const t = useTranslations("nav");
   const [typeFilter, setTypeFilter] = useState("ALL");
 
@@ -28,6 +28,7 @@ export function CalendarView({ userRole }: { userRole: UserRole }) {
           ...(typeFilter !== "ALL" && { classType: typeFilter as "THEORY" | "PRACTICAL" }),
         }}
         userRole={userRole}
+        userId={userId}
       />
     </div>
   );

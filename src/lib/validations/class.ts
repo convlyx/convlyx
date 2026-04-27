@@ -30,6 +30,16 @@ export const createClassSchema = z
       return new Date(data.endsAt) > new Date(data.startsAt);
     },
     { message: "A hora de fim deve ser posterior à hora de início" }
+  )
+  .refine(
+    (data) => {
+      if (!data.recurrence) return true;
+      const from = new Date(data.recurrence.validFrom);
+      const until = new Date(data.recurrence.validUntil);
+      const days = (until.getTime() - from.getTime()) / (1000 * 60 * 60 * 24);
+      return days >= 0 && days <= 366;
+    },
+    { message: "O intervalo de recorrência não pode exceder 1 ano" }
   );
 
 export const updateClassSchema = z.object({
