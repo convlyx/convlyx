@@ -145,6 +145,7 @@ export function ClassCalendar({
             allDaySlot={false}
             nowIndicator
             selectable={false}
+            eventDisplay="block"
             events={events}
             eventClick={handleEventClick}
             datesSet={handleDatesSet}
