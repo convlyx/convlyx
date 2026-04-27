@@ -21,6 +21,7 @@ export default async function SettingsPage() {
         select: {
           id: true,
           name: true,
+          subdomain: true,
           address: true,
           phone: true,
           _count: { select: { users: true, sessions: true } },
@@ -43,6 +44,7 @@ export default async function SettingsPage() {
       school={{
         id: user.school.id,
         name: user.school.name,
+        subdomain: user.school.subdomain,
         address: user.school.address ?? "",
         phone: user.school.phone ?? "",
         userCount: user.school._count.users,

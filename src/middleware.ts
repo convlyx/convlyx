@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const publicPaths = ["/login", "/register", "/reset-password", "/update-password"];
+const publicPaths = ["/login", "/register", "/reset-password", "/update-password", "/install"];
 
 // Root domains that should not serve the app (no subdomain)
 const ROOT_DOMAINS = ["convlyx.com", "www.convlyx.com"];
@@ -39,6 +39,8 @@ export async function middleware(request: NextRequest) {
 
   // 4. Route protection
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
+  // Paths that are always public, even for logged-in users
+  const isAlwaysPublic = pathname.startsWith("/install");
 
   if (!user && !isPublicPath) {
     const loginUrl = new URL("/login", request.url);
@@ -46,7 +48,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && isPublicPath) {
+  if (user && isPublicPath && !isAlwaysPublic) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

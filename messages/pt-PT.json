@@ -355,6 +355,30 @@
     "vacancies": "Vagas",
     "inProgressBadge": "A decorrer"
   },
+  "install": {
+    "title": "Instalar a aplicação",
+    "description": "Instale a aplicação no seu telemóvel para receber notificações e aceder mais rapidamente, sem precisar do navegador.",
+    "alreadyInstalled": "Aplicação já instalada",
+    "alreadyInstalledDescription": "A aplicação já está instalada no seu dispositivo.",
+    "openApp": "Abrir aplicação",
+    "androidNative": "Instalar agora",
+    "androidNativeDescription": "Toque no botão para adicionar a aplicação ao seu ecrã principal.",
+    "installButton": "Instalar aplicação",
+    "iosTitle": "Como instalar no iPhone / iPad",
+    "iosStep1Before": "Toque no botão",
+    "iosStep1Share": "Partilhar",
+    "iosStep1After": "na barra inferior do Safari.",
+    "iosStep2Before": "Selecione",
+    "iosStep2AddToHome": "Adicionar ao Ecrã Principal",
+    "iosStep3": "Confirme em \"Adicionar\". O ícone aparece no seu ecrã principal.",
+    "iosNote": "Esta página deve ser aberta no Safari para a instalação funcionar.",
+    "androidTitle": "Como instalar no Android",
+    "androidStep1": "Abra esta página no Chrome.",
+    "androidStep2": "Toque no menu (três pontos) no canto superior direito.",
+    "androidStep3": "Selecione \"Instalar aplicação\" ou \"Adicionar ao ecrã principal\".",
+    "desktopTitle": "Instalar no computador",
+    "desktopDescription": "Para uma experiência otimizada, abra esta página no telemóvel. No computador, pode usar a aplicação diretamente no navegador."
+  },
   "settings": {
     "title": "Definições",
     "profile": "Perfil",
@@ -373,7 +397,10 @@
     "groupName": "Nome do grupo",
     "passwordError": "Erro ao atualizar palavra-passe",
     "pushNotifications": "Notificações push",
-    "pushDescription": "Receba notificações no seu dispositivo, mesmo quando não está a usar a aplicação."
+    "pushDescription": "Receba notificações no seu dispositivo, mesmo quando não está a usar a aplicação.",
+    "installQR": "QR de instalação",
+    "installQRDescription": "Imprima ou partilhe este QR para que os alunos instalem a aplicação no telemóvel. O QR aponta para uma página de instalação personalizada.",
+    "downloadQR": "Transferir QR"
   },
   "days": {
     "0": "Segunda-feira",

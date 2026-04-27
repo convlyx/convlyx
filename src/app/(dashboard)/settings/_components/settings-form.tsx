@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { PushManager } from "@/components/push-manager";
+import { InstallQR } from "./install-qr";
 
 type SettingsFormProps = {
   user: {
@@ -24,6 +25,7 @@ type SettingsFormProps = {
   school: {
     id: string;
     name: string;
+    subdomain: string;
     address: string;
     phone: string;
     userCount: number;
@@ -140,6 +142,9 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
           </form>
         </section>
       )}
+
+      {/* Install QR (ADMIN + SECRETARY) */}
+      {canEditSchool && <InstallQR subdomain={school.subdomain} schoolName={school.name} />}
 
       {/* Password */}
       <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
