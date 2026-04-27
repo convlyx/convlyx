@@ -56,12 +56,16 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") ?? defaultStatus);
   const [page, setPage] = useState(1);
   const [cancelId, setCancelId] = useState<string | null>(null);
+  const [enrollingId, setEnrollingId] = useState<string | null>(null);
   const [editClass, setEditClass] = useState<typeof filteredClasses[number] | null>(null);
 
+  const isStudent = userRole === "STUDENT";
   const { data: classes, isLoading } = trpc.class.list.useQuery({
     ...(typeFilter !== "ALL" && { classType: typeFilter as "THEORY" | "PRACTICAL" }),
     status: statusFilter as "ALL" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED",
   });
+  const { data: myEnrollments } = trpc.enrollment.listByStudent.useQuery(undefined, { enabled: isStudent });
+  const enrolledSessionIds = new Set(myEnrollments?.map((e) => e.session.id) ?? []);
 
   const utils = trpc.useUtils();
   const cancelMutation = trpc.class.cancel.useMutation({
@@ -71,6 +75,19 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
       setCancelId(null);
     },
     onError,
+  });
+
+  const enrollMutation = trpc.enrollment.enroll.useMutation({
+    onSuccess: () => {
+      toast.success(t("toast.enrollmentSuccess"));
+      utils.class.list.invalidate();
+      utils.enrollment.listByStudent.invalidate();
+      setEnrollingId(null);
+    },
+    onError: (error) => {
+      setEnrollingId(null);
+      onError(error);
+    },
   });
 
   const canManage = userRole === "ADMIN" || userRole === "SECRETARY";
@@ -222,6 +239,22 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                       </span>
                       <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5 shrink-0" />{cls._count.enrollments}/{cls.capacity}</span>
                     </div>
+                    {isStudent && cls.status === "SCHEDULED" && !enrolledSessionIds.has(cls.id) && cls._count.enrollments < cls.capacity && (
+                      <div className="mt-2">
+                        <Button
+                          size="sm"
+                          disabled={enrollingId === cls.id}
+                          onClick={(e) => { e.preventDefault(); setEnrollingId(cls.id); enrollMutation.mutate({ sessionId: cls.id }); }}
+                        >
+                          {enrollingId === cls.id ? t("common.loading") : t("enrollment.enroll")}
+                        </Button>
+                      </div>
+                    )}
+                    {isStudent && enrolledSessionIds.has(cls.id) && (
+                      <div className="mt-2">
+                        <Badge variant="default">{t("enrollment.enrolled")}</Badge>
+                      </div>
+                    )}
                     {canManage && (cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
                       <div className="mt-2 flex gap-2 sm:hidden" onClick={(e) => e.preventDefault()}>
                         <Button variant="outline" size="sm" onClick={(e) => { e.preventDefault(); setEditClass(cls); }}>
@@ -291,6 +324,18 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                   <TableCell>{cls._count.enrollments}/{cls.capacity}</TableCell>
                   <TableCell><Badge variant={statusVariant[cls.status] ?? "outline"}>{t(statusKeys[cls.status])}</Badge></TableCell>
                   <TableCell>
+                    {isStudent && cls.status === "SCHEDULED" && !enrolledSessionIds.has(cls.id) && cls._count.enrollments < cls.capacity && (
+                      <Button
+                        size="sm"
+                        disabled={enrollingId === cls.id}
+                        onClick={() => { setEnrollingId(cls.id); enrollMutation.mutate({ sessionId: cls.id }); }}
+                      >
+                        {enrollingId === cls.id ? t("common.loading") : t("enrollment.enroll")}
+                      </Button>
+                    )}
+                    {isStudent && enrolledSessionIds.has(cls.id) && (
+                      <Badge variant="default">{t("enrollment.enrolled")}</Badge>
+                    )}
                     {canManage && (cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
                       <div className="flex gap-1">
                         <Button variant="outline" size="icon-sm" onClick={() => setEditClass(cls)} title={t("common.edit")}>
