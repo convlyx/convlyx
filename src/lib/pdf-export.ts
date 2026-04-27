@@ -196,7 +196,7 @@ export async function exportStudentProgressPDF(student: {
   school: { name: string };
   createdAt: string | Date;
   stats: {
-    totalEnrolled: number;
+    totalClasses: number;
     totalAttended: number;
     totalNoShow: number;
     theoryAttended: number;

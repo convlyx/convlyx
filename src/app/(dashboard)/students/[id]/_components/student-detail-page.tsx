@@ -19,12 +19,14 @@ import {
   Building2,
   Camera,
   FileDown,
+  Pencil,
 } from "lucide-react";
+import { EditUserDialog } from "@/app/(dashboard)/users/_components/edit-user-dialog";
 import { Loading } from "@/components/loading";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
-import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeBadgeClass } from "@/lib/constants/class";
+import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeBadgeClass, resolveEnrollmentDisplay } from "@/lib/constants/class";
 import { exportStudentProgressPDF } from "@/lib/pdf-export";
 
 const HISTORY_PER_PAGE = 10;
@@ -38,6 +40,8 @@ export function StudentDetailPage({
   const format = useFormatter();
 
   const [historyPage, setHistoryPage] = useState(1);
+  const [showEdit, setShowEdit] = useState(false);
+  const utils = trpc.useUtils();
   const { data: student, isLoading } = trpc.user.studentProfile.useQuery({ id });
 
   if (isLoading) {
@@ -74,15 +78,26 @@ export function StudentDetailPage({
                 {student.status === "ACTIVE" ? t("common.active") : t("common.inactive")}
               </Badge>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 shrink-0"
-              onClick={() => exportStudentProgressPDF(student)}
-            >
-              <FileDown className="h-3.5 w-3.5" />
-              {t("common.exportPDF")}
-            </Button>
+            <div className="flex gap-2 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setShowEdit(true)}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                {t("common.edit")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => exportStudentProgressPDF(student)}
+              >
+                <FileDown className="h-3.5 w-3.5" />
+                {t("common.exportPDF")}
+              </Button>
+            </div>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">
@@ -109,10 +124,10 @@ export function StudentDetailPage({
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard icon={BookOpen} label={t("users.totalClasses")} value={student.stats.totalClasses} />
         <StatCard icon={CalendarDays} label={t("users.upcomingClasses")} value={student.stats.upcoming} />
         <StatCard icon={BookCheck} label={t("users.classesAttended")} value={student.stats.totalAttended} />
         <StatCard icon={XCircle} label={t("users.classesMissed")} value={student.stats.totalNoShow} />
-        <StatCard icon={BookOpen} label={t("enrollment.enrolled")} value={student.stats.totalEnrolled} />
       </div>
 
       {/* Progress breakdown */}
@@ -165,9 +180,14 @@ export function StudentDetailPage({
                         })}
                       </p>
                     </div>
-                    <Badge variant={enrollmentStatusVariant[enrollment.status] ?? "outline"}>
-                      {t(enrollmentStatusKeys[enrollment.status] ?? enrollment.status)}
-                    </Badge>
+                    {(() => {
+                      const displayStatus = resolveEnrollmentDisplay(enrollment.status, enrollment.session.status);
+                      return (
+                        <Badge variant={enrollmentStatusVariant[displayStatus] ?? "outline"}>
+                          {t(enrollmentStatusKeys[displayStatus] ?? displayStatus)}
+                        </Badge>
+                      );
+                    })()}
                   </div>
                 </Link>
               ))}
@@ -181,6 +201,17 @@ export function StudentDetailPage({
           </>
         )}
       </div>
+
+      {showEdit && (
+        <EditUserDialog
+          userData={{ ...student, role: "STUDENT" }}
+          open={showEdit}
+          onClose={() => {
+            setShowEdit(false);
+            utils.user.studentProfile.invalidate({ id });
+          }}
+        />
+      )}
     </div>
   );
 }

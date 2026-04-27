@@ -15,6 +15,7 @@ export const classRouter = router({
       z.object({
         schoolId: z.string().uuid().optional(),
         classType: z.enum(["THEORY", "PRACTICAL"]).optional(),
+        status: z.enum(["ALL", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"]).optional(),
         from: z.string().datetime().optional(),
         to: z.string().datetime().optional(),
       }).optional()
@@ -43,7 +44,7 @@ export const classRouter = router({
                 },
               }
             : {}),
-          status: { not: "CANCELLED" },
+          ...(input?.status && input.status !== "ALL" ? { status: input.status } : !input?.status ? { status: { not: "CANCELLED" as const } } : {}),
         },
         select: {
           id: true,
@@ -236,7 +237,14 @@ export const classRouter = router({
     .mutation(async ({ ctx, input }) => {
       const session = await ctx.db.classSession.findFirst({
         where: { id: input.id, tenantId: ctx.tenantId },
-        select: { status: true },
+        select: {
+          status: true,
+          title: true,
+          startsAt: true,
+          endsAt: true,
+          instructorId: true,
+          enrollments: { select: { studentId: true } },
+        },
       });
 
       if (!session) {
@@ -274,6 +282,12 @@ export const classRouter = router({
         });
       }
 
+      const instructorChanged = session.instructorId !== input.instructorId;
+      const toMinutes = (d: string | Date) => new Date(d).toISOString().slice(0, 16);
+      const scheduleChanged =
+        toMinutes(input.startsAt) !== toMinutes(session.startsAt) ||
+        toMinutes(input.endsAt) !== toMinutes(session.endsAt);
+
       await ctx.db.classSession.updateMany({
         where: { id: input.id, tenantId: ctx.tenantId },
         data: {
@@ -285,6 +299,79 @@ export const classRouter = router({
           updatedById: ctx.user.id,
         },
       });
+
+      // Notify on instructor change
+      if (instructorChanged) {
+        const timeStr = formatClassTime(new Date(input.startsAt));
+        const newInstructor = await ctx.db.user.findUnique({
+          where: { id: input.instructorId },
+          select: { name: true },
+        });
+        const newInstructorName = newInstructor?.name ?? "";
+
+        // Notify old instructor (removed)
+        createNotification({
+          db: ctx.db,
+          tenantId: ctx.tenantId,
+          userId: session.instructorId,
+          type: "class.instructorChanged",
+          titleKey: "notifications.removedFromClass",
+          messageKey: "notifications.removedFromClassMessage",
+          params: { title: input.title, time: timeStr },
+        }).catch(() => {});
+
+        // Notify new instructor (assigned)
+        createNotification({
+          db: ctx.db,
+          tenantId: ctx.tenantId,
+          userId: input.instructorId,
+          type: "class.instructorChanged",
+          titleKey: "notifications.assignedToClass",
+          messageKey: "notifications.assignedToClassMessage",
+          params: { title: input.title, time: timeStr },
+        }).catch(() => {});
+
+        // Notify enrolled students
+        const studentIds = session.enrollments.map((e) => e.studentId);
+        if (studentIds.length > 0) {
+          createNotifications({
+            db: ctx.db,
+            tenantId: ctx.tenantId,
+            userIds: studentIds,
+            type: "class.instructorChanged",
+            titleKey: "notifications.instructorChanged",
+            messageKey: "notifications.instructorChangedMessage",
+            params: { title: input.title, time: timeStr, instructor: newInstructorName },
+          }).catch(() => {});
+        }
+      }
+
+      // Notify on schedule change (only students not already notified about instructor change)
+      if (scheduleChanged && !instructorChanged) {
+        const studentIds = session.enrollments.map((e) => e.studentId);
+        const newTimeStr = formatClassTime(new Date(input.startsAt));
+        if (studentIds.length > 0) {
+          createNotifications({
+            db: ctx.db,
+            tenantId: ctx.tenantId,
+            userIds: studentIds,
+            type: "class.scheduleChanged",
+            titleKey: "notifications.scheduleChanged",
+            messageKey: "notifications.scheduleChangedMessage",
+            params: { title: input.title, time: newTimeStr },
+          }).catch(() => {});
+        }
+        // Notify instructor about schedule change
+        createNotification({
+          db: ctx.db,
+          tenantId: ctx.tenantId,
+          userId: input.instructorId,
+          type: "class.scheduleChanged",
+          titleKey: "notifications.scheduleChanged",
+          messageKey: "notifications.scheduleChangedMessage",
+          params: { title: input.title, time: newTimeStr },
+        }).catch(() => {});
+      }
 
       return { id: input.id, title: input.title };
     }),

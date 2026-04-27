@@ -25,6 +25,7 @@ export const enrollmentStatusKeys: Record<string, string> = {
   ENROLLED: "enrollment.enrolled",
   ATTENDED: "enrollment.attended",
   NO_SHOW: "enrollment.noShow",
+  NO_RECORD: "enrollment.noRecord",
 };
 
 // Enrollment status badge variants
@@ -32,6 +33,7 @@ export const enrollmentStatusVariant: Record<string, "default" | "secondary" | "
   ENROLLED: "default",
   ATTENDED: "secondary",
   NO_SHOW: "destructive",
+  NO_RECORD: "outline",
 };
 
 // Role avatar color classes
@@ -47,6 +49,17 @@ export const classTypeColorMap: Record<string, string> = {
   THEORY: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
   PRACTICAL: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400",
 };
+
+/**
+ * Resolve display status for an enrollment.
+ * ENROLLED on a COMPLETED class = NO_RECORD (attendance was never marked).
+ */
+export function resolveEnrollmentDisplay(enrollmentStatus: string, classStatus: string): string {
+  if (enrollmentStatus === "ENROLLED" && classStatus === "COMPLETED") {
+    return "NO_RECORD";
+  }
+  return enrollmentStatus;
+}
 
 // Class type badge classes (for inline badges)
 export const classTypeBadgeClass: Record<string, string> = {

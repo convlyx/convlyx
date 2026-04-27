@@ -18,7 +18,9 @@ import {
   Building2,
   Camera,
   XCircle,
+  Pencil,
 } from "lucide-react";
+import { EditUserDialog } from "@/app/(dashboard)/users/_components/edit-user-dialog";
 import { Loading } from "@/components/loading";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
@@ -36,6 +38,8 @@ export function InstructorDetailPage({
   const format = useFormatter();
 
   const [historyPage, setHistoryPage] = useState(1);
+  const [showEdit, setShowEdit] = useState(false);
+  const utils = trpc.useUtils();
   const { data: instructor, isLoading } = trpc.user.instructorProfile.useQuery({ id });
 
   if (isLoading) {
@@ -64,11 +68,22 @@ export function InstructorDetailPage({
           </div>
         </div>
         <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">{instructor.name}</h1>
-            <Badge variant={instructor.status === "ACTIVE" ? "default" : "destructive"}>
-              {instructor.status === "ACTIVE" ? t("common.active") : t("common.inactive")}
-            </Badge>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold">{instructor.name}</h1>
+              <Badge variant={instructor.status === "ACTIVE" ? "default" : "destructive"}>
+                {instructor.status === "ACTIVE" ? t("common.active") : t("common.inactive")}
+              </Badge>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 shrink-0"
+              onClick={() => setShowEdit(true)}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              {t("common.edit")}
+            </Button>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">
@@ -171,6 +186,17 @@ export function InstructorDetailPage({
           </>
         )}
       </div>
+
+      {showEdit && (
+        <EditUserDialog
+          userData={{ ...instructor, role: "INSTRUCTOR" }}
+          open={showEdit}
+          onClose={() => {
+            setShowEdit(false);
+            utils.user.instructorProfile.invalidate({ id });
+          }}
+        />
+      )}
     </div>
   );
 }

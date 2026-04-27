@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { router, protectedProcedure, roleProtectedProcedure } from "../trpc";
 import { createUserSchema, updateUserSchema } from "@/lib/validations/user";
 import { createNotification } from "../lib/notifications";
+import { syncClassStatuses } from "../lib/class-status";
 
 // Admin client for creating auth users
 const supabaseAdmin = createClient(
@@ -201,6 +202,8 @@ export const userRouter = router({
   studentProfile: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
+      await syncClassStatuses(ctx.db, ctx.tenantId);
+
       const student = await ctx.db.user.findFirst({
         where: { id: input.id, tenantId: ctx.tenantId, role: "STUDENT" },
         select: {
@@ -238,13 +241,14 @@ export const userRouter = router({
       }
 
       const enrollments = student.enrollments;
+      const now = new Date();
       const stats = {
-        totalEnrolled: enrollments.filter((e) => e.status === "ENROLLED").length,
+        totalClasses: enrollments.length,
         totalAttended: enrollments.filter((e) => e.status === "ATTENDED").length,
         totalNoShow: enrollments.filter((e) => e.status === "NO_SHOW").length,
         theoryAttended: enrollments.filter((e) => e.status === "ATTENDED" && e.session.classType === "THEORY").length,
         practicalAttended: enrollments.filter((e) => e.status === "ATTENDED" && e.session.classType === "PRACTICAL").length,
-        upcoming: enrollments.filter((e) => e.status === "ENROLLED" && new Date(e.session.startsAt) > new Date()).length,
+        upcoming: enrollments.filter((e) => e.status === "ENROLLED" && new Date(e.session.startsAt) > now).length,
       };
 
       return { ...student, stats };
@@ -254,6 +258,8 @@ export const userRouter = router({
   instructorProfile: roleProtectedProcedure(["ADMIN", "SECRETARY"])
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
+      await syncClassStatuses(ctx.db, ctx.tenantId);
+
       const instructor = await ctx.db.user.findFirst({
         where: { id: input.id, tenantId: ctx.tenantId, role: "INSTRUCTOR" },
         select: {

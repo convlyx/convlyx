@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { StudentPicker } from "@/components/student-picker";
 import {
-  typeKeys, statusKeys, statusVariant, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap, classTypeBadgeClass,
+  typeKeys, statusKeys, statusVariant, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap, classTypeBadgeClass, resolveEnrollmentDisplay,
 } from "@/lib/constants/class";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { useState } from "react";
 import type { UserRole } from "@/generated/prisma/enums";
+import { EditClassDialog } from "@/app/(dashboard)/classes/_components/edit-class-dialog";
 
 export function ClassDetailView({
   classId,
@@ -43,6 +44,7 @@ export function ClassDetailView({
   const [confirmCompletedEnroll, setConfirmCompletedEnroll] = useState(false);
   const [pendingAttendanceChange, setPendingAttendanceChange] = useState<{ enrollmentId: string; status: "ATTENDED" | "NO_SHOW" } | null>(null);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [showEditClass, setShowEditClass] = useState(false);
   const [noteText, setNoteText] = useState("");
 
   const { data: classDetail, isLoading, isError } = trpc.class.getById.useQuery(
@@ -184,6 +186,17 @@ export function ClassDetailView({
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+            {isStaff && isActive && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setShowEditClass(true)}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                {t("common.edit")}
+              </Button>
+            )}
             {classDetail.status === "COMPLETED" && (
               <Button
                 variant="outline"
@@ -297,9 +310,14 @@ export function ClassDetailView({
                     <Link href={`/students/${enrollment.student.id}`} className="text-sm font-semibold truncate hover:underline hover:text-primary transition-colors">
                       {enrollment.student.name}
                     </Link>
-                    <Badge variant={enrollmentStatusVariant[enrollment.status] ?? "outline"}>
-                      {t(enrollmentStatusKeys[enrollment.status] ?? enrollment.status)}
-                    </Badge>
+                    {(() => {
+                      const displayStatus = resolveEnrollmentDisplay(enrollment.status, classDetail.status);
+                      return (
+                        <Badge variant={enrollmentStatusVariant[displayStatus] ?? "outline"}>
+                          {t(enrollmentStatusKeys[displayStatus] ?? displayStatus)}
+                        </Badge>
+                      );
+                    })()}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{enrollment.student.email}</p>
                   <p className="text-xs text-muted-foreground">
@@ -482,6 +500,17 @@ export function ClassDetailView({
         message={t("classes.changeAttendanceCompletedMessage")}
         loading={markAttendanceMutation.isPending}
       />
+
+      {showEditClass && (
+        <EditClassDialog
+          classData={classDetail}
+          open={showEditClass}
+          onClose={() => {
+            setShowEditClass(false);
+            utils.class.getById.invalidate({ id: classId });
+          }}
+        />
+      )}
     </div>
   );
 }

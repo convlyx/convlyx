@@ -52,12 +52,15 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   const [view, setView] = useViewMode("/classes", initialView);
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [typeFilter, setTypeFilter] = useState<string>(searchParams.get("type") ?? "ALL");
+  const defaultStatus = (searchParams.get("time") ?? "upcoming") === "upcoming" ? "SCHEDULED" : "COMPLETED";
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") ?? defaultStatus);
   const [page, setPage] = useState(1);
   const [cancelId, setCancelId] = useState<string | null>(null);
   const [editClass, setEditClass] = useState<typeof filteredClasses[number] | null>(null);
 
   const { data: classes, isLoading } = trpc.class.list.useQuery({
     ...(typeFilter !== "ALL" && { classType: typeFilter as "THEORY" | "PRACTICAL" }),
+    status: statusFilter as "ALL" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED",
   });
 
   const utils = trpc.useUtils();
@@ -78,17 +81,15 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
 
   const now = new Date();
   const filteredClasses = classes?.filter((cls) => {
-    const matchesSearch = cls.title.toLowerCase().includes(search.toLowerCase());
-    const matchesTime = timeTab === "upcoming"
-      ? new Date(cls.endsAt as unknown as string) >= now && cls.status !== "COMPLETED"
-      : new Date(cls.endsAt as unknown as string) < now || cls.status === "COMPLETED" || cls.status === "CANCELLED";
-    return matchesSearch && matchesTime;
+    if (!cls.title.toLowerCase().includes(search.toLowerCase())) return false;
+    const isFuture = new Date(cls.startsAt as unknown as string) >= now;
+    return timeTab === "upcoming" ? isFuture : !isFuture;
   }) ?? [];
 
   const totalPages = Math.ceil(filteredClasses.length / ITEMS_PER_PAGE);
   const paginatedClasses = filteredClasses.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-  useEffect(() => setPage(1), [search, typeFilter, timeTab]);
+  useEffect(() => setPage(1), [search, typeFilter, statusFilter, timeTab]);
 
   function handleSearchChange(value: string) {
     setSearch(value);
@@ -100,6 +101,11 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
     updateParams("type", value);
   }
 
+  function handleStatusChange(value: string) {
+    setStatusFilter(value);
+    updateParams("status", value === "ALL" ? "" : value);
+  }
+
   function handleViewChange(mode: "cards" | "table") {
     setView(mode);
     updateParams("view", mode);
@@ -107,7 +113,17 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
 
   function handleTimeTab(tab: string) {
     setTimeTab(tab);
-    updateParams("time", tab === "upcoming" ? "" : tab);
+    const newStatus = tab === "upcoming" ? "SCHEDULED" : "COMPLETED";
+    setStatusFilter(newStatus);
+    setPage(1);
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab === "upcoming") {
+      params.delete("time");
+    } else {
+      params.set("time", tab);
+    }
+    params.delete("status");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   return (
@@ -149,6 +165,27 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
               <SelectItem value="ALL">{t("classes.allTypes")}</SelectItem>
               <SelectItem value="THEORY">{t("classes.theory")}</SelectItem>
               <SelectItem value="PRACTICAL">{t("classes.practical")}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={handleStatusChange}>
+            <SelectTrigger className="w-auto min-w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {timeTab === "upcoming" ? (
+                <>
+                  <SelectItem value="ALL">{t("classes.allStatuses")}</SelectItem>
+                  <SelectItem value="SCHEDULED">{t("classes.scheduled")}</SelectItem>
+                  <SelectItem value="IN_PROGRESS">{t("classes.inProgress")}</SelectItem>
+                  <SelectItem value="CANCELLED">{t("classes.cancelled")}</SelectItem>
+                </>
+              ) : (
+                <>
+                  <SelectItem value="ALL">{t("classes.allStatuses")}</SelectItem>
+                  <SelectItem value="COMPLETED">{t("classes.completed")}</SelectItem>
+                  <SelectItem value="CANCELLED">{t("classes.cancelled")}</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>

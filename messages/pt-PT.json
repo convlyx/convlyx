@@ -208,6 +208,7 @@
     "validFrom": "De",
     "validUntil": "Até",
     "allTypes": "Todos os tipos",
+    "allStatuses": "Todos os estados",
     "noClasses": "Nenhuma aula registada",
     "cancelConfirm": "Tem a certeza que pretende cancelar esta aula?",
     "schoolNotFound": "Escola não encontrada",
@@ -251,6 +252,7 @@
     "enrolled": "Inscrito/a",
     "attended": "Presente",
     "noShow": "Faltou",
+    "noRecord": "Sem registo",
     "cancelled": "Removido/a",
     "classFull": "Aula lotada",
     "remove": "Remover",
@@ -294,7 +296,15 @@
     "classReminderMessage": "Amanhã tem aula: {title} · {time}",
     "classReminderInstructor": "Amanhã tem aula para dar: {title} · {time}",
     "statusAttended": "presente",
-    "statusNoShow": "ausente"
+    "statusNoShow": "ausente",
+    "removedFromClass": "Removido/a de aula",
+    "removedFromClassMessage": "Já não é o/a instrutor/a da aula {title} ({time})",
+    "assignedToClass": "Atribuído/a a aula",
+    "assignedToClassMessage": "Foi-lhe atribuída a aula {title} ({time})",
+    "instructorChanged": "Instrutor alterado",
+    "instructorChangedMessage": "O instrutor da aula {title} ({time}) foi alterado para {instructor}",
+    "scheduleChanged": "Horário alterado",
+    "scheduleChangedMessage": "A aula {title} foi reagendada para {time}"
   },
   "dashboard": {
     "welcome": "Bem-vindo/a",

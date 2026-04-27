@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { typeKeys, statusKeys, enrollmentStatusKeys, classTypeBadgeClass } from "@/lib/constants/class";
+import { typeKeys, statusKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeBadgeClass, resolveEnrollmentDisplay } from "@/lib/constants/class";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
@@ -147,11 +147,14 @@ export function ClassDetailDialog({
                   <div key={enrollment.id} className="flex items-center justify-between py-1">
                     <div className="flex items-center gap-2">
                       <span>{enrollment.student.name}</span>
-                      <Badge
-                        variant={enrollment.status === "ENROLLED" ? "default" : enrollment.status === "ATTENDED" ? "secondary" : "destructive"}
-                      >
-                        {t(enrollmentStatusKeys[enrollment.status] ?? enrollment.status)}
-                      </Badge>
+                      {(() => {
+                        const displayStatus = resolveEnrollmentDisplay(enrollment.status, classDetail.status);
+                        return (
+                          <Badge variant={enrollmentStatusVariant[displayStatus] ?? "outline"}>
+                            {t(enrollmentStatusKeys[displayStatus] ?? displayStatus)}
+                          </Badge>
+                        );
+                      })()}
                     </div>
                     {enrollment.status === "ENROLLED" && (
                       <div className="flex gap-1">

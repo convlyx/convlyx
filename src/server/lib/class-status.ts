@@ -22,13 +22,24 @@ export async function syncClassStatuses(db: PrismaClient, tenantId: string) {
     data: { status: "IN_PROGRESS" },
   });
 
-  // Move IN_PROGRESS → COMPLETED (class has ended)
-  await db.classSession.updateMany({
+  // Find classes about to be completed (still IN_PROGRESS but ended)
+  const completingClasses = await db.classSession.findMany({
     where: {
       tenantId,
       status: "IN_PROGRESS",
       endsAt: { lte: now },
     },
-    data: { status: "COMPLETED" },
+    select: { id: true },
   });
+
+  if (completingClasses.length > 0) {
+    const completingIds = completingClasses.map((c) => c.id);
+
+    // Move IN_PROGRESS → COMPLETED
+    await db.classSession.updateMany({
+      where: { id: { in: completingIds } },
+      data: { status: "COMPLETED" },
+    });
+  }
+
 }

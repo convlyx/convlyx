@@ -13,7 +13,7 @@ import {
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
 import { EmptyState } from "@/components/empty-state";
-import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
+import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap, classTypeBadgeClass, resolveEnrollmentDisplay } from "@/lib/constants/class";
 import { Pagination } from "@/components/pagination";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
@@ -103,9 +103,14 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
                   <div className="flex flex-wrap items-center gap-1.5">
                     <p className="font-medium truncate">{enrollment.session.title}</p>
                     <Badge className={classTypeBadgeClass[enrollment.session.classType]}>{t(typeKeys[enrollment.session.classType])}</Badge>
-                    <Badge variant={enrollmentStatusVariant[enrollment.status] ?? "outline"}>
-                      {t(enrollmentStatusKeys[enrollment.status] ?? enrollment.status)}
-                    </Badge>
+                    {(() => {
+                      const ds = resolveEnrollmentDisplay(enrollment.status, enrollment.session.status);
+                      return (
+                        <Badge variant={enrollmentStatusVariant[ds] ?? "outline"}>
+                          {t(enrollmentStatusKeys[ds] ?? ds)}
+                        </Badge>
+                      );
+                    })()}
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground mt-1">
                     <span className="flex items-center gap-1 truncate"><Users className="h-3.5 w-3.5 shrink-0" />{enrollment.session.instructor.name}</span>
@@ -160,9 +165,14 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
                     {format.dateTime(new Date(enrollment.session.endsAt), { hour: "2-digit", minute: "2-digit" })}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={enrollmentStatusVariant[enrollment.status] ?? "outline"}>
-                      {t(enrollmentStatusKeys[enrollment.status] ?? enrollment.status)}
-                    </Badge>
+                    {(() => {
+                      const ds = resolveEnrollmentDisplay(enrollment.status, enrollment.session.status);
+                      return (
+                        <Badge variant={enrollmentStatusVariant[ds] ?? "outline"}>
+                          {t(enrollmentStatusKeys[ds] ?? ds)}
+                        </Badge>
+                      );
+                    })()}
                   </TableCell>
                   {userRole === "STUDENT" && (
                     <TableCell>
