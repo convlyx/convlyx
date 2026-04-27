@@ -1,5 +1,25 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import { sendPushToUser, sendPushToUsers } from "./push";
+import messages from "@/../messages/pt-PT.json";
+
+/**
+ * Resolve a translation key like "notifications.classAssigned" to PT-PT text,
+ * interpolating {param} placeholders.
+ */
+function resolveTranslation(key: string, params?: Record<string, string>): string {
+  const parts = key.split(".");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let value: any = messages;
+  for (const part of parts) {
+    value = value?.[part];
+  }
+  if (typeof value !== "string") return key;
+  if (!params) return value;
+  return Object.entries(params).reduce(
+    (text, [k, v]) => text.replace(new RegExp(`\\{${k}\\}`, "g"), v),
+    value,
+  );
+}
 
 /** Format a date for notification params: "20/04 às 09:00" */
 export function formatClassTime(startsAt: Date): string {
@@ -52,14 +72,12 @@ export async function createNotification({
       },
     });
 
-    // Also send push notification if text provided
-    if (pushTitle || pushBody) {
-      sendPushToUser(db, userId, {
-        title: pushTitle ?? "Convlyx",
-        body: pushBody ?? "",
-        url: "/",
-      }).catch(() => {});
-    }
+    // Send push notification (resolve text from translation keys if not provided)
+    sendPushToUser(db, userId, {
+      title: pushTitle ?? resolveTranslation(titleKey, params),
+      body: pushBody ?? resolveTranslation(messageKey, params),
+      url: "/",
+    }).catch(() => {});
 
     return result;
   } catch (error) {
@@ -92,14 +110,12 @@ export async function createNotifications({
       })),
     });
 
-    // Also send push notifications
-    if (pushTitle || pushBody) {
-      sendPushToUsers(db, userIds, {
-        title: pushTitle ?? "Convlyx",
-        body: pushBody ?? "",
-        url: "/",
-      }).catch(() => {});
-    }
+    // Send push notifications (resolve text from translation keys if not provided)
+    sendPushToUsers(db, userIds, {
+      title: pushTitle ?? resolveTranslation(titleKey, params),
+      body: pushBody ?? resolveTranslation(messageKey, params),
+      url: "/",
+    }).catch(() => {});
 
     return result;
   } catch (error) {
