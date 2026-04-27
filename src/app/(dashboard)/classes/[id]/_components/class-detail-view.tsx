@@ -371,45 +371,47 @@ export function ClassDetailView({
                 </div>
 
                 {/* Actions */}
-                {enrollment.status === "ENROLLED" && canMarkAttendance && (
-                  <div className="flex flex-col sm:flex-row gap-1 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={markAttendanceMutation.isPending}
-                      onClick={() => markAttendanceMutation.mutate({
-                        enrollmentId: enrollment.id,
-                        status: "ATTENDED",
-                      })}
-                    >
-                      <CheckCircle className="h-3.5 w-3.5 sm:mr-1" />
-                      <span className="hidden sm:inline">{t("enrollment.attended")}</span>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={markAttendanceMutation.isPending}
-                      onClick={() => markAttendanceMutation.mutate({
-                        enrollmentId: enrollment.id,
-                        status: "NO_SHOW",
-                      })}
-                    >
-                      <XCircle className="h-3.5 w-3.5 sm:mr-1" />
-                      <span className="hidden sm:inline">{t("enrollment.noShow")}</span>
-                    </Button>
-                    {isStaff && (
+                <div className="flex flex-col sm:flex-row gap-1 shrink-0">
+                  {enrollment.status === "ENROLLED" && canMarkAttendance && (
+                    <>
                       <Button
                         size="sm"
-                        variant="destructive"
-                        disabled={cancelEnrollmentMutation.isPending}
-                        onClick={() => setRemoveEnrollmentId(enrollment.id)}
+                        variant="outline"
+                        disabled={markAttendanceMutation.isPending}
+                        onClick={() => markAttendanceMutation.mutate({
+                          enrollmentId: enrollment.id,
+                          status: "ATTENDED",
+                        })}
                       >
-                        <span className="hidden sm:inline">{t("enrollment.remove")}</span>
-                        <span className="sm:hidden">×</span>
+                        <CheckCircle className="h-3.5 w-3.5 sm:mr-1" />
+                        <span className="hidden sm:inline">{t("enrollment.attended")}</span>
                       </Button>
-                    )}
-                  </div>
-                )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={markAttendanceMutation.isPending}
+                        onClick={() => markAttendanceMutation.mutate({
+                          enrollmentId: enrollment.id,
+                          status: "NO_SHOW",
+                        })}
+                      >
+                        <XCircle className="h-3.5 w-3.5 sm:mr-1" />
+                        <span className="hidden sm:inline">{t("enrollment.noShow")}</span>
+                      </Button>
+                    </>
+                  )}
+                  {isStaff && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      disabled={cancelEnrollmentMutation.isPending}
+                      onClick={() => setRemoveEnrollmentId(enrollment.id)}
+                    >
+                      <span className="hidden sm:inline">{t("enrollment.remove")}</span>
+                      <span className="sm:hidden">×</span>
+                    </Button>
+                  )}
+                </div>
                 {classDetail.status === "COMPLETED" && (enrollment.status === "ATTENDED" || enrollment.status === "NO_SHOW") && (
                   <div className="flex flex-col sm:flex-row gap-1 shrink-0">
                     {enrollment.status === "NO_SHOW" && (

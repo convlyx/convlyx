@@ -142,19 +142,20 @@ export const enrollmentRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "enrollment.notFound" });
       }
 
-      // Students can only cancel their own
-      if (ctx.user.role === "STUDENT" && enrollment.studentId !== ctx.user.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "auth.insufficientPermissions",
-        });
-      }
-
-      if (enrollment.status !== "ENROLLED") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "enrollment.notActive",
-        });
+      // Students can only cancel their own, and only if still ENROLLED
+      if (ctx.user.role === "STUDENT") {
+        if (enrollment.studentId !== ctx.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "auth.insufficientPermissions",
+          });
+        }
+        if (enrollment.status !== "ENROLLED") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "enrollment.notActive",
+          });
+        }
       }
 
       await ctx.db.enrollment.delete({
