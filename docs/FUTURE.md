@@ -80,6 +80,12 @@ Living document of things to build, improve, or investigate post-MVP.
 - [ ] Feature flag management per tenant
 - [ ] Support ticket system
 
+## Superadmin (post-MVP)
+- [ ] SuperAdmin table with email allowlist (decoupled from tenant Users)
+- [ ] Superadmin UI on root domain or separate subdomain (e.g. `super.convlyx.com`)
+- [ ] Tenant access for support — "enter tenant" flow with same access as tenant admin
+- [ ] Audit log of superadmin actions (which tenant entered, when, what was changed) — GDPR-relevant
+
 ## Technical Debt
 - [ ] Zod schema validation messages should be i18n (need architectural change)
 - [ ] Replace base-ui Select with Radix Select everywhere (some remnants)
