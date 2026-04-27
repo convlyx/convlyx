@@ -16,6 +16,11 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
 
   if (totalPages <= 1) return null;
 
+  function changePage(newPage: number) {
+    onPageChange(newPage);
+    document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   // Generate page numbers to show
   const pages: (number | "...")[] = [];
   if (totalPages <= 7) {
@@ -44,7 +49,7 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
           variant="outline"
           size="icon-sm"
           disabled={page <= 1}
-          onClick={() => onPageChange(page - 1)}
+          onClick={() => changePage(page - 1)}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -57,7 +62,7 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
               variant={p === page ? "default" : "outline"}
               size="sm"
               className="h-7 w-7 p-0"
-              onClick={() => onPageChange(p)}
+              onClick={() => changePage(p)}
             >
               {p}
             </Button>
@@ -67,7 +72,7 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
           variant="outline"
           size="icon-sm"
           disabled={page >= totalPages}
-          onClick={() => onPageChange(page + 1)}
+          onClick={() => changePage(page + 1)}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>

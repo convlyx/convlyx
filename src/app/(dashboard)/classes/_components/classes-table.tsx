@@ -100,6 +100,13 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   const filteredClasses = classes?.filter((cls) => {
     if (!cls.title.toLowerCase().includes(search.toLowerCase())) return false;
     const isFuture = new Date(cls.startsAt as unknown as string) >= now;
+    if (isStudent) {
+      // Students only see future scheduled classes they can enroll in
+      return isFuture
+        && cls.status === "SCHEDULED"
+        && !enrolledSessionIds.has(cls.id)
+        && cls._count.enrollments < cls.capacity;
+    }
     return timeTab === "upcoming" ? isFuture : !isFuture;
   }) ?? [];
 
@@ -145,23 +152,25 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
 
   return (
     <div className="space-y-4">
-      {/* Time tabs */}
-      <div className="flex items-center gap-1 rounded-lg border p-0.5 w-fit">
-        <Button
-          variant={timeTab === "upcoming" ? "default" : "ghost"}
-          size="sm"
-          onClick={() => handleTimeTab("upcoming")}
-        >
-          {t("classes.upcoming")}
-        </Button>
-        <Button
-          variant={timeTab === "past" ? "default" : "ghost"}
-          size="sm"
-          onClick={() => handleTimeTab("past")}
-        >
-          {t("classes.past")}
-        </Button>
-      </div>
+      {/* Time tabs (hidden for students) */}
+      {!isStudent && (
+        <div className="flex items-center gap-1 rounded-lg border p-0.5 w-fit">
+          <Button
+            variant={timeTab === "upcoming" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => handleTimeTab("upcoming")}
+          >
+            {t("classes.upcoming")}
+          </Button>
+          <Button
+            variant={timeTab === "past" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => handleTimeTab("past")}
+          >
+            {t("classes.past")}
+          </Button>
+        </div>
+      )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
@@ -184,27 +193,29 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
               <SelectItem value="PRACTICAL">{t("classes.practical")}</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={statusFilter} onValueChange={handleStatusChange}>
-            <SelectTrigger className="w-auto min-w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {timeTab === "upcoming" ? (
-                <>
-                  <SelectItem value="ALL">{t("classes.allStatuses")}</SelectItem>
-                  <SelectItem value="SCHEDULED">{t("classes.scheduled")}</SelectItem>
-                  <SelectItem value="IN_PROGRESS">{t("classes.inProgress")}</SelectItem>
-                  <SelectItem value="CANCELLED">{t("classes.cancelled")}</SelectItem>
-                </>
-              ) : (
-                <>
-                  <SelectItem value="ALL">{t("classes.allStatuses")}</SelectItem>
-                  <SelectItem value="COMPLETED">{t("classes.completed")}</SelectItem>
-                  <SelectItem value="CANCELLED">{t("classes.cancelled")}</SelectItem>
-                </>
-              )}
-            </SelectContent>
-          </Select>
+          {!isStudent && (
+            <Select value={statusFilter} onValueChange={handleStatusChange}>
+              <SelectTrigger className="w-auto min-w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {timeTab === "upcoming" ? (
+                  <>
+                    <SelectItem value="ALL">{t("classes.allStatuses")}</SelectItem>
+                    <SelectItem value="SCHEDULED">{t("classes.scheduled")}</SelectItem>
+                    <SelectItem value="IN_PROGRESS">{t("classes.inProgress")}</SelectItem>
+                    <SelectItem value="CANCELLED">{t("classes.cancelled")}</SelectItem>
+                  </>
+                ) : (
+                  <>
+                    <SelectItem value="ALL">{t("classes.allStatuses")}</SelectItem>
+                    <SelectItem value="COMPLETED">{t("classes.completed")}</SelectItem>
+                    <SelectItem value="CANCELLED">{t("classes.cancelled")}</SelectItem>
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+          )}
         </div>
         <ViewToggle view={view} onChange={handleViewChange} />
       </div>
