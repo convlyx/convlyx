@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
+import { Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 
@@ -72,6 +73,11 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
       utils.user.list.invalidate();
       onClose();
     },
+    onError,
+  });
+
+  const resendInviteMutation = trpc.user.resendInvite.useMutation({
+    onSuccess: () => toast.success(t("users.inviteResent")),
     onError,
   });
 
@@ -148,13 +154,26 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
               </div>
             </div>
           </DialogBody>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              {t("common.cancel")}
+          <DialogFooter className="sm:justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              disabled={resendInviteMutation.isPending}
+              onClick={() => resendInviteMutation.mutate({ id: userData.id })}
+            >
+              <Mail className="h-3.5 w-3.5" />
+              {resendInviteMutation.isPending ? t("common.loading") : t("users.resendInvite")}
             </Button>
-            <Button type="submit" disabled={updateMutation.isPending || schoolsLoading}>
-              {updateMutation.isPending ? t("common.loading") : t("common.save")}
-            </Button>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                {t("common.cancel")}
+              </Button>
+              <Button type="submit" disabled={updateMutation.isPending || schoolsLoading}>
+                {updateMutation.isPending ? t("common.loading") : t("common.save")}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

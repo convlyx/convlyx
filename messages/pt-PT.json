@@ -169,6 +169,8 @@
     "cannotDeactivateSelf": "Não pode desativar a sua própria conta",
     "notFound": "Utilizador não encontrado",
     "userUpdated": "Utilizador atualizado com sucesso",
+    "resendInvite": "Reenviar convite",
+    "inviteResent": "Convite reenviado por email",
     "memberSince": "Membro desde",
     "profile": "Perfil",
     "classesAttended": "Aulas assistidas",

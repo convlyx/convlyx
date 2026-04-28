@@ -13,6 +13,13 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
+// Anon client used to trigger email-sending flows (e.g. password reset)
+const supabaseAnon = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+);
+
 export const userRouter = router({
   list: roleProtectedProcedure(["ADMIN", "SECRETARY"])
     .input(
@@ -112,6 +119,34 @@ export const userRouter = router({
       });
 
       return user;
+    }),
+
+  resendInvite: roleProtectedProcedure(["ADMIN", "SECRETARY"])
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.db.user.findFirst({
+        where: { id: input.id, tenantId: ctx.tenantId },
+        select: { email: true, school: { select: { subdomain: true } } },
+      });
+
+      if (!user) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
+      }
+
+      const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
+      const tenantHost = `${user.school.subdomain}.${siteUrl.host}`;
+      const redirectTo = `${siteUrl.protocol}//${tenantHost}/update-password`;
+
+      // Sends a password recovery email via Supabase's built-in email
+      const { error } = await supabaseAnon.auth.resetPasswordForEmail(user.email, {
+        redirectTo,
+      });
+
+      if (error) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+      }
+
+      return { success: true };
     }),
 
   update: roleProtectedProcedure(["ADMIN", "SECRETARY"])
