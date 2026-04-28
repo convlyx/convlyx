@@ -30,7 +30,8 @@ export function UpdatePasswordForm() {
     const refreshToken = params.get("refresh_token");
 
     if (!accessToken || !refreshToken) {
-      // Either already logged in via cookie, or nothing to do — just verify session
+      // No invite/recovery tokens in the URL — just verify session (e.g. user clicked
+      // change-password while already logged in)
       const supabase = createClient();
       supabase.auth.getSession().then(({ data }) => {
         setSessionReady(!!data.session);
@@ -38,17 +39,26 @@ export function UpdatePasswordForm() {
       return;
     }
 
+    // Invite/recovery flow: sign out any existing session first to avoid the new tokens
+    // being silently consumed against the wrong user, then establish the invitee's session.
     const supabase = createClient();
-    supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-      .then(({ error }) => {
-        if (error) {
-          toast.error(t("invalidLink"));
-          return;
-        }
-        // Clean the hash from the URL so refresh doesn't re-trigger
-        window.history.replaceState(null, "", window.location.pathname);
-        setSessionReady(true);
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        await supabase.auth.signOut();
+      }
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
       });
+      if (error) {
+        toast.error(t("invalidLink"));
+        return;
+      }
+      // Clean the hash from the URL so refresh doesn't re-trigger
+      window.history.replaceState(null, "", window.location.pathname);
+      setSessionReady(true);
+    })();
   }, [t]);
 
   async function handleSubmit(e: React.FormEvent) {

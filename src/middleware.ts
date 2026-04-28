@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
   // 4. Route protection
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
   // Paths that are always public, even for logged-in users
-  const isAlwaysPublic = pathname.startsWith("/install");
+  const isAlwaysPublic = pathname.startsWith("/install") || pathname.startsWith("/update-password");
 
   if (!user && !isPublicPath) {
     const loginUrl = new URL("/login", request.url);
