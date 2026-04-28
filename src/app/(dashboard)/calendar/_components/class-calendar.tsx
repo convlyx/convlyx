@@ -62,19 +62,28 @@ export function ClassCalendar({
     { enabled: isStudent }
   );
 
-  const enrolledSessionIds = useMemo(() => {
+  // Sessions the student has any enrollment row for (ENROLLED, ATTENDED, NO_SHOW)
+  const studentSessionIds = useMemo(() => {
     if (!isStudent || !enrollments) return new Set<string>();
-    return new Set(
-      enrollments
-        .filter((e) => e.status === "ENROLLED")
-        .map((e) => e.session.id)
-    );
+    return new Set(enrollments.map((e) => e.session.id));
   }, [isStudent, enrollments]);
 
   const events = useMemo(() => {
     if (!classes) return [];
-    return classes.map((cls) => {
-      const isEnrolled = enrolledSessionIds.has(cls.id);
+    const now = new Date();
+    return classes
+      .filter((cls) => {
+        if (!isStudent) return true;
+        // Always show classes the student is part of
+        if (studentSessionIds.has(cls.id)) return true;
+        // For others: only show future scheduled classes with capacity
+        if (cls.status !== "SCHEDULED") return false;
+        if (new Date(cls.startsAt as unknown as string) < now) return false;
+        if (cls._count.enrollments >= cls.capacity) return false;
+        return true;
+      })
+      .map((cls) => {
+      const isEnrolled = studentSessionIds.has(cls.id);
       const isFull = cls._count.enrollments >= cls.capacity;
 
       let colors;
@@ -105,7 +114,7 @@ export function ClassCalendar({
         },
       };
     });
-  }, [classes, enrolledSessionIds, isStudent]);
+  }, [classes, studentSessionIds, isStudent]);
 
   function handleEventClick(info: EventClickArg) {
     setSelectedClassId(info.event.id);
