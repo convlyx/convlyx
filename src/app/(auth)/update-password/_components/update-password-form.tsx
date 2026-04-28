@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
@@ -19,6 +19,37 @@ export function UpdatePasswordForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  // On mount, extract tokens from URL hash and establish a session.
+  // Supabase invite/recovery flows append #access_token=...&refresh_token=... to the URL.
+  useEffect(() => {
+    const hash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : "";
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+
+    if (!accessToken || !refreshToken) {
+      // Either already logged in via cookie, or nothing to do — just verify session
+      const supabase = createClient();
+      supabase.auth.getSession().then(({ data }) => {
+        setSessionReady(!!data.session);
+      });
+      return;
+    }
+
+    const supabase = createClient();
+    supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+      .then(({ error }) => {
+        if (error) {
+          toast.error(t("invalidLink"));
+          return;
+        }
+        // Clean the hash from the URL so refresh doesn't re-trigger
+        window.history.replaceState(null, "", window.location.pathname);
+        setSessionReady(true);
+      });
+  }, [t]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -102,7 +133,7 @@ export function UpdatePasswordForm() {
         </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button type="submit" className="w-full" disabled={loading || !sessionReady}>
         {loading ? t("updating") : t("updatePassword")}
       </Button>
     </form>
