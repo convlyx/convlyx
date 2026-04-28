@@ -58,6 +58,7 @@ export function ClassDetailView({
     onSuccess: () => {
       toast.success(t("toast.studentEnrolled"));
       utils.class.getById.invalidate({ id: classId });
+      utils.class.list.invalidate();
       setSelectedStudents([]);
       setShowAddStudent(false);
     },
@@ -68,6 +69,7 @@ export function ClassDetailView({
     onSuccess: () => {
       toast.success(t("toast.enrollmentRemoved"));
       utils.class.getById.invalidate({ id: classId });
+      utils.class.list.invalidate();
     },
     onError,
   });
