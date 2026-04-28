@@ -69,7 +69,7 @@ export const userRouter = router({
       // Verify the school belongs to this tenant
       const school = await ctx.db.school.findFirst({
         where: { id: input.schoolId, tenantId: ctx.tenantId },
-        select: { id: true },
+        select: { id: true, subdomain: true },
       });
 
       if (!school) {
@@ -79,10 +79,15 @@ export const userRouter = router({
         });
       }
 
+      // Build redirect URL pointing at the school's subdomain
+      const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
+      const tenantHost = `${school.subdomain}.${siteUrl.host}`;
+      const redirectTo = `${siteUrl.protocol}//${tenantHost}/update-password`;
+
       // Invite user via email — they'll set their own password
       const { data: authData, error: authError } =
         await supabaseAdmin.auth.admin.inviteUserByEmail(input.email, {
-          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/update-password`,
+          redirectTo,
         });
 
       if (authError) {
