@@ -602,12 +602,15 @@ function generateRecurringSessions(
 
   const current = new Date(from);
   while (current <= until) {
-    if (jsDays.includes(current.getDay())) {
-      const startsAt = new Date(current);
-      startsAt.setHours(startHour, startMin, 0, 0);
+    // current.getDay() reads in server timezone; for UTC servers and dates parsed
+    // from "YYYY-MM-DD" (which become UTC midnight), this is reliable.
+    if (jsDays.includes(current.getUTCDay())) {
+      const year = current.getUTCFullYear();
+      const month = current.getUTCMonth();
+      const day = current.getUTCDate();
 
-      const endsAt = new Date(current);
-      endsAt.setHours(endHour, endMin, 0, 0);
+      const startsAt = lisbonWallClockToUTC(year, month, day, startHour, startMin);
+      const endsAt = lisbonWallClockToUTC(year, month, day, endHour, endMin);
 
       sessions.push({
         tenantId,
@@ -623,8 +626,45 @@ function generateRecurringSessions(
       });
     }
 
-    current.setDate(current.getDate() + 1);
+    current.setUTCDate(current.getUTCDate() + 1);
   }
 
   return sessions;
+}
+
+/**
+ * Convert a Lisbon wall-clock time to its absolute UTC Date.
+ * Handles DST transitions by querying Intl for the actual offset on that date.
+ */
+function lisbonWallClockToUTC(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+): Date {
+  // Naïve UTC date with the wall-clock components
+  const naive = new Date(Date.UTC(year, month, day, hour, minute, 0, 0));
+  // Find the offset Lisbon has FROM UTC at that moment
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Lisbon",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = dtf.formatToParts(naive);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  const lisbonAsUTC = Date.UTC(
+    get("year"),
+    get("month") - 1,
+    get("day"),
+    get("hour") % 24,
+    get("minute"),
+  );
+  // Difference between what Lisbon shows and the naive UTC = offset (in ms)
+  const offsetMs = lisbonAsUTC - naive.getTime();
+  return new Date(naive.getTime() - offsetMs);
 }
