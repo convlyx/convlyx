@@ -15,7 +15,20 @@ function resolveTranslation(key: string, params?: Record<string, string>): strin
   }
   if (typeof value !== "string") return key;
   if (!params) return value;
-  return Object.entries(params).reduce(
+
+  // Resolve enum-like params to translated values (e.g. status: "ATTENDED" → "presente")
+  const resolvedParams: Record<string, string> = {};
+  for (const [k, v] of Object.entries(params)) {
+    if (k === "status" && v === "ATTENDED") {
+      resolvedParams[k] = resolveTranslation("notifications.statusAttended");
+    } else if (k === "status" && v === "NO_SHOW") {
+      resolvedParams[k] = resolveTranslation("notifications.statusNoShow");
+    } else {
+      resolvedParams[k] = v;
+    }
+  }
+
+  return Object.entries(resolvedParams).reduce(
     (text, [k, v]) => text.replace(new RegExp(`\\{${k}\\}`, "g"), v),
     value,
   );
