@@ -104,9 +104,17 @@ export const classRouter = router({
       return result;
     }),
 
-  create: roleProtectedProcedure(["ADMIN", "SECRETARY"])
+  create: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
     .input(createClassSchema)
     .mutation(async ({ ctx, input }) => {
+      // Instructors can only schedule classes for themselves
+      if (ctx.user.role === "INSTRUCTOR" && input.instructorId !== ctx.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "auth.insufficientPermissions",
+        });
+      }
+
       // Verify school and instructor belong to this tenant
       const [school, instructor] = await Promise.all([
         ctx.db.school.findFirst({

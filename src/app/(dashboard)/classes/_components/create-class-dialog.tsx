@@ -39,7 +39,7 @@ type CreateClassFormData = z.infer<typeof createClassFormSchema>;
 type ScheduleMode = "one-off" | "recurring";
 const DAYS_OF_WEEK = [0, 1, 2, 3, 4, 5, 6] as const;
 
-export function CreateClassDialog() {
+export function CreateClassDialog({ userRole, userId }: { userRole?: string; userId?: string } = {}) {
   const t = useTranslations();
   const { onError } = useTranslatedError();
   const [open, setOpen] = useState(false);
@@ -48,17 +48,27 @@ export function CreateClassDialog() {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const utils = trpc.useUtils();
 
+  const isInstructor = userRole === "INSTRUCTOR";
+  const isStaff = !userRole || userRole === "ADMIN" || userRole === "SECRETARY";
+
   const { data: schools, isLoading: schoolsLoading } = trpc.school.list.useQuery();
-  const { data: instructors, isLoading: instructorsLoading } = trpc.user.list.useQuery({ role: "INSTRUCTOR", status: "ACTIVE" });
-  const { data: students, isLoading: studentsLoading } = trpc.user.list.useQuery({ role: "STUDENT", status: "ACTIVE" });
-  const dataLoading = schoolsLoading || instructorsLoading || studentsLoading;
+  const { data: instructors, isLoading: instructorsLoading } = trpc.user.list.useQuery(
+    { role: "INSTRUCTOR", status: "ACTIVE" },
+    { enabled: isStaff },
+  );
+  const { data: students, isLoading: studentsLoading } = trpc.user.list.useQuery(
+    { role: "STUDENT", status: "ACTIVE" },
+    { enabled: isStaff },
+  );
+  const dataLoading = schoolsLoading
+    || (isStaff && (instructorsLoading || studentsLoading));
 
   const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm<CreateClassFormData>({
     resolver: zodResolver(createClassFormSchema),
     defaultValues: {
       classType: "THEORY" as "THEORY" | "PRACTICAL",
       schoolId: "",
-      instructorId: "",
+      instructorId: isInstructor && userId ? userId : "",
       title: "",
       capacity: 20,
       date: "",
@@ -180,28 +190,32 @@ export function CreateClassDialog() {
             {/* School is auto-set from the user's school — hidden field */}
             <input type="hidden" {...register("schoolId")} />
 
-            <div className="grid gap-2">
-              <Label>{t("classes.instructor")}</Label>
-              <Controller
-                control={control}
-                name="instructorId"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder={t("classes.instructor")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {instructors?.map((instructor) => (
-                        <SelectItem key={instructor.id} value={instructor.id}>
-                          {instructor.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.instructorId && <p className="text-sm text-destructive">{errors.instructorId.message}</p>}
-            </div>
+            {isStaff ? (
+              <div className="grid gap-2">
+                <Label>{t("classes.instructor")}</Label>
+                <Controller
+                  control={control}
+                  name="instructorId"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={t("classes.instructor")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {instructors?.map((instructor) => (
+                          <SelectItem key={instructor.id} value={instructor.id}>
+                            {instructor.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.instructorId && <p className="text-sm text-destructive">{errors.instructorId.message}</p>}
+              </div>
+            ) : (
+              <input type="hidden" {...register("instructorId")} />
+            )}
 
             <div className="grid gap-2">
               <Label htmlFor="class-title">{t("common.name")}</Label>

@@ -220,7 +220,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
         </div>
         <div className="flex items-center gap-2">
           <ViewToggle view={view} onChange={handleViewChange} />
-          {canManage && <CreateClassDialog />}
+          {(canManage || isInstructor) && <CreateClassDialog userRole={userRole} userId={userId} />}
         </div>
       </div>
 
