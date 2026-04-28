@@ -37,14 +37,12 @@ export function Header({
   }
 
   return (
-    <header className="flex h-14 items-center justify-between px-3 md:px-6 shadow-[0_1px_3px_0_rgb(0_0_0/0.05)]">
-      <div className="flex items-center gap-2">
+    <header className="flex h-14 items-center justify-between gap-2 px-3 md:px-6 shadow-[0_1px_3px_0_rgb(0_0_0/0.05)]">
+      <div className="flex items-center gap-2 min-w-0 flex-1">
         {/* Hamburger on mobile */}
         {userMobileNav}
-        {/* Tenant / school breadcrumb — hide school on mobile */}
-        <span className="text-sm font-semibold truncate">{tenantName}</span>
-        <span className="text-muted-foreground hidden sm:inline">/</span>
-        <span className="text-sm text-muted-foreground hidden sm:inline truncate">{schoolName}</span>
+        {/* Show school name on mobile only — sidebar shows it on desktop */}
+        <span className="text-sm font-semibold truncate md:hidden">{schoolName}</span>
       </div>
       <div className="flex items-center gap-2 md:gap-3">
         <NotificationBell userId={userId} />

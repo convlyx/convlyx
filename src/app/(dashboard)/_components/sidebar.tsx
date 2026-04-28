@@ -59,7 +59,7 @@ export function Sidebar({ userRole, tenantName }: { userRole: UserRole; tenantNa
   return (
     <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
       <div className="flex h-14 items-center border-b border-sidebar-border px-4">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 min-w-0 w-full">
           <img src="/favicon.png" alt="" width={28} height={28} className="shrink-0" />
           <span className="text-sm font-bold truncate">{tenantName}</span>
         </Link>

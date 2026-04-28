@@ -70,15 +70,15 @@ export function MobileLayout({
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Top bar — minimal, clean */}
-      <header className="flex items-center justify-between px-4 h-14 border-b bg-card shrink-0">
-        <div className="flex items-center gap-2">
+      <header className="flex items-center justify-between gap-2 px-4 h-14 border-b bg-card shrink-0">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <img src="/favicon.png" alt="" width={28} height={28} className="shrink-0" />
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold leading-tight truncate">{tenantName}</p>
             <p className="text-xs text-muted-foreground truncate">{userName}</p>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           <NotificationBell userId={userId} />
           <button
             onClick={handleLogout}

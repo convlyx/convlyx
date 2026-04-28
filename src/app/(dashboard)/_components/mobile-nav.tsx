@@ -45,7 +45,7 @@ export function MobileNav({ userRole, tenantName }: { userRole: UserRole; tenant
             <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-4">
               <Link
                 href="/"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 min-w-0 flex-1 mr-2"
                 onClick={() => setOpen(false)}
               >
                 <img src="/favicon.png" alt="" width={28} height={28} className="shrink-0" />
