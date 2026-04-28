@@ -18,6 +18,7 @@ import {
 import { DatePicker, TimePicker } from "@/components/date-picker";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
+import { lisbonWallClockToISO } from "@/lib/dates";
 
 type ClassData = {
   id: string;
@@ -43,17 +44,31 @@ const editClassFormSchema = z.object({
 
 type EditClassFormData = z.infer<typeof editClassFormSchema>;
 
-function toDateValue(d: string | Date): string {
+function lisbonParts(d: string | Date) {
   const date = new Date(d);
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  const dtf = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Lisbon",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = dtf.formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return {
+    date: `${get("year")}-${get("month")}-${get("day")}`,
+    time: `${get("hour") === "24" ? "00" : get("hour")}:${get("minute")}`,
+  };
+}
+
+function toDateValue(d: string | Date): string {
+  return lisbonParts(d).date;
 }
 
 function toTimeValue(d: string | Date): string {
-  const date = new Date(d);
-  return date.toTimeString().slice(0, 5);
+  return lisbonParts(d).time;
 }
 
 export function EditClassDialog({
@@ -113,8 +128,8 @@ export function EditClassDialog({
       instructorId: data.instructorId,
       title: data.title,
       capacity: data.capacity,
-      startsAt: new Date(`${data.date}T${data.startTime}:00`).toISOString(),
-      endsAt: new Date(`${data.date}T${data.endTime}:00`).toISOString(),
+      startsAt: lisbonWallClockToISO(data.date, data.startTime),
+      endsAt: lisbonWallClockToISO(data.date, data.endTime),
     });
   }
 

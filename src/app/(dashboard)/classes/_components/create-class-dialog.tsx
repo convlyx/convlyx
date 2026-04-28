@@ -19,6 +19,7 @@ import { StudentPicker } from "@/components/student-picker";
 import { DatePicker, TimePicker } from "@/components/date-picker";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
+import { lisbonWallClockToISO } from "@/lib/dates";
 
 const createClassFormSchema = z.object({
   classType: z.enum(["THEORY", "PRACTICAL"]),
@@ -116,8 +117,8 @@ export function CreateClassDialog() {
         title: data.title,
         capacity: data.capacity,
         studentIds,
-        startsAt: new Date(`${data.validFrom}T${data.startTime}:00`).toISOString(),
-        endsAt: new Date(`${data.validFrom}T${data.endTime}:00`).toISOString(),
+        startsAt: lisbonWallClockToISO(data.validFrom, data.startTime),
+        endsAt: lisbonWallClockToISO(data.validFrom, data.endTime),
         recurrence: {
           daysOfWeek: selectedDays,
           startTime: data.startTime,
@@ -134,8 +135,8 @@ export function CreateClassDialog() {
         title: data.title,
         capacity: data.capacity,
         studentIds,
-        startsAt: new Date(`${data.date}T${data.startTime}:00`).toISOString(),
-        endsAt: new Date(`${data.date}T${data.endTime}:00`).toISOString(),
+        startsAt: lisbonWallClockToISO(data.date, data.startTime),
+        endsAt: lisbonWallClockToISO(data.date, data.endTime),
       });
     }
   }
