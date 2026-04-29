@@ -21,7 +21,7 @@ const supabaseAnon = createClient(
 );
 
 export const userRouter = router({
-  list: roleProtectedProcedure(["ADMIN", "SECRETARY"])
+  list: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
     .input(
       z.object({
         schoolId: z.string().uuid().optional(),

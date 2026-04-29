@@ -51,7 +51,7 @@ export function ClassDetailView({
     { id: classId },
     { retry: false }
   );
-  const staffRole = userRole === "ADMIN" || userRole === "SECRETARY";
+  const staffRole = userRole === "ADMIN" || userRole === "SECRETARY" || userRole === "INSTRUCTOR";
   const { data: allStudents } = trpc.user.list.useQuery({ role: "STUDENT", status: "ACTIVE" }, { enabled: staffRole });
 
   const enrollMutation = trpc.enrollment.enroll.useMutation({
@@ -135,7 +135,8 @@ export function ClassDetailView({
   const isActive = classDetail.status === "SCHEDULED" || classDetail.status === "IN_PROGRESS";
   const canMarkAttendance = classDetail.status === "IN_PROGRESS" || classDetail.status === "COMPLETED";
   const isStaff = userRole === "ADMIN" || userRole === "SECRETARY";
-  const canAddStudent = isStaff && classDetail.status !== "CANCELLED";
+  const isInstructor = userRole === "INSTRUCTOR";
+  const canAddStudent = (isStaff || isInstructor) && classDetail.status !== "CANCELLED";
 
   return (
     <div className="space-y-6">
@@ -403,7 +404,7 @@ export function ClassDetailView({
                       </Button>
                     </>
                   )}
-                  {isStaff && (
+                  {(isStaff || isInstructor) && (
                     <Button
                       size="sm"
                       variant="destructive"

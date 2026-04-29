@@ -58,10 +58,10 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
   );
   const { data: students, isLoading: studentsLoading } = trpc.user.list.useQuery(
     { role: "STUDENT", status: "ACTIVE" },
-    { enabled: isStaff },
   );
   const dataLoading = schoolsLoading
-    || (isStaff && (instructorsLoading || studentsLoading));
+    || studentsLoading
+    || (isStaff && instructorsLoading);
 
   const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm<CreateClassFormData>({
     resolver: zodResolver(createClassFormSchema),

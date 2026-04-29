@@ -33,6 +33,7 @@ export const enrollmentRouter = router({
           startsAt: true,
           capacity: true,
           status: true,
+          instructorId: true,
           _count: {
             select: {
               enrollments: true,
@@ -43,6 +44,14 @@ export const enrollmentRouter = router({
 
       if (!session) {
         throw new TRPCError({ code: "NOT_FOUND", message: "classes.notFound" });
+      }
+
+      // Instructors can only enroll students into their own classes
+      if (ctx.user.role === "INSTRUCTOR" && session.instructorId !== ctx.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "auth.insufficientPermissions",
+        });
       }
 
       // Verify student belongs to this tenant (when enrolling someone else)
@@ -134,12 +143,20 @@ export const enrollmentRouter = router({
           id: true,
           studentId: true,
           status: true,
-          session: { select: { id: true, title: true, startsAt: true } },
+          session: { select: { id: true, title: true, startsAt: true, instructorId: true } },
         },
       });
 
       if (!enrollment) {
         throw new TRPCError({ code: "NOT_FOUND", message: "enrollment.notFound" });
+      }
+
+      // Instructors can only cancel enrollments in their own classes
+      if (ctx.user.role === "INSTRUCTOR" && enrollment.session.instructorId !== ctx.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "auth.insufficientPermissions",
+        });
       }
 
       // Students can only cancel their own, and only if still ENROLLED
