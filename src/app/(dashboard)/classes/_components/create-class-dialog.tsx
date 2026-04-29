@@ -20,6 +20,7 @@ import { DatePicker, TimePicker } from "@/components/date-picker";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { lisbonWallClockToISO } from "@/lib/dates";
+import { track } from "@/lib/posthog";
 
 const createClassFormSchema = z.object({
   classType: z.enum(["THEORY", "PRACTICAL"]),
@@ -102,9 +103,14 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
   }, [instructors, instructorId, setValue]);
 
   const createMutation = trpc.class.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       toast.success(t("toast.classCreated"));
       utils.class.list.invalidate();
+      track("class_created", {
+        class_type: vars.classType,
+        recurring: !!vars.recurrence,
+        capacity: vars.capacity,
+      });
       setOpen(false);
       reset();
       setScheduleMode("one-off");

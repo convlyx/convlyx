@@ -6,6 +6,8 @@ import { TRPCProvider } from "@/lib/trpc-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { PostHogProvider } from "@/components/posthog-provider";
+import { Suspense } from "react";
 import "./globals.css";
 
 const inter = Inter({
@@ -43,7 +45,11 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider messages={messages}>
-          <TRPCProvider>{children}</TRPCProvider>
+          <Suspense fallback={null}>
+            <PostHogProvider>
+              <TRPCProvider>{children}</TRPCProvider>
+            </PostHogProvider>
+          </Suspense>
           <Toaster position="bottom-right" richColors />
         </NextIntlClientProvider>
         <Analytics />

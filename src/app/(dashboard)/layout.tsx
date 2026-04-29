@@ -8,6 +8,7 @@ import { Header } from "./_components/header";
 import { MobileLayout } from "./_components/mobile-layout";
 import { PageTitle } from "@/components/page-title";
 import { PushPrompt } from "@/components/push-prompt";
+import { AnalyticsIdentifier } from "@/components/analytics-identifier";
 
 async function getAuthUser() {
   try {
@@ -76,6 +77,15 @@ export default async function DashboardLayout({
 
   const pageTitle = `${user.school.name} | Convlyx`;
 
+  const analyticsProps = {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    tenantId: user.tenantId,
+    schoolId: user.schoolId,
+  };
+
   // Student and Instructor get mobile-first layout
   if (user.role === "STUDENT" || user.role === "INSTRUCTOR") {
     return (
@@ -86,6 +96,7 @@ export default async function DashboardLayout({
         tenantName={user.school.name}
       >
         <PageTitle title={pageTitle} />
+        <AnalyticsIdentifier {...analyticsProps} />
         <div className="mb-4"><PushPrompt userId={user.id} /></div>
         {children}
       </MobileLayout>
@@ -107,6 +118,7 @@ export default async function DashboardLayout({
           schoolName={user.school.name}
         />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+          <AnalyticsIdentifier {...analyticsProps} />
           <PushPrompt userId={user.id} />
           {children}
         </main>

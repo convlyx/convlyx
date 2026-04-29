@@ -63,6 +63,8 @@ export function MobileLayout({
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
+    const { resetAnalytics } = await import("@/lib/posthog");
+    resetAnalytics();
     router.push("/login");
     router.refresh();
   }

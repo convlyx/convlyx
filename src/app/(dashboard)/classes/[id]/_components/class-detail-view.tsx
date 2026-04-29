@@ -22,6 +22,7 @@ import { exportClassAttendancePDF } from "@/lib/pdf-export";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
+import { track } from "@/lib/posthog";
 import { useState } from "react";
 import type { UserRole } from "@/generated/prisma/enums";
 import { EditClassDialog } from "@/app/(dashboard)/classes/_components/edit-class-dialog";
@@ -59,6 +60,7 @@ export function ClassDetailView({
       toast.success(t("toast.studentEnrolled"));
       utils.class.getById.invalidate({ id: classId });
       utils.class.list.invalidate();
+      track("student_enrolled", { source: "class_detail", class_id: classId });
       setSelectedStudents([]);
       setShowAddStudent(false);
     },
@@ -70,14 +72,16 @@ export function ClassDetailView({
       toast.success(t("toast.enrollmentRemoved"));
       utils.class.getById.invalidate({ id: classId });
       utils.class.list.invalidate();
+      track("student_removed", { source: "class_detail", class_id: classId });
     },
     onError,
   });
 
   const markAttendanceMutation = trpc.enrollment.markAttendance.useMutation({
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       toast.success(t("toast.attendanceRecorded"));
       utils.class.getById.invalidate({ id: classId });
+      track("attendance_marked", { status: vars.status, class_id: classId });
     },
     onError,
   });
@@ -87,15 +91,17 @@ export function ClassDetailView({
       toast.success(t("toast.classCancelled"));
       utils.class.getById.invalidate({ id: classId });
       utils.class.list.invalidate();
+      track("class_cancelled", { class_id: classId });
       setCancelClassConfirm(false);
     },
     onError,
   });
 
   const bulkAttendanceMutation = trpc.enrollment.bulkMarkAttendance.useMutation({
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       toast.success(t("enrollment.allMarkedPresent"));
       utils.class.getById.invalidate({ id: classId });
+      track("attendance_bulk_marked", { status: vars.status, class_id: classId });
     },
     onError,
   });

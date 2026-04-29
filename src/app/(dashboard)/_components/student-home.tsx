@@ -22,6 +22,7 @@ import {
 import { typeKeys, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
+import { track } from "@/lib/posthog";
 
 export function StudentHome({ userName }: { userName: string }) {
   const t = useTranslations();
@@ -65,6 +66,7 @@ export function StudentHome({ userName }: { userName: string }) {
       toast.success(t("toast.enrollmentSuccess"));
       utils.class.list.invalidate();
       utils.enrollment.listByStudent.invalidate();
+      track("student_self_enrolled", { source: "home" });
     },
     onError,
   });

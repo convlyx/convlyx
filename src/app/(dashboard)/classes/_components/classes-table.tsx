@@ -27,6 +27,7 @@ import { EditClassDialog } from "./edit-class-dialog";
 import { CreateClassDialog } from "./create-class-dialog";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
+import { track } from "@/lib/posthog";
 import type { UserRole } from "@/generated/prisma/enums";
 
 const ITEMS_PER_PAGE = 10;
@@ -83,6 +84,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
       toast.success(t("toast.enrollmentSuccess"));
       utils.class.list.invalidate();
       utils.enrollment.listByStudent.invalidate();
+      track("student_self_enrolled", { source: "classes_tab" });
       setEnrollingId(null);
     },
     onError: (error) => {
