@@ -9,18 +9,49 @@ const ROOT_DOMAINS = ["convlyx.com", "www.convlyx.com"];
 // Reserved subdomains that are not real schools
 const RESERVED_SUBDOMAINS = ["admin", "www", "api"];
 
+// Common bot scan paths (WordPress, .env, php-myadmin, etc.) — return 404 fast
+const BOT_PATH_PATTERNS = [
+  /^\/wp-/i,
+  /^\/wordpress/i,
+  /^\/xmlrpc\.php/i,
+  /^\/phpmyadmin/i,
+  /^\/\.env/i,
+  /^\/\.git/i,
+  /^\/\.aws/i,
+  /\.php$/i,
+  /\.asp$/i,
+  /\.jsp$/i,
+];
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "";
+
+  // Block obvious bot scan paths immediately (before any auth/db work)
+  if (BOT_PATH_PATTERNS.some((p) => p.test(pathname))) {
+    return new NextResponse(null, { status: 404 });
+  }
+
   const response = NextResponse.next();
 
   // 1. Resolve tenant from subdomain
   const subdomain = extractSubdomain(hostname);
 
-  // 2. Block root domain — app requires a subdomain in production
+  // 2. Root domain — only "/" serves the landing page; allow SEO files and 404 everything else
   const isRootDomain = ROOT_DOMAINS.some((d) => hostname === d || hostname === `${d}:443`);
-  if (isRootDomain && !pathname.startsWith("/api/")) {
-    return NextResponse.rewrite(new URL("/no-tenant", request.url));
+  if (isRootDomain) {
+    if (pathname.startsWith("/api/")) {
+      return response;
+    }
+    if (pathname === "/") {
+      return NextResponse.rewrite(new URL("/no-tenant", request.url));
+    }
+    // Allow SEO/PWA files served from public/ and Next.js internals
+    const ALLOWED = ["/robots.txt", "/sitemap.xml", "/favicon", "/manifest.json", "/sw.js", "/og-image"];
+    if (ALLOWED.some((p) => pathname.startsWith(p)) || pathname.startsWith("/_next/")) {
+      return response;
+    }
+    return new NextResponse(null, { status: 404 });
   }
 
   // 3. Platform admin subdomain — rewrite to /platform-admin routes
