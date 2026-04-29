@@ -6,6 +6,7 @@ import {
   updateClassSchema,
   cancelClassSchema,
 } from "@/lib/validations/class";
+import { LICENSE_CATEGORIES } from "@/lib/license-categories";
 import { syncClassStatuses } from "../lib/class-status";
 import { createNotification, createNotifications, formatClassTime } from "../lib/notifications";
 
@@ -15,6 +16,7 @@ export const classRouter = router({
       z.object({
         schoolId: z.string().uuid().optional(),
         classType: z.enum(["THEORY", "PRACTICAL"]).optional(),
+        category: z.enum(LICENSE_CATEGORIES).optional(),
         status: z.enum(["ALL", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"]).optional(),
         from: z.string().datetime().optional(),
         to: z.string().datetime().optional(),
@@ -36,6 +38,7 @@ export const classRouter = router({
           ...instructorFilter,
           ...(input?.schoolId && { schoolId: input.schoolId }),
           ...(input?.classType && { classType: input.classType }),
+          ...(input?.category && { category: input.category }),
           ...(input?.from || input?.to
             ? {
                 startsAt: {
@@ -49,6 +52,7 @@ export const classRouter = router({
         select: {
           id: true,
           classType: true,
+          category: true,
           title: true,
           startsAt: true,
           endsAt: true,
@@ -70,6 +74,7 @@ export const classRouter = router({
         select: {
           id: true,
           classType: true,
+          category: true,
           title: true,
           startsAt: true,
           endsAt: true,
@@ -215,6 +220,7 @@ export const classRouter = router({
           tenantId: ctx.tenantId,
           schoolId: input.schoolId,
           classType: input.classType,
+          category: input.category,
           instructorId: input.instructorId,
           title: input.title,
           startsAt: new Date(input.startsAt),
@@ -323,6 +329,7 @@ export const classRouter = router({
         where: { id: input.id, tenantId: ctx.tenantId },
         data: {
           instructorId: input.instructorId,
+          category: input.category,
           title: input.title,
           capacity: input.capacity,
           startsAt: new Date(input.startsAt),
@@ -571,6 +578,7 @@ function generateRecurringSessions(
   input: {
     schoolId: string;
     classType: "THEORY" | "PRACTICAL";
+    category: import("@/lib/license-categories").LicenseCategory;
     instructorId: string;
     title: string;
     capacity: number;
@@ -590,6 +598,7 @@ function generateRecurringSessions(
     tenantId: string;
     schoolId: string;
     classType: "THEORY" | "PRACTICAL";
+    category: import("@/lib/license-categories").LicenseCategory;
     instructorId: string;
     title: string;
     capacity: number;
@@ -624,6 +633,7 @@ function generateRecurringSessions(
         tenantId,
         schoolId: input.schoolId,
         classType: input.classType,
+        category: input.category,
         instructorId: input.instructorId,
         title: input.title,
         capacity: input.capacity,

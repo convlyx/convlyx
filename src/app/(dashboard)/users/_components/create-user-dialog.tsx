@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
+import { CategorySelect } from "@/components/category-select";
+import { CategoryMultiSelect } from "@/components/category-multi-select";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import type { UserRole } from "@/generated/prisma/enums";
@@ -40,7 +42,14 @@ export function CreateUserDialog({ fixedRole, buttonLabel }: CreateUserDialogPro
 
   const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm<CreateUserInput>({
     resolver: zodResolver(createUserSchema),
-    defaultValues: { name: "", email: "", role: defaultRole, schoolId: "" },
+    defaultValues: {
+      name: "",
+      email: "",
+      role: defaultRole,
+      schoolId: "",
+      initialCategory: undefined,
+      qualifiedCategories: [],
+    },
   });
 
   // Auto-select when only one school
@@ -59,10 +68,19 @@ export function CreateUserDialog({ fixedRole, buttonLabel }: CreateUserDialogPro
       toast.success(t("toast.inviteSent"));
       utils.user.list.invalidate();
       setOpen(false);
-      reset({ name: "", email: "", role: defaultRole, schoolId: schools?.length === 1 ? schools[0].id : "" });
+      reset({
+        name: "",
+        email: "",
+        role: defaultRole,
+        schoolId: schools?.length === 1 ? schools[0].id : "",
+        initialCategory: undefined,
+        qualifiedCategories: [],
+      });
     },
     onError,
   });
+
+  const role = watch("role");
 
   function onSubmit(data: CreateUserInput) {
     createMutation.mutate(data);
@@ -125,6 +143,47 @@ export function CreateUserDialog({ fixedRole, buttonLabel }: CreateUserDialogPro
                 )}
                 {/* Hidden school field — auto-set */}
                 <input type="hidden" {...register("schoolId")} />
+
+                {role === "STUDENT" && (
+                  <div className="grid gap-2">
+                    <Label>{t("students.initialCategory")}</Label>
+                    <Controller
+                      control={control}
+                      name="initialCategory"
+                      render={({ field }) => (
+                        <CategorySelect
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          placeholder={t("courses.selectCategory")}
+                        />
+                      )}
+                    />
+                    {errors.initialCategory && (
+                      <p className="text-sm text-destructive">
+                        {t("students.categoryRequired")}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {role === "INSTRUCTOR" && (
+                  <div className="grid gap-2">
+                    <Label>{t("instructors.qualifiedCategories")}</Label>
+                    <p className="text-xs text-muted-foreground -mt-1">
+                      {t("instructors.qualifiedCategoriesHint")}
+                    </p>
+                    <Controller
+                      control={control}
+                      name="qualifiedCategories"
+                      render={({ field }) => (
+                        <CategoryMultiSelect
+                          value={field.value ?? []}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                  </div>
+                )}
               </div>
             </DialogBody>
             <DialogFooter>

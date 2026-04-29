@@ -15,9 +15,11 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
+import { CategoryMultiSelect } from "@/components/category-multi-select";
 import { Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
+import type { LicenseCategory } from "@/lib/license-categories";
 
 const ROLES = ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"] as const;
 
@@ -28,6 +30,7 @@ type UserData = {
   phone?: string | null;
   role: string;
   status: string;
+  qualifiedCategories?: LicenseCategory[];
   school: { id: string; name: string };
 };
 
@@ -44,7 +47,7 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
 
   const { data: schools, isLoading: schoolsLoading } = trpc.school.list.useQuery();
 
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<UpdateUserInput>({
+  const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<UpdateUserInput>({
     resolver: zodResolver(updateUserSchema),
     defaultValues: {
       id: userData.id,
@@ -52,6 +55,7 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
       phone: userData.phone ?? undefined,
       role: userData.role as UpdateUserInput["role"],
       schoolId: userData.school.id,
+      qualifiedCategories: userData.qualifiedCategories ?? [],
     },
   });
 
@@ -63,14 +67,19 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
         phone: userData.phone ?? undefined,
         role: userData.role as UpdateUserInput["role"],
         schoolId: userData.school.id,
+        qualifiedCategories: userData.qualifiedCategories ?? [],
       });
     }
   }, [open, userData, reset]);
+
+  const role = watch("role");
 
   const updateMutation = trpc.user.update.useMutation({
     onSuccess: () => {
       toast.success(t("users.userUpdated"));
       utils.user.list.invalidate();
+      utils.user.instructorProfile.invalidate({ id: userData.id });
+      utils.user.studentProfile.invalidate({ id: userData.id });
       onClose();
     },
     onError,
@@ -152,6 +161,25 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
                 />
                 {errors.schoolId && <p className="text-sm text-destructive">{errors.schoolId.message}</p>}
               </div>
+
+              {role === "INSTRUCTOR" && (
+                <div className="grid gap-2">
+                  <Label>{t("instructors.qualifiedCategories")}</Label>
+                  <p className="text-xs text-muted-foreground -mt-1">
+                    {t("instructors.qualifiedCategoriesHint")}
+                  </p>
+                  <Controller
+                    control={control}
+                    name="qualifiedCategories"
+                    render={({ field }) => (
+                      <CategoryMultiSelect
+                        value={field.value ?? []}
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
+                </div>
+              )}
             </div>
           </DialogBody>
           <DialogFooter className="sm:justify-between">

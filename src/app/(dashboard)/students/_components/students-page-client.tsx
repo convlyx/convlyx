@@ -20,6 +20,7 @@ import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
 import { Pagination } from "@/components/pagination";
 import { CreateUserDialog } from "@/app/(dashboard)/users/_components/create-user-dialog";
+import { CategoryBadge } from "@/components/category-badge";
 const ITEMS_PER_PAGE = 10;
 
 import type { UserRole } from "@/generated/prisma/enums";
@@ -128,6 +129,7 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
                   <p className="text-sm text-muted-foreground truncate">{student.email}</p>
                   <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                     <Badge variant="secondary">{student.school.name}</Badge>
+                    <CategoryBadge category={student.currentCategory} />
                     <Badge variant={student.status === "ACTIVE" ? "default" : "destructive"}>
                       {student.status === "ACTIVE" ? t("common.active") : t("common.inactive")}
                     </Badge>
@@ -145,6 +147,7 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
                 <TableHead>{t("common.name")}</TableHead>
                 <TableHead>{t("auth.email")}</TableHead>
                 <TableHead>{t("common.school")}</TableHead>
+                <TableHead>{t("classes.category")}</TableHead>
                 <TableHead>{t("common.status")}</TableHead>
               </TableRow>
             </TableHeader>
@@ -158,6 +161,7 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
                   </TableCell>
                   <TableCell>{student.email}</TableCell>
                   <TableCell>{student.school.name}</TableCell>
+                  <TableCell><CategoryBadge category={student.currentCategory} /></TableCell>
                   <TableCell>
                     <Badge variant={student.status === "ACTIVE" ? "default" : "destructive"}>
                       {student.status === "ACTIVE" ? t("common.active") : t("common.inactive")}

@@ -14,6 +14,7 @@ import {
   typeKeys, statusKeys, statusVariant, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap, classTypeBadgeClass, resolveEnrollmentDisplay,
 } from "@/lib/constants/class";
 import { Textarea } from "@/components/ui/textarea";
+import { CategoryBadge } from "@/components/category-badge";
 import {
   ArrowLeft, BookOpen, CalendarDays, Clock, Users, UserPlus,
   CheckCircle, XCircle, Building2, Pencil, CheckCheck, FileDown,
@@ -165,6 +166,7 @@ export function ClassDetailView({
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-bold">{classDetail.title}</h1>
                 <Badge className={classTypeBadgeClass[classDetail.classType]}>{t(typeKeys[classDetail.classType])}</Badge>
+                <CategoryBadge category={classDetail.category} />
                 <Badge variant={statusVariant[classDetail.status] ?? "outline"}>
                   {t(statusKeys[classDetail.status])}
                 </Badge>

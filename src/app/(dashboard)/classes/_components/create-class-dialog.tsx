@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/radix-select";
 import { StudentPicker } from "@/components/student-picker";
 import { DatePicker, TimePicker } from "@/components/date-picker";
+import { CategorySelect } from "@/components/category-select";
+import { LICENSE_CATEGORIES } from "@/lib/license-categories";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { lisbonWallClockToISO } from "@/lib/dates";
@@ -24,6 +26,7 @@ import { track } from "@/lib/posthog";
 
 const createClassFormSchema = z.object({
   classType: z.enum(["THEORY", "PRACTICAL"]),
+  category: z.enum(LICENSE_CATEGORIES, "Selecione a categoria"),
   schoolId: z.string().min(1, "Selecione uma escola"),
   instructorId: z.string().min(1, "Selecione um instrutor"),
   title: z.string().min(1, "O título é obrigatório"),
@@ -68,6 +71,7 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
     resolver: zodResolver(createClassFormSchema),
     defaultValues: {
       classType: "THEORY" as "THEORY" | "PRACTICAL",
+      category: undefined,
       schoolId: "",
       instructorId: isInstructor && userId ? userId : "",
       title: "",
@@ -95,12 +99,34 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
   // Auto-select when only one option
   const schoolId = watch("schoolId");
   const instructorId = watch("instructorId");
+  const category = watch("category");
   useEffect(() => {
     if (!schoolId && schools?.length === 1) setValue("schoolId", schools[0].id);
   }, [schools, schoolId, setValue]);
+
+  // When a category is chosen, only show instructors qualified for it
+  const filteredInstructors = isStaff && category && instructors
+    ? instructors.filter((i) =>
+        !i.qualifiedCategories?.length || i.qualifiedCategories.includes(category)
+      )
+    : instructors;
+
   useEffect(() => {
-    if (!instructorId && instructors?.length === 1) setValue("instructorId", instructors[0].id);
-  }, [instructors, instructorId, setValue]);
+    if (!instructorId && filteredInstructors?.length === 1) setValue("instructorId", filteredInstructors[0].id);
+  }, [filteredInstructors, instructorId, setValue]);
+
+  // Clear instructor if they're not qualified for the newly selected category
+  useEffect(() => {
+    if (!category || !instructorId || !instructors) return;
+    const current = instructors.find((i) => i.id === instructorId);
+    if (
+      current &&
+      current.qualifiedCategories?.length &&
+      !current.qualifiedCategories.includes(category)
+    ) {
+      setValue("instructorId", "");
+    }
+  }, [category, instructorId, instructors, setValue]);
 
   const createMutation = trpc.class.create.useMutation({
     onSuccess: (_data, vars) => {
@@ -128,6 +154,7 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
     if (scheduleMode === "recurring") {
       createMutation.mutate({
         classType: data.classType,
+        category: data.category,
         schoolId: data.schoolId,
         instructorId: data.instructorId,
         title: data.title,
@@ -146,6 +173,7 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
     } else {
       createMutation.mutate({
         classType: data.classType,
+        category: data.category,
         schoolId: data.schoolId,
         instructorId: data.instructorId,
         title: data.title,
@@ -174,23 +202,40 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
             <DialogBody>
               <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label>{t("classes.type")}</Label>
-              <Controller
-                control={control}
-                name="classType"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="THEORY">{t("classes.theory")}</SelectItem>
-                      <SelectItem value="PRACTICAL">{t("classes.practical")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>{t("classes.type")}</Label>
+                <Controller
+                  control={control}
+                  name="classType"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="THEORY">{t("classes.theory")}</SelectItem>
+                        <SelectItem value="PRACTICAL">{t("classes.practical")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>{t("classes.category")}</Label>
+                <Controller
+                  control={control}
+                  name="category"
+                  render={({ field }) => (
+                    <CategorySelect
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      placeholder={t("classes.categoryRequired")}
+                    />
+                  )}
+                />
+                {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
+              </div>
             </div>
 
             {/* School is auto-set from the user's school — hidden field */}
@@ -208,7 +253,7 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
                         <SelectValue placeholder={t("classes.instructor")} />
                       </SelectTrigger>
                       <SelectContent>
-                        {instructors?.map((instructor) => (
+                        {filteredInstructors?.map((instructor) => (
                           <SelectItem key={instructor.id} value={instructor.id}>
                             {instructor.name}
                           </SelectItem>

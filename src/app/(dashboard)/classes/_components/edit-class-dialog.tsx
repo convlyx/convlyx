@@ -16,6 +16,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
 import { DatePicker, TimePicker } from "@/components/date-picker";
+import { CategorySelect } from "@/components/category-select";
+import { LICENSE_CATEGORIES, type LicenseCategory } from "@/lib/license-categories";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { lisbonWallClockToISO } from "@/lib/dates";
@@ -24,6 +26,7 @@ type ClassData = {
   id: string;
   title: string;
   classType: string;
+  category?: LicenseCategory | null;
   startsAt: string | Date;
   endsAt: string | Date;
   capacity: number;
@@ -35,6 +38,7 @@ type ClassData = {
 const editClassFormSchema = z.object({
   id: z.string().uuid(),
   instructorId: z.string().min(1, "Selecione um instrutor"),
+  category: z.enum(LICENSE_CATEGORIES, "Selecione a categoria"),
   title: z.string().min(1, "O título é obrigatório"),
   capacity: z.number().int().min(1, "A capacidade deve ser pelo menos 1"),
   date: z.string().min(1, "Selecione uma data"),
@@ -86,11 +90,12 @@ export function EditClassDialog({
 
   const { data: instructors } = trpc.user.list.useQuery({ role: "INSTRUCTOR", status: "ACTIVE" });
 
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<EditClassFormData>({
+  const { register, handleSubmit, reset, control, watch, setValue, formState: { errors } } = useForm<EditClassFormData>({
     resolver: zodResolver(editClassFormSchema),
     defaultValues: {
       id: classData.id,
       instructorId: classData.instructor.id,
+      category: classData.category ?? undefined,
       title: classData.title,
       capacity: classData.capacity,
       date: toDateValue(classData.startsAt),
@@ -104,6 +109,7 @@ export function EditClassDialog({
       reset({
         id: classData.id,
         instructorId: classData.instructor.id,
+        category: classData.category ?? undefined,
         title: classData.title,
         capacity: classData.capacity,
         date: toDateValue(classData.startsAt),
@@ -112,6 +118,26 @@ export function EditClassDialog({
       });
     }
   }, [open, classData, reset]);
+
+  const category = watch("category");
+  const instructorId = watch("instructorId");
+  const filteredInstructors = category && instructors
+    ? instructors.filter((i) =>
+        !i.qualifiedCategories?.length || i.qualifiedCategories.includes(category)
+      )
+    : instructors;
+
+  useEffect(() => {
+    if (!category || !instructorId || !instructors) return;
+    const current = instructors.find((i) => i.id === instructorId);
+    if (
+      current &&
+      current.qualifiedCategories?.length &&
+      !current.qualifiedCategories.includes(category)
+    ) {
+      setValue("instructorId", "");
+    }
+  }, [category, instructorId, instructors, setValue]);
 
   const updateMutation = trpc.class.update.useMutation({
     onSuccess: () => {
@@ -126,6 +152,7 @@ export function EditClassDialog({
     updateMutation.mutate({
       id: data.id,
       instructorId: data.instructorId,
+      category: data.category,
       title: data.title,
       capacity: data.capacity,
       startsAt: lisbonWallClockToISO(data.date, data.startTime),
@@ -145,6 +172,22 @@ export function EditClassDialog({
               <input type="hidden" {...register("id")} />
 
               <div className="grid gap-2">
+                <Label>{t("classes.category")}</Label>
+                <Controller
+                  control={control}
+                  name="category"
+                  render={({ field }) => (
+                    <CategorySelect
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      placeholder={t("classes.categoryRequired")}
+                    />
+                  )}
+                />
+                {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
+              </div>
+
+              <div className="grid gap-2">
                 <Label>{t("classes.instructor")}</Label>
                 <Controller
                   control={control}
@@ -155,7 +198,7 @@ export function EditClassDialog({
                         <SelectValue placeholder={t("classes.instructor")} />
                       </SelectTrigger>
                       <SelectContent>
-                        {instructors?.map((instructor) => (
+                        {filteredInstructors?.map((instructor) => (
                           <SelectItem key={instructor.id} value={instructor.id}>
                             {instructor.name}
                           </SelectItem>

@@ -30,7 +30,7 @@ export const userRouter = router({
       }).optional()
     )
     .query(async ({ ctx, input }) => {
-      return ctx.db.user.findMany({
+      const users = await ctx.db.user.findMany({
         where: {
           tenantId: ctx.tenantId,
           ...(input?.schoolId && { schoolId: input.schoolId }),
@@ -44,11 +44,23 @@ export const userRouter = router({
           phone: true,
           role: true,
           status: true,
+          qualifiedCategories: true,
           createdAt: true,
           school: { select: { id: true, name: true } },
+          // Current course for students (used to display category badge in lists)
+          studentCourses: {
+            where: { status: "IN_PROGRESS" },
+            select: { id: true, category: true },
+            take: 1,
+          },
         },
         orderBy: { name: "asc" },
       });
+
+      return users.map(({ studentCourses, ...u }) => ({
+        ...u,
+        currentCategory: studentCourses[0]?.category ?? null,
+      }));
     }),
 
   getById: roleProtectedProcedure(["ADMIN", "SECRETARY"])
@@ -64,6 +76,7 @@ export const userRouter = router({
           role: true,
           status: true,
           schoolId: true,
+          qualifiedCategories: true,
           school: { select: { id: true, name: true } },
           createdAt: true,
         },
@@ -104,18 +117,34 @@ export const userRouter = router({
         });
       }
 
-      // Create Prisma user profile
-      const user = await ctx.db.user.create({
-        data: {
-          id: authData.user.id,
-          tenantId: ctx.tenantId,
-          schoolId: input.schoolId,
-          email: input.email,
-          name: input.name,
-          phone: input.phone,
-          role: input.role,
-        },
-        select: { id: true, name: true, email: true, role: true },
+      // Create Prisma user profile + initial student course (if applicable) atomically
+      const user = await ctx.db.$transaction(async (tx) => {
+        const created = await tx.user.create({
+          data: {
+            id: authData.user.id,
+            tenantId: ctx.tenantId,
+            schoolId: input.schoolId,
+            email: input.email,
+            name: input.name,
+            phone: input.phone,
+            role: input.role,
+            qualifiedCategories:
+              input.role === "INSTRUCTOR" ? input.qualifiedCategories ?? [] : [],
+          },
+          select: { id: true, name: true, email: true, role: true },
+        });
+
+        if (input.role === "STUDENT" && input.initialCategory) {
+          await tx.studentCourse.create({
+            data: {
+              tenantId: ctx.tenantId,
+              studentId: created.id,
+              category: input.initialCategory,
+            },
+          });
+        }
+
+        return created;
       });
 
       return user;
@@ -172,6 +201,9 @@ export const userRouter = router({
           phone: input.phone,
           role: input.role,
           schoolId: input.schoolId,
+          ...(input.qualifiedCategories !== undefined && {
+            qualifiedCategories: input.qualifiedCategories,
+          }),
         },
       });
     }),
@@ -238,7 +270,7 @@ export const userRouter = router({
       return { success: true };
     }),
 
-  /** Student profile with enrollment stats and history */
+  /** Student profile with enrollment stats, course history and exam history */
   studentProfile: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
@@ -254,6 +286,27 @@ export const userRouter = router({
           status: true,
           createdAt: true,
           school: { select: { id: true, name: true } },
+          studentCourses: {
+            select: {
+              id: true,
+              category: true,
+              status: true,
+              startedAt: true,
+              completedAt: true,
+              exams: {
+                select: {
+                  id: true,
+                  type: true,
+                  scheduledAt: true,
+                  result: true,
+                  location: true,
+                  instructor: { select: { id: true, name: true } },
+                },
+                orderBy: { scheduledAt: "desc" },
+              },
+            },
+            orderBy: { startedAt: "desc" },
+          },
           enrollments: {
             select: {
               id: true,
@@ -264,6 +317,7 @@ export const userRouter = router({
                   id: true,
                   title: true,
                   classType: true,
+                  category: true,
                   startsAt: true,
                   endsAt: true,
                   status: true,
@@ -308,6 +362,7 @@ export const userRouter = router({
           email: true,
           phone: true,
           status: true,
+          qualifiedCategories: true,
           createdAt: true,
           school: { select: { id: true, name: true } },
           instructedSessions: {

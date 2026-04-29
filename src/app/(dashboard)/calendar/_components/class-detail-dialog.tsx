@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { useState } from "react";
 import Link from "next/link";
+import { ProfileLink } from "@/components/profile-link";
+import type { UserRole } from "@/generated/prisma/enums";
 
 export function ClassDetailDialog({
   classId,
@@ -24,7 +26,7 @@ export function ClassDetailDialog({
   classId: string | null;
   open: boolean;
   onClose: () => void;
-  userRole: string;
+  userRole: UserRole;
   userId: string;
 }) {
   const t = useTranslations();
@@ -84,7 +86,7 @@ export function ClassDetailDialog({
   const canEnroll = userRole === "STUDENT" && classDetail.status === "SCHEDULED" && !isFull;
   const canMarkAttendance = ["ADMIN", "SECRETARY", "INSTRUCTOR"].includes(userRole)
     && (classDetail.status === "IN_PROGRESS" || classDetail.status === "COMPLETED");
-  const canManage = ["ADMIN", "SECRETARY"].includes(userRole);
+  const canManage = userRole === "ADMIN" || userRole === "SECRETARY";
   const isInstructor = userRole === "INSTRUCTOR";
 
   // Check if current student is already enrolled
@@ -113,7 +115,13 @@ export function ClassDetailDialog({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <span className="text-muted-foreground">{t("classes.instructor")}: </span>
-              {classDetail.instructor.name}
+              <ProfileLink
+                type="instructor"
+                id={classDetail.instructor.id}
+                name={classDetail.instructor.name}
+                userRole={userRole}
+                onNavigate={onClose}
+              />
             </div>
             <div>
               <span className="text-muted-foreground">{t("common.school")}: </span>
@@ -149,7 +157,13 @@ export function ClassDetailDialog({
                 {classDetail.enrollments.map((enrollment) => (
                   <div key={enrollment.id} className="flex items-center justify-between py-1">
                     <div className="flex items-center gap-2">
-                      <span>{enrollment.student.name}</span>
+                      <ProfileLink
+                        type="student"
+                        id={enrollment.student.id}
+                        name={enrollment.student.name}
+                        userRole={userRole}
+                        onNavigate={onClose}
+                      />
                       {(() => {
                         const displayStatus = resolveEnrollmentDisplay(enrollment.status, classDetail.status);
                         return (

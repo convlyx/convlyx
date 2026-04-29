@@ -47,6 +47,42 @@ enum TenantStatus {
   INACTIVE
 }
 
+enum LicenseCategory {
+  AM
+  A1
+  A2
+  A
+  B1
+  B
+  BE
+  C1
+  C1E
+  C
+  D1
+  D1E
+  D
+  DE
+}
+
+enum CourseStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+enum ExamType {
+  THEORY
+  PRACTICAL
+}
+
+enum ExamResult {
+  SCHEDULED
+  PASSED
+  FAILED
+  NO_SHOW
+  CANCELLED
+}
+
 // ──────────────────────────────────────────
 // Models
 // ──────────────────────────────────────────
@@ -91,6 +127,8 @@ model User {
   phone     String?
   role      UserRole
   status    UserStatus @default(ACTIVE)
+  // Categories an instructor is qualified to teach. Empty for non-instructors.
+  qualifiedCategories LicenseCategory[] @default([]) @map("qualified_categories")
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
 
@@ -107,6 +145,16 @@ model User {
   createdSessions ClassSession[] @relation("CreatedBySessions")
   updatedSessions ClassSession[] @relation("UpdatedBySessions")
 
+  // Driving courses (only meaningful for STUDENT role)
+  studentCourses StudentCourse[]
+
+  // Practical exams this instructor is accompanying
+  accompaniedExams Exam[] @relation("InstructorExams")
+
+  // Audit trail for exams
+  createdExams Exam[] @relation("CreatedByExams")
+  updatedExams Exam[] @relation("UpdatedByExams")
+
   @@unique([tenantId, email])
   @@index([tenantId])
   @@index([schoolId])
@@ -118,6 +166,9 @@ model ClassSession {
   tenantId     String      @map("tenant_id") @db.Uuid
   schoolId     String      @map("school_id") @db.Uuid
   classType    ClassType   @map("class_type")
+  // License category this class is taught for. Nullable to keep legacy rows valid;
+  // required at the validation layer for newly created classes.
+  category     LicenseCategory?
   instructorId String      @map("instructor_id") @db.Uuid
   title        String
   startsAt     DateTime    @map("starts_at")
@@ -179,6 +230,56 @@ model Notification {
   @@index([userId, read])
   @@index([createdAt])
   @@map("notifications")
+}
+
+model StudentCourse {
+  id          String          @id @default(uuid()) @db.Uuid
+  tenantId    String          @map("tenant_id") @db.Uuid
+  studentId   String          @map("student_id") @db.Uuid
+  category    LicenseCategory
+  status      CourseStatus    @default(IN_PROGRESS)
+  startedAt   DateTime        @default(now()) @map("started_at")
+  completedAt DateTime?       @map("completed_at")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  student User   @relation(fields: [studentId], references: [id])
+  exams   Exam[]
+
+  @@index([tenantId])
+  @@index([studentId])
+  @@index([studentId, status])
+  @@map("student_courses")
+}
+
+model Exam {
+  id            String     @id @default(uuid()) @db.Uuid
+  tenantId      String     @map("tenant_id") @db.Uuid
+  schoolId      String     @map("school_id") @db.Uuid
+  courseId      String     @map("course_id") @db.Uuid
+  type          ExamType
+  scheduledAt   DateTime   @map("scheduled_at")
+  location      String?
+  result        ExamResult @default(SCHEDULED)
+  examinerNotes String?    @map("examiner_notes")
+  // Accompanying instructor (typical for practical exams). Optional for theory.
+  instructorId  String?    @map("instructor_id") @db.Uuid
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  createdById   String     @map("created_by") @db.Uuid
+  updatedById   String     @map("updated_by") @db.Uuid
+
+  course     StudentCourse @relation(fields: [courseId], references: [id])
+  instructor User?         @relation("InstructorExams", fields: [instructorId], references: [id])
+  createdBy  User          @relation("CreatedByExams", fields: [createdById], references: [id])
+  updatedBy  User          @relation("UpdatedByExams", fields: [updatedById], references: [id])
+
+  @@index([tenantId])
+  @@index([schoolId])
+  @@index([courseId])
+  @@index([scheduledAt])
+  @@index([instructorId])
+  @@map("exams")
 }
 
 model PushSubscription {
