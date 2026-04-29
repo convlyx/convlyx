@@ -18,12 +18,15 @@ const nextConfig: NextConfig = {
   ],
 };
 
+// Only upload source maps to Sentry on production deploys (skip preview to save build time)
+const sentryEnabled = process.env.VERCEL_ENV === "production" && !!process.env.SENTRY_AUTH_TOKEN;
+
 export default withSentryConfig(withNextIntl(nextConfig), {
-  // Suppress source map upload logs unless an auth token is provided
-  silent: !process.env.SENTRY_AUTH_TOKEN,
+  silent: !sentryEnabled,
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
-  authToken: process.env.SENTRY_AUTH_TOKEN,
+  authToken: sentryEnabled ? process.env.SENTRY_AUTH_TOKEN : undefined,
   // Automatically tree-shake Sentry logger statements to reduce bundle size
   disableLogger: true,
+  sourcemaps: sentryEnabled ? undefined : { disable: true },
 });

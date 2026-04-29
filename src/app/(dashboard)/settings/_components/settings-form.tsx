@@ -14,7 +14,6 @@ import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { PushManager } from "@/components/push-manager";
 import { InstallQR } from "./install-qr";
-import { SentryTest } from "./sentry-test";
 import { Building2, Lock, Bell, Users2 } from "lucide-react";
 
 type SettingsFormProps = {
@@ -232,8 +231,6 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
           </form>
         </section>
       )}
-
-      <SentryTest />
     </div>
   );
 }
