@@ -65,6 +65,8 @@ export function MobileLayout({
     await supabase.auth.signOut();
     const { resetAnalytics } = await import("@/lib/posthog");
     resetAnalytics();
+    const Sentry = await import("@sentry/nextjs");
+    Sentry.setUser(null);
     router.push("/login");
     router.refresh();
   }
