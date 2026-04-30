@@ -21,44 +21,67 @@ export function UpdatePasswordForm() {
   const [done, setDone] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
 
-  // On mount, extract tokens from URL hash and establish a session.
-  // Supabase invite/recovery flows append #access_token=...&refresh_token=... to the URL.
+  // On mount, establish a session from whichever invite/recovery shape the URL carries:
+  //   - Implicit flow:  #access_token=...&refresh_token=...   (cross-browser safe)
+  //   - PKCE flow:      ?code=...                             (only redeemable in the
+  //                                                            originating browser)
+  // We sign out any existing session before applying new tokens so the recovery link
+  // can't be silently consumed against the wrong user.
   useEffect(() => {
-    const hash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : "";
-    const params = new URLSearchParams(hash);
-    const accessToken = params.get("access_token");
-    const refreshToken = params.get("refresh_token");
-
-    if (!accessToken || !refreshToken) {
-      // No invite/recovery tokens in the URL — just verify session (e.g. user clicked
-      // change-password while already logged in)
-      const supabase = createClient();
-      supabase.auth.getSession().then(({ data }) => {
-        setSessionReady(!!data.session);
-      });
-      return;
-    }
-
-    // Invite/recovery flow: sign out any existing session first to avoid the new tokens
-    // being silently consumed against the wrong user, then establish the invitee's session.
     const supabase = createClient();
+    let cancelled = false;
+
     (async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        await supabase.auth.signOut();
+      const hash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : "";
+      const hashParams = new URLSearchParams(hash);
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+      const code = new URL(window.location.href).searchParams.get("code");
+
+      const hasIncomingTokens = (accessToken && refreshToken) || code;
+      if (hasIncomingTokens) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          await supabase.auth.signOut();
+        }
       }
-      const { error } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
-      if (error) {
-        toast.error(t("invalidLink"));
+
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (cancelled) return;
+        if (error) {
+          toast.error(t("invalidLink"));
+          return;
+        }
+        window.history.replaceState(null, "", window.location.pathname);
+        setSessionReady(true);
         return;
       }
-      // Clean the hash from the URL so refresh doesn't re-trigger
-      window.history.replaceState(null, "", window.location.pathname);
-      setSessionReady(true);
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (cancelled) return;
+        if (error) {
+          toast.error(t("invalidLink"));
+          return;
+        }
+        window.history.replaceState(null, "", window.location.pathname);
+        setSessionReady(true);
+        return;
+      }
+
+      // No incoming tokens — page reached directly (e.g. user changing password while
+      // already logged in). Allow submit only if there's an active session.
+      const { data } = await supabase.auth.getSession();
+      if (!cancelled) setSessionReady(!!data.session);
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [t]);
 
   async function handleSubmit(e: React.FormEvent) {
