@@ -22,6 +22,7 @@ export function UpdatePasswordForm() {
   const [sessionReady, setSessionReady] = useState(false);
 
   // On mount, establish a session from whichever invite/recovery shape the URL carries:
+  //   - OTP token:      ?token_hash=...&type=recovery   (cross-browser safe — preferred)
   //   - Implicit flow:  #access_token=...&refresh_token=...   (cross-browser safe)
   //   - PKCE flow:      ?code=...                             (only redeemable in the
   //                                                            originating browser)
@@ -32,18 +33,36 @@ export function UpdatePasswordForm() {
     let cancelled = false;
 
     (async () => {
+      const url = new URL(window.location.href);
+      const tokenHash = url.searchParams.get("token_hash");
+      const otpType = url.searchParams.get("type");
+      const code = url.searchParams.get("code");
       const hash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : "";
       const hashParams = new URLSearchParams(hash);
       const accessToken = hashParams.get("access_token");
       const refreshToken = hashParams.get("refresh_token");
-      const code = new URL(window.location.href).searchParams.get("code");
 
-      const hasIncomingTokens = (accessToken && refreshToken) || code;
+      const hasIncomingTokens = tokenHash || code || (accessToken && refreshToken);
       if (hasIncomingTokens) {
         const { data } = await supabase.auth.getSession();
         if (data.session) {
           await supabase.auth.signOut();
         }
+      }
+
+      if (tokenHash) {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: (otpType as "recovery" | "invite" | "email") ?? "recovery",
+        });
+        if (cancelled) return;
+        if (error) {
+          toast.error(t("invalidLink"));
+          return;
+        }
+        window.history.replaceState(null, "", window.location.pathname);
+        setSessionReady(true);
+        return;
       }
 
       if (accessToken && refreshToken) {
