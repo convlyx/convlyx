@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { createClient } from "@/lib/supabase/client";
+import { createImplicitClient } from "@/lib/supabase/client-implicit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +22,9 @@ export function ResetPasswordForm() {
     e.preventDefault();
     setLoading(true);
 
-    const supabase = createClient();
+    // Use the implicit-flow client so Supabase issues a plain (non-PKCE)
+    // token_hash that can be redeemed cross-browser via verifyOtp.
+    const supabase = createImplicitClient();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/update-password`,
     });
