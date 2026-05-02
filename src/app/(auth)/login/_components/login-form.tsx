@@ -36,10 +36,17 @@ export function LoginForm() {
       return;
     }
 
-    // Validate user belongs to this tenant (if on a subdomain)
+    // Validate user belongs to this tenant (if on a subdomain).
+    // Mirror the middleware's *.vercel.app fallback so previews map to the
+    // test tenant instead of treating the long Vercel hostname as a subdomain.
     const hostname = window.location.hostname;
-    const parts = hostname.split(".");
-    const subdomain = parts.length >= 3 ? parts[0] : null;
+    let subdomain: string | null;
+    if (hostname.endsWith(".vercel.app")) {
+      subdomain = "testes";
+    } else {
+      const parts = hostname.split(".");
+      subdomain = parts.length >= 3 ? parts[0] : null;
+    }
 
     if (subdomain && subdomain !== "admin") {
       try {
