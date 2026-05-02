@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -22,12 +22,15 @@ export const metadata: Metadata = {
   },
   description: "Gestão de escolas de condução",
   manifest: "/manifest.json",
-  themeColor: "#16a34a",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Convlyx",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#16a34a",
 };
 
 export default async function RootLayout({
