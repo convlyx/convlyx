@@ -113,9 +113,12 @@ model School {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  tenant   Tenant         @relation(fields: [tenantId], references: [id])
-  users    User[]
-  sessions ClassSession[]
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  users          User[]
+  sessions       ClassSession[]
+  enrollments    Enrollment[]
+  notifications  Notification[]
+  studentCourses StudentCourse[]
 
   @@index([tenantId])
   @@map("schools")
@@ -199,6 +202,7 @@ model ClassSession {
 model Enrollment {
   id         String           @id @default(uuid()) @db.Uuid
   tenantId   String           @map("tenant_id") @db.Uuid
+  schoolId   String           @map("school_id") @db.Uuid
   sessionId  String           @map("session_id") @db.Uuid
   studentId  String           @map("student_id") @db.Uuid
   status     EnrollmentStatus @default(ENROLLED)
@@ -206,11 +210,13 @@ model Enrollment {
   enrolledAt DateTime         @default(now()) @map("enrolled_at")
   updatedAt  DateTime         @updatedAt @map("updated_at")
 
+  school  School       @relation(fields: [schoolId], references: [id])
   session ClassSession @relation(fields: [sessionId], references: [id])
   student User         @relation(fields: [studentId], references: [id])
 
   @@unique([sessionId, studentId])
   @@index([tenantId])
+  @@index([schoolId])
   @@index([sessionId])
   @@index([studentId])
   @@map("enrollments")
@@ -219,6 +225,7 @@ model Enrollment {
 model Notification {
   id        String   @id @default(uuid()) @db.Uuid
   tenantId  String   @map("tenant_id") @db.Uuid
+  schoolId  String   @map("school_id") @db.Uuid
   userId    String   @map("user_id") @db.Uuid
   type      String   // e.g. "enrollment.created", "class.cancelled", "attendance.marked"
   title     String
@@ -227,9 +234,11 @@ model Notification {
   read      Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id])
+  school School @relation(fields: [schoolId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   @@index([tenantId])
+  @@index([schoolId])
   @@index([userId, read])
   @@index([createdAt])
   @@map("notifications")
@@ -238,6 +247,7 @@ model Notification {
 model StudentCourse {
   id          String          @id @default(uuid()) @db.Uuid
   tenantId    String          @map("tenant_id") @db.Uuid
+  schoolId    String          @map("school_id") @db.Uuid
   studentId   String          @map("student_id") @db.Uuid
   category    LicenseCategory
   status      CourseStatus    @default(IN_PROGRESS)
@@ -246,10 +256,12 @@ model StudentCourse {
   createdAt   DateTime        @default(now()) @map("created_at")
   updatedAt   DateTime        @updatedAt @map("updated_at")
 
+  school  School @relation(fields: [schoolId], references: [id])
   student User   @relation(fields: [studentId], references: [id])
   exams   Exam[]
 
   @@index([tenantId])
+  @@index([schoolId])
   @@index([studentId])
   @@index([studentId, status])
   @@map("student_courses")

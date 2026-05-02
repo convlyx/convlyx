@@ -250,6 +250,7 @@ export const classRouter = router({
         await ctx.db.enrollment.createMany({
           data: input.studentIds.map((studentId) => ({
             tenantId: ctx.tenantId,
+            schoolId: input.schoolId,
             sessionId: session.id,
             studentId,
           })),

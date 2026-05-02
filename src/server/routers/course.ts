@@ -78,7 +78,7 @@ export const courseRouter = router({
           tenantId: ctx.tenantId,
           role: "STUDENT",
         },
-        select: { id: true },
+        select: { id: true, schoolId: true },
       });
 
       if (!student) {
@@ -105,6 +105,7 @@ export const courseRouter = router({
       return ctx.db.studentCourse.create({
         data: {
           tenantId: ctx.tenantId,
+          schoolId: student.schoolId,
           studentId: input.studentId,
           category: input.category,
         },

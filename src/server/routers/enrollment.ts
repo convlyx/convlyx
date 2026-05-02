@@ -34,6 +34,7 @@ export const enrollmentRouter = router({
           capacity: true,
           status: true,
           instructorId: true,
+          schoolId: true,
           _count: {
             select: {
               enrollments: true,
@@ -107,6 +108,7 @@ export const enrollmentRouter = router({
       const result = await ctx.db.enrollment.create({
         data: {
           tenantId: ctx.tenantId,
+          schoolId: session.schoolId,
           sessionId: input.sessionId,
           studentId,
           status: enrollStatus,

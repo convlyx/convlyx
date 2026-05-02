@@ -138,6 +138,7 @@ export const userRouter = router({
           await tx.studentCourse.create({
             data: {
               tenantId: ctx.tenantId,
+              schoolId: input.schoolId,
               studentId: created.id,
               category: input.initialCategory,
             },
