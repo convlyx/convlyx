@@ -93,7 +93,7 @@ See `docs/MVP_PLAN.md` for full architecture, data model, and roadmap.
 npm run dev                                       # Start dev server
 npm run lint                                      # ESLint
 npm run type-check                                # TypeScript check
-npm run build                                     # Production build (also runs migrate deploy)
+npm run build                                     # Production build (`prisma generate && next build` — see "KNOWN ISSUE" below for why migrate deploy is intentionally NOT here)
 npm run db:migrate -- --name <descriptive_name>   # Create + apply a new migration locally
 npm run db:migrate:status                         # See applied vs. pending migrations (dev)
 npm run db:migrate:status:prod                    # Same against prod DB
@@ -111,11 +111,31 @@ Workflow for any schema change:
 1. Edit `prisma/schema.prisma`
 2. Run `npm run db:migrate -- --name <descriptive_name>` — generates a numbered folder under `prisma/migrations/` (a reviewable `.sql` file) and applies it to the dev DB
 3. Commit the schema change + the new migration folder together in the same PR — reviewers see the SQL diff
-4. Merge → Vercel runs `prisma migrate deploy` as part of `build` (per `package.json`) and applies the pending migration to whichever `DATABASE_URL` is set for that environment (prod for production, dev/preview Supabase for preview deploys)
+4. **Apply to prod manually via the Supabase SQL Editor** — see "KNOWN ISSUE" below. Until the prod-routing problem is resolved, the auto-deploy step doesn't work, so step 4 is a manual paste of the migration `.sql` content into https://supabase.com/dashboard/project/idvupzweddgjcolgrluz/sql/new
+5. Insert a row into `_prisma_migrations` so the migration is recorded as applied:
+   ```sql
+   INSERT INTO _prisma_migrations (id, checksum, finished_at, migration_name, applied_steps_count)
+   VALUES (gen_random_uuid()::text, 'manual', now(), '<migration_folder_name>', 1);
+   ```
 
 The repo is baselined to `prisma/migrations/0_init/migration.sql` representing the schema at the time of the switch from `db push` to migrate. Both dev and prod DBs already have it marked applied.
 
-If migration state diverges (e.g. someone runs raw SQL on prod): `npm run db:migrate:resolve:prod -- --applied <name>` (or `--rolled-back <name>`) to reconcile.
+If migration state diverges (e.g. someone runs raw SQL on prod): `npm run db:migrate:resolve:prod -- --applied <name>` (or `--rolled-back <name>`) to reconcile — but note this only works on whichever DB `.env.prod` actually routes to, which (per the known issue) isn't always the dashboard's view.
+
+### KNOWN ISSUE: prod auto-migration is disabled
+
+`prisma migrate deploy` is **intentionally absent** from the `build` script. We removed it on 2026-05-02 after discovering that the prod project (`idvupzweddgjcolgrluz`) has a routing inconsistency: connections via `postgres.idvupzweddgjcolgrluz` (pooler URL in `.env.prod` and presumably Vercel's `DATABASE_URL`) land on a different physical Postgres than the dashboard SQL Editor displays for the same project. We confirmed this by writing a marker table via Prisma — it was visible to Prisma but not to the dashboard. Password reset didn't change it. No branching is enabled.
+
+Symptoms if you forget this and re-enable migrate deploy in build:
+- Vercel deploys succeed but apply migrations to the *wrong* DB
+- Dashboard view of prod stays missing tables/columns
+- `_prisma_migrations` and the live app's `DATABASE_URL` drift further apart
+
+Until resolved (Supabase support ticket recommended), the workflow is:
+1. Migrations on dev: normal `npm run db:migrate` flow
+2. Migrations on prod: hand-paste the migration `.sql` via the prod Supabase SQL Editor + record it in `_prisma_migrations` manually as above
+3. Do NOT add `prisma migrate deploy` back to the `build` script
+4. Do NOT trust `npm run db:migrate:status:prod` or `npm run db:migrate:deploy:prod` — they go through the broken-routing URL
 
 Preview deployments still have a separate unresolved issue: their `*.vercel.app` URLs don't match the `*.convlyx.com` tenant subdomain pattern, so tenant resolution doesn't work for preview testing. Migrations *are* applied (against the dev/preview Supabase), but exercising the running app against a tenant requires either local testing with `demo.localhost:3000` or setting up a wildcard preview domain — separate from the migration workflow.
 
