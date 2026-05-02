@@ -157,7 +157,6 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
                 max={168}
                 {...schoolForm.register("cancellationNoticeHours")}
               />
-              <p className="text-xs text-muted-foreground">{t("cancellationNoticeHelp")}</p>
               {schoolForm.formState.errors.cancellationNoticeHours && (
                 <p className="text-sm text-destructive">
                   {schoolForm.formState.errors.cancellationNoticeHours.message}
