@@ -10,6 +10,9 @@ import interactionPlugin from "@fullcalendar/interaction";
 import type { EventClickArg } from "@fullcalendar/core";
 import { trpc } from "@/lib/trpc";
 import { ClassDetailDialog } from "./class-detail-dialog";
+import { ExamDetailDialog } from "./exam-detail-dialog";
+import { RecordExamResultDialog } from "@/app/(dashboard)/students/[id]/_components/record-exam-result-dialog";
+import type { UserRole } from "@/generated/prisma/enums";
 
 type CalendarFilter = {
   schoolId?: string;
@@ -28,10 +31,21 @@ const availableColors: Record<string, { bg: string; border: string }> = {
   PRACTICAL: { bg: "#6ee7b7", border: "#34d399" },
 };
 
+// Exams — red/amber palette to stand out
+const examColors: Record<string, { bg: string; border: string }> = {
+  SCHEDULED: { bg: "#dc2626", border: "#b91c1c" },
+  PASSED: { bg: "#16a34a", border: "#15803d" },
+  FAILED: { bg: "#7f1d1d", border: "#991b1b" },
+  NO_SHOW: { bg: "#7f1d1d", border: "#991b1b" },
+  CANCELLED: { bg: "#9ca3af", border: "#6b7280" },
+};
+
 const statusColors: Record<string, { bg: string; border: string }> = {
   CANCELLED: { bg: "#ef4444", border: "#dc2626" },
   COMPLETED: { bg: "#9ca3af", border: "#6b7280" },
 };
+
+const EXAM_PREFIX = "exam:";
 
 export function ClassCalendar({
   filter,
@@ -39,12 +53,14 @@ export function ClassCalendar({
   userId,
 }: {
   filter?: CalendarFilter;
-  userRole: string;
+  userRole: UserRole;
   userId: string;
 }) {
   const t = useTranslations();
   const [dateRange, setDateRange] = useState<{ from: string; to: string } | null>(null);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
+  const [recordResultFor, setRecordResultFor] = useState<{ examId: string; studentId: string } | null>(null);
 
   const queryInput = useMemo(() => ({
     ...(filter?.schoolId && { schoolId: filter.schoolId }),
@@ -53,7 +69,14 @@ export function ClassCalendar({
     ...(dateRange?.to && { to: dateRange.to }),
   }), [filter, dateRange]);
 
+  const examQueryInput = useMemo(() => ({
+    ...(filter?.schoolId && { schoolId: filter.schoolId }),
+    ...(dateRange?.from && { from: dateRange.from }),
+    ...(dateRange?.to && { to: dateRange.to }),
+  }), [filter, dateRange]);
+
   const { data: classes, isFetching } = trpc.class.list.useQuery(queryInput);
+  const { data: exams } = trpc.exam.list.useQuery(examQueryInput);
 
   // For students: fetch enrollments to highlight enrolled classes
   const isStudent = userRole === "STUDENT";
@@ -105,6 +128,7 @@ export function ClassCalendar({
         backgroundColor: colors.bg,
         borderColor: colors.border,
         extendedProps: {
+          kind: "class" as const,
           classType: cls.classType,
           instructor: cls.instructor.name,
           school: cls.school.name,
@@ -116,8 +140,42 @@ export function ClassCalendar({
     });
   }, [classes, studentSessionIds, isStudent]);
 
+  const examEvents = useMemo(() => {
+    if (!exams) return [];
+    return exams.map((exam) => {
+      const colors = examColors[exam.result] ?? examColors.SCHEDULED;
+      // Default 60-min slot for exams (no end stored in DB)
+      const start = new Date(exam.scheduledAt as unknown as string);
+      const end = new Date(start.getTime() + 60 * 60 * 1000);
+      const examTypeLabel =
+        exam.type === "THEORY" ? t("exams.theory") : t("exams.practical");
+      const title = `${t("exams.examLabel")} ${examTypeLabel} · ${exam.course.student.name}`;
+      return {
+        id: `${EXAM_PREFIX}${exam.id}`,
+        title,
+        start: start.toISOString(),
+        end: end.toISOString(),
+        backgroundColor: colors.bg,
+        borderColor: colors.border,
+        extendedProps: {
+          kind: "exam" as const,
+          studentName: exam.course.student.name,
+          category: exam.course.category,
+          result: exam.result,
+        },
+      };
+    });
+  }, [exams, t]);
+
+  const allEvents = useMemo(() => [...events, ...examEvents], [events, examEvents]);
+
   function handleEventClick(info: EventClickArg) {
-    setSelectedClassId(info.event.id);
+    const id = info.event.id;
+    if (id.startsWith(EXAM_PREFIX)) {
+      setSelectedExamId(id.slice(EXAM_PREFIX.length));
+    } else {
+      setSelectedClassId(id);
+    }
   }
 
   function handleDatesSet(dateInfo: { start: Date; end: Date }) {
@@ -155,12 +213,22 @@ export function ClassCalendar({
             nowIndicator
             selectable={false}
             eventDisplay="block"
-            events={events}
+            events={allEvents}
             eventClick={handleEventClick}
             datesSet={handleDatesSet}
             height="auto"
             eventContent={(arg) => {
               const props = arg.event.extendedProps;
+              if (props.kind === "exam") {
+                return (
+                  <div className="p-1 text-xs leading-tight overflow-hidden">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium truncate">{arg.event.title}</span>
+                    </div>
+                    <div className="opacity-80 truncate">{props.category}</div>
+                  </div>
+                );
+              }
               return (
                 <div className="p-1 text-xs leading-tight overflow-hidden">
                   <div className="flex items-center gap-1">
@@ -191,6 +259,10 @@ export function ClassCalendar({
             <span className="h-3 w-3 rounded bg-blue-300" />
             {t("calendar.availableLabel")}
           </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded bg-red-600" />
+            {t("calendar.examLabel")}
+          </span>
         </div>
       )}
 
@@ -201,6 +273,27 @@ export function ClassCalendar({
         userRole={userRole}
         userId={userId}
       />
+
+      <ExamDetailDialog
+        examId={selectedExamId}
+        open={selectedExamId !== null}
+        onClose={() => setSelectedExamId(null)}
+        onRequestRecordResult={(examId, studentId) => {
+          setSelectedExamId(null);
+          setRecordResultFor({ examId, studentId });
+        }}
+        userRole={userRole}
+        userId={userId}
+      />
+
+      {recordResultFor && (
+        <RecordExamResultDialog
+          examId={recordResultFor.examId}
+          studentId={recordResultFor.studentId}
+          open
+          onClose={() => setRecordResultFor(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,9 +1,11 @@
 import { z } from "zod/v4";
+import { LICENSE_CATEGORIES } from "@/lib/license-categories";
 
 export const createClassSchema = z
   .object({
     schoolId: z.string().uuid(),
     classType: z.enum(["THEORY", "PRACTICAL"]),
+    category: z.enum(LICENSE_CATEGORIES),
     instructorId: z.string().uuid(),
     title: z.string().min(1, "O título é obrigatório"),
     capacity: z.number().int().min(1, "A capacidade deve ser pelo menos 1"),
@@ -45,6 +47,7 @@ export const createClassSchema = z
 export const updateClassSchema = z.object({
   id: z.string().uuid(),
   instructorId: z.string().uuid(),
+  category: z.enum(LICENSE_CATEGORIES),
   title: z.string().min(1, "O título é obrigatório"),
   capacity: z.number().int().min(1),
   startsAt: z.string().datetime(),

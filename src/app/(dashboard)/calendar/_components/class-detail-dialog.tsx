@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { useState } from "react";
 import Link from "next/link";
+import { ProfileLink } from "@/components/profile-link";
+import type { UserRole } from "@/generated/prisma/enums";
 
 export function ClassDetailDialog({
   classId,
@@ -24,7 +26,7 @@ export function ClassDetailDialog({
   classId: string | null;
   open: boolean;
   onClose: () => void;
-  userRole: string;
+  userRole: UserRole;
   userId: string;
 }) {
   const t = useTranslations();
@@ -84,13 +86,21 @@ export function ClassDetailDialog({
   const canEnroll = userRole === "STUDENT" && classDetail.status === "SCHEDULED" && !isFull;
   const canMarkAttendance = ["ADMIN", "SECRETARY", "INSTRUCTOR"].includes(userRole)
     && (classDetail.status === "IN_PROGRESS" || classDetail.status === "COMPLETED");
-  const canManage = ["ADMIN", "SECRETARY"].includes(userRole);
+  const canManage = userRole === "ADMIN" || userRole === "SECRETARY";
   const isInstructor = userRole === "INSTRUCTOR";
 
   // Check if current student is already enrolled
   const myEnrollment = classDetail.enrollments.find(
     (e) => e.status === "ENROLLED" && e.student.id === userId,
   );
+
+  // Whether a student's self-cancellation is blocked by the school's notice window
+  const noticeHours = classDetail.school.cancellationNoticeHours;
+  const nowMs = new Date().getTime();
+  const isWithinNoticeWindow =
+    noticeHours > 0 &&
+    new Date(classDetail.startsAt as unknown as string).getTime() - nowMs <
+      noticeHours * 3600_000;
 
   return (
     <Dialog open={open} onOpenChange={(val) => { if (!val) onClose(); }}>
@@ -113,7 +123,13 @@ export function ClassDetailDialog({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <span className="text-muted-foreground">{t("classes.instructor")}: </span>
-              {classDetail.instructor.name}
+              <ProfileLink
+                type="instructor"
+                id={classDetail.instructor.id}
+                name={classDetail.instructor.name}
+                userRole={userRole}
+                onNavigate={onClose}
+              />
             </div>
             <div>
               <span className="text-muted-foreground">{t("common.school")}: </span>
@@ -149,7 +165,13 @@ export function ClassDetailDialog({
                 {classDetail.enrollments.map((enrollment) => (
                   <div key={enrollment.id} className="flex items-center justify-between py-1">
                     <div className="flex items-center gap-2">
-                      <span>{enrollment.student.name}</span>
+                      <ProfileLink
+                        type="student"
+                        id={enrollment.student.id}
+                        name={enrollment.student.name}
+                        userRole={userRole}
+                        onNavigate={onClose}
+                      />
                       {(() => {
                         const displayStatus = resolveEnrollmentDisplay(enrollment.status, classDetail.status);
                         return (
@@ -212,13 +234,20 @@ export function ClassDetailDialog({
           {userRole === "STUDENT" && classDetail.status === "SCHEDULED" && (
             <>
               {myEnrollment ? (
-                <Button
-                  variant="destructive"
-                  disabled={cancelEnrollmentMutation.isPending}
-                  onClick={() => setConfirmCancelOwn(true)}
-                >
-                  {cancelEnrollmentMutation.isPending ? t("common.loading") : t("enrollment.cancel")}
-                </Button>
+                <div className="flex flex-col items-end gap-1">
+                  <Button
+                    variant="destructive"
+                    disabled={cancelEnrollmentMutation.isPending || isWithinNoticeWindow}
+                    onClick={() => setConfirmCancelOwn(true)}
+                  >
+                    {cancelEnrollmentMutation.isPending ? t("common.loading") : t("enrollment.cancel")}
+                  </Button>
+                  {isWithinNoticeWindow && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("enrollment.cancellationLockedHint", { hours: noticeHours })}
+                    </p>
+                  )}
+                </div>
               ) : canEnroll ? (
                 <Button
                   disabled={enrollMutation.isPending}

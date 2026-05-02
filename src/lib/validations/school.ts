@@ -12,6 +12,7 @@ export const updateSchoolSchema = z.object({
   name: z.string().min(1, "O nome é obrigatório"),
   address: z.string().optional(),
   phone: z.string().optional(),
+  cancellationNoticeHours: z.number().int().min(0).max(168).optional(),
 });
 
 export type CreateSchoolInput = z.infer<typeof createSchoolSchema>;

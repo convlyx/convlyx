@@ -30,7 +30,6 @@ Living document of things to build, improve, or investigate post-MVP.
 - [ ] Custom domain per school (escola.pt instead of escola.convlyx.com)
 
 ## Classes & Scheduling
-- [ ] IMT category tracking (A, A1, A2, B, B1, etc.)
 - [ ] Vehicle/fleet management
 - [ ] Instructor availability management (recurring schedules, holidays)
 - [ ] Waiting lists for full classes
@@ -96,6 +95,14 @@ Living document of things to build, improve, or investigate post-MVP.
 - [ ] Error monitoring (Sentry)
 - [ ] Structured logging
 - [ ] CI pipeline with lint + type-check + tests on PR
+
+## License Categories & Exams (follow-ups)
+- [ ] Backfill `category` for legacy `class_sessions` rows (currently nullable; new rows are required at validation layer). Add a one-time admin tool or seed script.
+- [ ] Defense-in-depth: partial unique index in Postgres enforcing one `IN_PROGRESS` `StudentCourse` per student (currently only validated at the tRPC layer).
+- [ ] Conflict detection between class schedule and accompanying exam schedule for the same instructor.
+- [ ] Cross-category statistics on student profile (per-category attendance & exam pass rate).
+- [ ] PDF export of full course report (course + exams + classes attended) per category.
+- [ ] When abandoning a course, optionally archive related future enrollments.
 
 ## Code Quality (from audit)
 - [ ] **Instructor authorization scoping** — `enrollment.markAttendance`, `addNote`, `bulkMarkAttendance` allow any instructor in the tenant to act on any class. Add `session: { instructorId: ctx.user.id }` filter when role is INSTRUCTOR.

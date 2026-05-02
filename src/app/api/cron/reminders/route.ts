@@ -80,9 +80,68 @@ export async function GET(request: NextRequest) {
     notificationCount += 1;
   }
 
+  // Find all scheduled exams for tomorrow
+  const tomorrowExams = await db.exam.findMany({
+    where: {
+      result: "SCHEDULED",
+      scheduledAt: { gte: tomorrow, lt: dayAfter },
+    },
+    select: {
+      id: true,
+      type: true,
+      tenantId: true,
+      scheduledAt: true,
+      instructorId: true,
+      course: {
+        select: { student: { select: { id: true, name: true } } },
+      },
+    },
+  });
+
+  let examNotificationCount = 0;
+
+  for (const exam of tomorrowExams) {
+    const timeStr = formatClassTime(new Date(exam.scheduledAt));
+    const examTypeLabel = exam.type === "THEORY" ? "teórico" : "prático";
+
+    // Notify student
+    await createNotification({
+      db,
+      tenantId: exam.tenantId,
+      userId: exam.course.student.id,
+      type: "reminder.exam",
+      titleKey:
+        exam.type === "THEORY"
+          ? "notifications.theoryExamScheduledTitle"
+          : "notifications.practicalExamScheduledTitle",
+      messageKey: "notifications.examReminderStudent",
+      params: { examType: examTypeLabel, time: timeStr },
+      pushTitle: "Lembrete de exame",
+      pushBody: `Amanhã: exame ${examTypeLabel} · ${timeStr}`,
+    });
+    examNotificationCount += 1;
+
+    // Notify accompanying instructor (if any)
+    if (exam.instructorId) {
+      await createNotification({
+        db,
+        tenantId: exam.tenantId,
+        userId: exam.instructorId,
+        type: "reminder.exam",
+        titleKey: "notifications.examAccompanyTitle",
+        messageKey: "notifications.examReminderInstructor",
+        params: { student: exam.course.student.name, time: timeStr },
+        pushTitle: "Lembrete de exame",
+        pushBody: `Amanhã: exame de ${exam.course.student.name} · ${timeStr}`,
+      });
+      examNotificationCount += 1;
+    }
+  }
+
   return NextResponse.json({
     success: true,
     classesFound: tomorrowClasses.length,
-    notificationsSent: notificationCount,
+    examsFound: tomorrowExams.length,
+    notificationsSent: notificationCount + examNotificationCount,
   });
 }

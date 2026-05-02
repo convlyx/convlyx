@@ -234,6 +234,7 @@ async function main() {
         await db.enrollment.create({
           data: {
             tenantId: tenant.id,
+            schoolId: school.id,
             sessionId: session.id,
             studentId: shuffled[i],
             status: attended ? "ATTENDED" : "NO_SHOW",
@@ -290,6 +291,7 @@ async function main() {
         await db.enrollment.create({
           data: {
             tenantId: tenant.id,
+            schoolId: school.id,
             sessionId: session.id,
             studentId: studentIds[studentIndex],
             status: attended ? "ATTENDED" : "NO_SHOW",
@@ -338,6 +340,7 @@ async function main() {
       await db.enrollment.create({
         data: {
           tenantId: tenant.id,
+          schoolId: school.id,
           sessionId: session.id,
           studentId: shuffled[i],
           status: isPast ? (Math.random() > 0.1 ? "ATTENDED" : "NO_SHOW") : "ENROLLED",
@@ -376,6 +379,7 @@ async function main() {
       await db.enrollment.create({
         data: {
           tenantId: tenant.id,
+          schoolId: school.id,
           sessionId: session.id,
           studentId: studentIds[studentIndex],
           status: isPast ? "ATTENDED" : "ENROLLED",
@@ -419,6 +423,7 @@ async function main() {
         await db.enrollment.create({
           data: {
             tenantId: tenant.id,
+            schoolId: school.id,
             sessionId: session.id,
             studentId: shuffled[i],
             status: "ENROLLED",
@@ -456,6 +461,7 @@ async function main() {
         await db.enrollment.create({
           data: {
             tenantId: tenant.id,
+            schoolId: school.id,
             sessionId: session.id,
             studentId: studentIds[studentIndex],
             status: "ENROLLED",

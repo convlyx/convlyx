@@ -28,13 +28,18 @@ import { EmptyState } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
 import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeBadgeClass, resolveEnrollmentDisplay } from "@/lib/constants/class";
 import { exportStudentProgressPDF } from "@/lib/pdf-export";
+import { CategoryBadge } from "@/components/category-badge";
+import { CoursesAndExamsSection } from "./courses-and-exams-section";
+import type { UserRole } from "@/generated/prisma/enums";
 
 const HISTORY_PER_PAGE = 10;
 
 export function StudentDetailPage({
   id,
+  userRole,
 }: {
   id: string;
+  userRole: UserRole;
 }) {
   const t = useTranslations();
   const format = useFormatter();
@@ -144,6 +149,13 @@ export function StudentDetailPage({
         </div>
       </div>
 
+      {/* Courses + exams */}
+      <CoursesAndExamsSection
+        studentId={id}
+        courses={student.studentCourses}
+        userRole={userRole}
+      />
+
       {/* Enrollment history */}
       <div className="space-y-3">
         <h2 className="text-lg font-semibold">{t("users.enrollmentHistory")}</h2>
@@ -164,6 +176,7 @@ export function StudentDetailPage({
                     <Badge className={classTypeBadgeClass[enrollment.session.classType]}>
                       {t(typeKeys[enrollment.session.classType])}
                     </Badge>
+                    <CategoryBadge category={enrollment.session.category} />
                     <div>
                       <p className="text-sm font-medium">{enrollment.session.title}</p>
                       <p className="text-xs text-muted-foreground">

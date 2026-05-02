@@ -31,5 +31,5 @@ export default async function StudentPage({
   });
   if (!studentExists) notFound();
 
-  return <StudentDetailPage id={id} />;
+  return <StudentDetailPage id={id} userRole={user.role} />;
 }

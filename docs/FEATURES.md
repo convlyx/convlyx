@@ -44,8 +44,38 @@ Living document of everything the app can do, organized by area.
 - Create user directly from students page ("Adicionar aluno") and instructors page ("Adicionar instrutor") with pre-locked role
 - Filter students/instructors list by status (Ativo / Inativo / Todos) — defaults to active only
 
+## License Categories (IMT)
+- All 14 Portuguese categories supported: AM, A1, A2, A, B1, B, BE, C1, C1E, C, D1, D1E, D, DE
+- Category labels with descriptions on every selector (e.g. "B — Automóveis ligeiros")
+- Required on every class (legacy rows kept nullable; new classes require category at validation layer)
+- Required on student creation (selects initial license category, creates a `StudentCourse`)
+- Optional `qualifiedCategories[]` on instructors (categories they can teach)
+- When a category is selected on class create/edit, instructor list filters to only those qualified for it
+- Category badge shown on class cards, class table, class detail page, calendar, student lists, student profile, enrollment history
+
+## Driving Courses (StudentCourse)
+- Each student has one active course (single category) at a time, with full course history
+- "Iniciar curso" action on student profile (admin/secretary) — picks a category, blocked if a course is already active
+- "Concluir curso" / "Abandonar curso" actions with confirmation modals
+- Course history list per student with status badges (Em curso / Concluído / Abandonado), start date, completion date
+- After completing/abandoning a course, the student can start a new one in a different (or the same) category
+
+## Exams
+- Per-attempt exam records (full retake history)
+- Theory and Practical exam types
+- Schedule exam from student profile — date/time, optional location, optional accompanying instructor
+- Accompanying instructor list filtered to those qualified for the course's category
+- Exam results: SCHEDULED → PASSED / FAILED / NO_SHOW / CANCELLED
+- Admin/secretary can record any result; instructor can mark NO_SHOW only on exams they accompany
+- Exam cancellation (only while still SCHEDULED)
+- Notifications: scheduled (student + instructor), result recorded (student), cancelled (student + instructor)
+- Day-before reminder included in existing daily cron (student + accompanying instructor)
+- Exams render on the calendar alongside classes — distinct red palette, exam legend, dedicated exam detail dialog
+- Exam detail dialog: student link, schedule, location, accompanying instructor, examiner notes, result-marking and cancel actions
+- Students see only their own exams on the calendar; instructors see only exams they accompany
+
 ## Classes
-- List classes with filters (type, school) and search
+- List classes with filters (type, school, category) and search
 - Card + table view toggle
 - Past / upcoming tabs with URL sync
 - Clickable cards → class detail page (admin, secretary)
@@ -75,6 +105,7 @@ Living document of everything the app can do, organized by area.
 - Retroactive attendance correction: toggle ATTENDED ↔ NO_SHOW on completed classes with confirmation modal
 - Attendance marking: Present / No-show (admin, secretary, instructor) — only for in-progress or completed classes
 - Bulk attendance: "Mark all present" button — only for in-progress or completed classes
+- Student self-cancellation gated by per-school notice window — cancel button is disabled with explanatory hint when class starts within the window; server enforces the same rule and returns a translatable error
 - Enrollment status tracking: ENROLLED → ATTENDED / NO_SHOW
 - Instructor notes on enrollments: only instructors can write/edit, admin/secretary can view, hidden from students
 - Instructor can flag unavailability with confirmation — cancels the class and deletes all enrollments
@@ -130,6 +161,7 @@ Living document of everything the app can do, organized by area.
 - Profile section: edit own name
 - Change password (via Supabase Auth)
 - School info section: edit name, address, phone (admin, secretary)
+- Per-school cancellation notice window (hours) — students can't self-cancel within X hours of class start (default 24, range 0-168, configurable by admin/secretary; staff bypass)
 - Tenant/group section: edit group name (admin only)
 
 ## Notifications
@@ -189,7 +221,7 @@ Living document of everything the app can do, organized by area.
 
 ## API (tRPC)
 - Type-safe end-to-end (shared types web ↔ future mobile app)
-- Routers: school, class, enrollment, user, notification
+- Routers: school, class, enrollment, user, notification, course, exam
 - Protected procedures with role enforcement
 - Zod validation on all inputs
 - Supabase JWT auth in tRPC context
@@ -199,7 +231,7 @@ Living document of everything the app can do, organized by area.
 
 ## Database
 - Supabase PostgreSQL with Prisma ORM
-- Tables: tenants, schools, users, class_sessions, enrollments, notifications
+- Tables: tenants, schools, users, class_sessions, enrollments, notifications, student_courses, exams
 - Audit columns: updated_at on all tables, created_by/updated_by on class_sessions
 - Unique constraint on enrollment (session+student)
 - Indexed foreign keys
@@ -215,6 +247,7 @@ Living document of everything the app can do, organized by area.
 
 ## Cron Jobs
 - Daily class reminder: runs at 20:00 UTC via Vercel Cron, notifies students and instructors about tomorrow's classes
+- Daily exam reminder: same cron — notifies student + accompanying instructor about tomorrow's exams
 - Secured via `CRON_SECRET` Bearer token
 
 ## Infrastructure

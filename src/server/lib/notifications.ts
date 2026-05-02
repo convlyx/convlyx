@@ -61,6 +61,9 @@ type CreateNotificationParams = {
  * Create a notification for a user.
  * Stores translation keys + params, NOT pre-rendered text.
  * The client renders the translated text via next-intl.
+ *
+ * The recipient's `schoolId` is derived from their User row so callers
+ * don't have to plumb it through.
  */
 export async function createNotification({
   db,
@@ -74,9 +77,16 @@ export async function createNotification({
   pushBody,
 }: CreateNotificationParams) {
   try {
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { schoolId: true },
+    });
+    if (!user) return null;
+
     const result = await db.notification.create({
       data: {
         tenantId,
+        schoolId: user.schoolId,
         userId,
         type,
         title: titleKey,
@@ -112,15 +122,24 @@ export async function createNotifications({
 }: Omit<CreateNotificationParams, "userId"> & { userIds: string[] }) {
   if (userIds.length === 0) return;
   try {
+    const users = await db.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, schoolId: true },
+    });
+    const schoolByUserId = new Map(users.map((u) => [u.id, u.schoolId]));
+
     const result = await db.notification.createMany({
-      data: userIds.map((userId) => ({
-        tenantId,
-        userId,
-        type,
-        title: titleKey,
-        message: messageKey,
-        ...(params && { data: params as object }),
-      })),
+      data: userIds
+        .filter((userId) => schoolByUserId.has(userId))
+        .map((userId) => ({
+          tenantId,
+          schoolId: schoolByUserId.get(userId)!,
+          userId,
+          type,
+          title: titleKey,
+          message: messageKey,
+          ...(params && { data: params as object }),
+        })),
     });
 
     // Send push notifications (resolve text from translation keys if not provided)

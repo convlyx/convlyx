@@ -29,6 +29,7 @@ type SettingsFormProps = {
     subdomain: string;
     address: string;
     phone: string;
+    cancellationNoticeHours: number;
     userCount: number;
     classCount: number;
   };
@@ -42,6 +43,7 @@ const schoolFormSchema = z.object({
   name: z.string().min(1, "O nome é obrigatório"),
   address: z.string(),
   phone: z.string(),
+  cancellationNoticeHours: z.coerce.number().int().min(0).max(168),
 });
 
 const tenantFormSchema = z.object({
@@ -91,7 +93,12 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
   // --- School section ---
   const schoolForm = useForm({
     resolver: zodResolver(schoolFormSchema),
-    defaultValues: { name: school.name, address: school.address, phone: school.phone },
+    defaultValues: {
+      name: school.name,
+      address: school.address,
+      phone: school.phone,
+      cancellationNoticeHours: school.cancellationNoticeHours,
+    },
   });
   const updateSchoolMutation = trpc.school.update.useMutation({
     onSuccess: () => toast.success(t("schoolUpdated")),
@@ -123,6 +130,7 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
                 name: data.name,
                 address: data.address || undefined,
                 phone: data.phone || undefined,
+                cancellationNoticeHours: data.cancellationNoticeHours,
               })
             )}
             className="space-y-3"
@@ -139,6 +147,21 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
             <div className="grid gap-2">
               <Label htmlFor="school-phone">{tc("phone")}</Label>
               <Input id="school-phone" {...schoolForm.register("phone")} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="school-cancellation-notice">{t("cancellationNoticeLabel")}</Label>
+              <Input
+                id="school-cancellation-notice"
+                type="number"
+                min={0}
+                max={168}
+                {...schoolForm.register("cancellationNoticeHours")}
+              />
+              {schoolForm.formState.errors.cancellationNoticeHours && (
+                <p className="text-sm text-destructive">
+                  {schoolForm.formState.errors.cancellationNoticeHours.message}
+                </p>
+              )}
             </div>
             <Button type="submit" disabled={updateSchoolMutation.isPending}>
               {updateSchoolMutation.isPending ? tc("loading") : tc("save")}

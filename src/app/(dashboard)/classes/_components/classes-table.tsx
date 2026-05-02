@@ -25,6 +25,8 @@ import { typeKeys, statusKeys, statusVariant, classTypeColorMap, classTypeBadgeC
 import { Pagination } from "@/components/pagination";
 import { EditClassDialog } from "./edit-class-dialog";
 import { CreateClassDialog } from "./create-class-dialog";
+import { CategoryBadge } from "@/components/category-badge";
+import { LICENSE_CATEGORIES, type LicenseCategory } from "@/lib/license-categories";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { track } from "@/lib/posthog";
@@ -54,6 +56,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   const [view, setView] = useViewMode("/classes", initialView);
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [typeFilter, setTypeFilter] = useState<string>(searchParams.get("type") ?? "ALL");
+  const [categoryFilter, setCategoryFilter] = useState<string>(searchParams.get("category") ?? "ALL");
   const defaultStatus = (searchParams.get("time") ?? "upcoming") === "upcoming" ? "SCHEDULED" : "COMPLETED";
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") ?? defaultStatus);
   const [page, setPage] = useState(1);
@@ -64,6 +67,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   const isStudent = userRole === "STUDENT";
   const { data: classes, isLoading } = trpc.class.list.useQuery({
     ...(typeFilter !== "ALL" && { classType: typeFilter as "THEORY" | "PRACTICAL" }),
+    ...(categoryFilter !== "ALL" && { category: categoryFilter as LicenseCategory }),
     status: statusFilter as "ALL" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED",
   });
   const { data: myEnrollments } = trpc.enrollment.listByStudent.useQuery(undefined, { enabled: isStudent });
@@ -116,7 +120,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   const totalPages = Math.ceil(filteredClasses.length / ITEMS_PER_PAGE);
   const paginatedClasses = filteredClasses.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-  useEffect(() => setPage(1), [search, typeFilter, statusFilter, timeTab]);
+  useEffect(() => setPage(1), [search, typeFilter, categoryFilter, statusFilter, timeTab]);
 
   function handleSearchChange(value: string) {
     setSearch(value);
@@ -126,6 +130,11 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   function handleTypeChange(value: string) {
     setTypeFilter(value);
     updateParams("type", value);
+  }
+
+  function handleCategoryChange(value: string) {
+    setCategoryFilter(value);
+    updateParams("category", value);
   }
 
   function handleStatusChange(value: string) {
@@ -196,6 +205,17 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
               <SelectItem value="PRACTICAL">{t("classes.practical")}</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={categoryFilter} onValueChange={handleCategoryChange}>
+            <SelectTrigger className="w-auto min-w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">{t("classes.allCategories")}</SelectItem>
+              {LICENSE_CATEGORIES.map((cat) => (
+                <SelectItem key={cat} value={cat}>{t(`categories.${cat}`)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {!isStudent && (
             <Select value={statusFilter} onValueChange={handleStatusChange}>
               <SelectTrigger className="w-auto min-w-[140px]">
@@ -244,6 +264,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                     <div className="flex flex-wrap items-center gap-1.5">
                       <p className={`font-medium truncate ${isClickable ? "group-hover:text-primary transition-colors" : ""}`}>{cls.title}</p>
                       <Badge className={classTypeBadgeClass[cls.classType]}>{t(typeKeys[cls.classType])}</Badge>
+                      <CategoryBadge category={cls.category} />
                       <Badge variant={statusVariant[cls.status] ?? "outline"}>{t(statusKeys[cls.status])}</Badge>
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground mt-0.5">
@@ -314,6 +335,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
               <TableRow>
                 <TableHead>{t("common.name")}</TableHead>
                 <TableHead>{t("classes.type")}</TableHead>
+                <TableHead>{t("classes.category")}</TableHead>
                 <TableHead>{t("classes.instructor")}</TableHead>
                 <TableHead>{t("classes.date")}</TableHead>
                 <TableHead>{t("classes.capacity")}</TableHead>
@@ -332,6 +354,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                     )}
                   </TableCell>
                   <TableCell><Badge className={classTypeBadgeClass[cls.classType]}>{t(typeKeys[cls.classType])}</Badge></TableCell>
+                  <TableCell><CategoryBadge category={cls.category} /></TableCell>
                   <TableCell>{cls.instructor.name}</TableCell>
                   <TableCell>
                     {format.dateTime(new Date(cls.startsAt), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}

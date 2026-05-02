@@ -47,6 +47,16 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
     userRole === "STUDENT" && enrollment.status === "ENROLLED" && enrollment.session.status === "SCHEDULED";
 
   const now = new Date();
+  const nowMs = now.getTime();
+
+  const isWithinNoticeWindow = (enrollment: {
+    session: { startsAt: Date | string; school: { cancellationNoticeHours: number } };
+  }) => {
+    const noticeHours = enrollment.session.school.cancellationNoticeHours;
+    if (noticeHours <= 0) return false;
+    const startsAt = new Date(enrollment.session.startsAt as unknown as string);
+    return startsAt.getTime() - nowMs < noticeHours * 3600_000;
+  };
   const filteredEnrollments = enrollments?.filter((e) => {
     if (timeTab === "current") {
       return e.status === "ENROLLED" && new Date(e.session.startsAt as unknown as string) >= now;
@@ -123,17 +133,38 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
                   </div>
                   {canCancel(enrollment) && (
                     <div className="mt-2 sm:hidden">
-                      <Button variant="destructive" size="sm" className="w-full" disabled={cancelMutation.isPending} onClick={() => setConfirmCancelId(enrollment.id)}>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="w-full"
+                        disabled={cancelMutation.isPending || isWithinNoticeWindow(enrollment)}
+                        onClick={() => setConfirmCancelId(enrollment.id)}
+                      >
                         {t("enrollment.cancel")}
                       </Button>
+                      {isWithinNoticeWindow(enrollment) && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {t("enrollment.cancellationLockedHint", { hours: enrollment.session.school.cancellationNoticeHours })}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
                 {canCancel(enrollment) && (
-                  <div className="hidden sm:block shrink-0">
-                    <Button variant="destructive" size="sm" disabled={cancelMutation.isPending} onClick={() => setConfirmCancelId(enrollment.id)}>
+                  <div className="hidden sm:flex sm:flex-col sm:items-end sm:gap-1 shrink-0">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={cancelMutation.isPending || isWithinNoticeWindow(enrollment)}
+                      onClick={() => setConfirmCancelId(enrollment.id)}
+                    >
                       {t("enrollment.cancel")}
                     </Button>
+                    {isWithinNoticeWindow(enrollment) && (
+                      <p className="text-xs text-muted-foreground text-right">
+                        {t("enrollment.cancellationLockedHint", { hours: enrollment.session.school.cancellationNoticeHours })}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -177,9 +208,21 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
                   {userRole === "STUDENT" && (
                     <TableCell>
                       {canCancel(enrollment) && (
-                        <Button variant="destructive" size="sm" disabled={cancelMutation.isPending} onClick={() => setConfirmCancelId(enrollment.id)}>
-                          {t("enrollment.cancel")}
-                        </Button>
+                        <div className="flex flex-col gap-1">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={cancelMutation.isPending || isWithinNoticeWindow(enrollment)}
+                            onClick={() => setConfirmCancelId(enrollment.id)}
+                          >
+                            {t("enrollment.cancel")}
+                          </Button>
+                          {isWithinNoticeWindow(enrollment) && (
+                            <p className="text-xs text-muted-foreground">
+                              {t("enrollment.cancellationLockedHint", { hours: enrollment.session.school.cancellationNoticeHours })}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </TableCell>
                   )}
