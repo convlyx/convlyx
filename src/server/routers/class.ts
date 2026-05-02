@@ -82,7 +82,7 @@ export const classRouter = router({
           status: true,
           createdAt: true,
           instructor: { select: { id: true, name: true } },
-          school: { select: { id: true, name: true } },
+          school: { select: { id: true, name: true, cancellationNoticeHours: true } },
           createdBy: { select: { id: true, name: true } },
           enrollments: {
             select: {

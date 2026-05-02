@@ -143,7 +143,15 @@ export const enrollmentRouter = router({
           id: true,
           studentId: true,
           status: true,
-          session: { select: { id: true, title: true, startsAt: true, instructorId: true } },
+          session: {
+            select: {
+              id: true,
+              title: true,
+              startsAt: true,
+              instructorId: true,
+              school: { select: { cancellationNoticeHours: true } },
+            },
+          },
         },
       });
 
@@ -159,7 +167,8 @@ export const enrollmentRouter = router({
         });
       }
 
-      // Students can only cancel their own, and only if still ENROLLED
+      // Students can only cancel their own, only while ENROLLED, and only outside
+      // the school's cancellation notice window (default 24h, configurable).
       if (ctx.user.role === "STUDENT") {
         if (enrollment.studentId !== ctx.user.id) {
           throw new TRPCError({
@@ -172,6 +181,16 @@ export const enrollmentRouter = router({
             code: "BAD_REQUEST",
             message: "enrollment.notActive",
           });
+        }
+        const noticeHours = enrollment.session.school.cancellationNoticeHours;
+        if (noticeHours > 0) {
+          const cutoff = new Date(enrollment.session.startsAt.getTime() - noticeHours * 3600_000);
+          if (new Date() > cutoff) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "enrollment.cancellationTooLate",
+            });
+          }
         }
       }
 
@@ -322,6 +341,7 @@ export const enrollmentRouter = router({
               endsAt: true,
               status: true,
               instructor: { select: { name: true } },
+              school: { select: { cancellationNoticeHours: true } },
             },
           },
           student: { select: { id: true, name: true } },

@@ -107,6 +107,9 @@ model School {
   name      String
   address   String?
   phone     String?
+  // Minimum notice (in hours) a student must give to cancel an enrollment.
+  // 0 = always allowed; staff (admin/secretary/instructor) bypass this.
+  cancellationNoticeHours Int @default(24) @map("cancellation_notice_hours")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

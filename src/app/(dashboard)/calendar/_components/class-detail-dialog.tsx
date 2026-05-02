@@ -94,6 +94,14 @@ export function ClassDetailDialog({
     (e) => e.status === "ENROLLED" && e.student.id === userId,
   );
 
+  // Whether a student's self-cancellation is blocked by the school's notice window
+  const noticeHours = classDetail.school.cancellationNoticeHours;
+  const nowMs = new Date().getTime();
+  const isWithinNoticeWindow =
+    noticeHours > 0 &&
+    new Date(classDetail.startsAt as unknown as string).getTime() - nowMs <
+      noticeHours * 3600_000;
+
   return (
     <Dialog open={open} onOpenChange={(val) => { if (!val) onClose(); }}>
       <DialogContent className="sm:max-w-lg">
@@ -226,13 +234,20 @@ export function ClassDetailDialog({
           {userRole === "STUDENT" && classDetail.status === "SCHEDULED" && (
             <>
               {myEnrollment ? (
-                <Button
-                  variant="destructive"
-                  disabled={cancelEnrollmentMutation.isPending}
-                  onClick={() => setConfirmCancelOwn(true)}
-                >
-                  {cancelEnrollmentMutation.isPending ? t("common.loading") : t("enrollment.cancel")}
-                </Button>
+                <div className="flex flex-col items-end gap-1">
+                  <Button
+                    variant="destructive"
+                    disabled={cancelEnrollmentMutation.isPending || isWithinNoticeWindow}
+                    onClick={() => setConfirmCancelOwn(true)}
+                  >
+                    {cancelEnrollmentMutation.isPending ? t("common.loading") : t("enrollment.cancel")}
+                  </Button>
+                  {isWithinNoticeWindow && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("enrollment.cancellationLockedHint", { hours: noticeHours })}
+                    </p>
+                  )}
+                </div>
               ) : canEnroll ? (
                 <Button
                   disabled={enrollMutation.isPending}

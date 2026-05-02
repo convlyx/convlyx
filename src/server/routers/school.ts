@@ -30,6 +30,7 @@ export const schoolRouter = router({
           subdomain: true,
           address: true,
           phone: true,
+          cancellationNoticeHours: true,
           createdAt: true,
         },
       });
@@ -69,6 +70,9 @@ export const schoolRouter = router({
           name: input.name,
           address: input.address,
           phone: input.phone,
+          ...(input.cancellationNoticeHours !== undefined && {
+            cancellationNoticeHours: input.cancellationNoticeHours,
+          }),
         },
       });
     }),

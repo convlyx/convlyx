@@ -24,6 +24,7 @@ export default async function SettingsPage() {
           subdomain: true,
           address: true,
           phone: true,
+          cancellationNoticeHours: true,
           _count: { select: { users: true, sessions: true } },
         },
       },
@@ -47,6 +48,7 @@ export default async function SettingsPage() {
         subdomain: user.school.subdomain,
         address: user.school.address ?? "",
         phone: user.school.phone ?? "",
+        cancellationNoticeHours: user.school.cancellationNoticeHours,
         userCount: user.school._count.users,
         classCount: user.school._count.sessions,
       }}

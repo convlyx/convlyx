@@ -387,7 +387,9 @@
     "markAllPresent": "Marcar todos presentes",
     "allMarkedPresent": "Todos marcados como presentes",
     "myEnrollments": "As minhas inscrições",
-    "enrollmentsShort": "Inscrições"
+    "enrollmentsShort": "Inscrições",
+    "cancellationTooLate": "Já não é possível cancelar — é necessário avisar com antecedência mínima",
+    "cancellationLockedHint": "Cancelamento bloqueado: a aula começa em menos de {hours}h"
   },
   "notifications": {
     "title": "Notificações",
@@ -528,6 +530,8 @@
     "profileUpdated": "Perfil atualizado com sucesso",
     "schoolInfo": "Informação da escola",
     "schoolUpdated": "Escola atualizada com sucesso",
+    "cancellationNoticeLabel": "Antecedência mínima para cancelamento (horas)",
+    "cancellationNoticeHelp": "Os alunos não podem cancelar inscrições com menos de X horas de antecedência. 0 = sempre permitido. Não se aplica a administradores, secretariado e instrutores.",
     "tenantInfo": "Informação do grupo",
     "tenantUpdated": "Grupo atualizado com sucesso",
     "groupName": "Nome do grupo",

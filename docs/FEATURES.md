@@ -105,6 +105,7 @@ Living document of everything the app can do, organized by area.
 - Retroactive attendance correction: toggle ATTENDED ↔ NO_SHOW on completed classes with confirmation modal
 - Attendance marking: Present / No-show (admin, secretary, instructor) — only for in-progress or completed classes
 - Bulk attendance: "Mark all present" button — only for in-progress or completed classes
+- Student self-cancellation gated by per-school notice window — cancel button is disabled with explanatory hint when class starts within the window; server enforces the same rule and returns a translatable error
 - Enrollment status tracking: ENROLLED → ATTENDED / NO_SHOW
 - Instructor notes on enrollments: only instructors can write/edit, admin/secretary can view, hidden from students
 - Instructor can flag unavailability with confirmation — cancels the class and deletes all enrollments
@@ -160,6 +161,7 @@ Living document of everything the app can do, organized by area.
 - Profile section: edit own name
 - Change password (via Supabase Auth)
 - School info section: edit name, address, phone (admin, secretary)
+- Per-school cancellation notice window (hours) — students can't self-cancel within X hours of class start (default 24, range 0-168, configurable by admin/secretary; staff bypass)
 - Tenant/group section: edit group name (admin only)
 
 ## Notifications

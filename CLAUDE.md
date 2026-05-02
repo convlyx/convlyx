@@ -90,15 +90,34 @@ See `docs/MVP_PLAN.md` for full architecture, data model, and roadmap.
 ## Commands
 
 ```bash
-npm run dev              # Start dev server
-npm run lint             # ESLint
-npm run type-check       # TypeScript check
-npm run build            # Production build
-npx prisma migrate dev   # Run migrations
-npx prisma generate      # Regenerate client
-npx prisma studio        # DB browser
-npx prisma db seed       # Seed data
+npm run dev                                       # Start dev server
+npm run lint                                      # ESLint
+npm run type-check                                # TypeScript check
+npm run build                                     # Production build (also runs migrate deploy)
+npm run db:migrate -- --name <descriptive_name>   # Create + apply a new migration locally
+npm run db:migrate:status                         # See applied vs. pending migrations (dev)
+npm run db:migrate:status:prod                    # Same against prod DB
+npm run db:migrate:deploy:prod                    # Manual emergency prod migration (rare)
+npm run db:generate                               # Regenerate Prisma client
+npm run db:studio                                 # DB browser
+npm run db:seed                                   # Seed data
 ```
+
+## Database Migrations
+
+**Use `prisma migrate`, never `prisma db push`.** The `db:push` scripts have been removed from `package.json` on purpose.
+
+Workflow for any schema change:
+1. Edit `prisma/schema.prisma`
+2. Run `npm run db:migrate -- --name <descriptive_name>` — generates a numbered folder under `prisma/migrations/` (a reviewable `.sql` file) and applies it to the dev DB
+3. Commit the schema change + the new migration folder together in the same PR — reviewers see the SQL diff
+4. Merge → Vercel runs `prisma migrate deploy` as part of `build` (per `package.json`) and applies the pending migration to whichever `DATABASE_URL` is set for that environment (prod for production, dev/preview Supabase for preview deploys)
+
+The repo is baselined to `prisma/migrations/0_init/migration.sql` representing the schema at the time of the switch from `db push` to migrate. Both dev and prod DBs already have it marked applied.
+
+If migration state diverges (e.g. someone runs raw SQL on prod): `npm run db:migrate:resolve:prod -- --applied <name>` (or `--rolled-back <name>`) to reconcile.
+
+Preview deployments still have a separate unresolved issue: their `*.vercel.app` URLs don't match the `*.convlyx.com` tenant subdomain pattern, so tenant resolution doesn't work for preview testing. Migrations *are* applied (against the dev/preview Supabase), but exercising the running app against a tenant requires either local testing with `demo.localhost:3000` or setting up a wildcard preview domain — separate from the migration workflow.
 
 ## Common Patterns
 
