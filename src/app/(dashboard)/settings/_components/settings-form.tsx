@@ -10,6 +10,15 @@ import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/radix-select";
+
+const CANCELLATION_NOTICE_OPTIONS = [0, 2, 6, 12, 24, 48, 72] as const;
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { PushManager } from "@/components/push-manager";
@@ -150,13 +159,27 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="school-cancellation-notice">{t("cancellationNoticeLabel")}</Label>
-              <Input
-                id="school-cancellation-notice"
-                type="number"
-                min={0}
-                max={168}
-                {...schoolForm.register("cancellationNoticeHours")}
-              />
+              <Select
+                value={String(schoolForm.watch("cancellationNoticeHours") ?? 24)}
+                onValueChange={(v) =>
+                  schoolForm.setValue("cancellationNoticeHours", Number(v), {
+                    shouldDirty: true,
+                  })
+                }
+              >
+                <SelectTrigger id="school-cancellation-notice" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CANCELLATION_NOTICE_OPTIONS.map((hours) => (
+                    <SelectItem key={hours} value={String(hours)}>
+                      {hours === 0
+                        ? t("cancellationNoticeOptionAlways")
+                        : t("cancellationNoticeOptionHours", { hours })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {schoolForm.formState.errors.cancellationNoticeHours && (
                 <p className="text-sm text-destructive">
                   {schoolForm.formState.errors.cancellationNoticeHours.message}

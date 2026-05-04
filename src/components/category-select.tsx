@@ -31,9 +31,6 @@ export function CategorySelect({ value, onChange, placeholder, allowedCategories
         {options.map((cat) => (
           <SelectItem key={cat} value={cat}>
             <span className="font-medium">{t(`categories.${cat}`)}</span>
-            <span className="ml-2 text-xs text-muted-foreground">
-              {t(`categories.${cat}_desc`)}
-            </span>
           </SelectItem>
         ))}
       </SelectContent>
