@@ -86,6 +86,18 @@ export const userRouter = router({
   create: roleProtectedProcedure(["ADMIN", "SECRETARY"])
     .input(createUserSchema)
     .mutation(async ({ ctx, input }) => {
+      // Only admins can create staff (admins or secretaries). Secretaries
+      // are limited to creating students and instructors.
+      if (
+        ctx.user.role !== "ADMIN" &&
+        (input.role === "ADMIN" || input.role === "SECRETARY")
+      ) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "auth.insufficientPermissions",
+        });
+      }
+
       // Verify the school belongs to this tenant
       const school = await ctx.db.school.findFirst({
         where: { id: input.schoolId, tenantId: ctx.tenantId },
@@ -182,6 +194,27 @@ export const userRouter = router({
   update: roleProtectedProcedure(["ADMIN", "SECRETARY"])
     .input(updateUserSchema)
     .mutation(async ({ ctx, input }) => {
+      // Only admins can edit staff (admins or secretaries) or promote anyone
+      // to a staff role.
+      if (ctx.user.role !== "ADMIN") {
+        if (input.role === "ADMIN" || input.role === "SECRETARY") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "auth.insufficientPermissions",
+          });
+        }
+        const target = await ctx.db.user.findFirst({
+          where: { id: input.id, tenantId: ctx.tenantId },
+          select: { role: true },
+        });
+        if (target && (target.role === "ADMIN" || target.role === "SECRETARY")) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "auth.insufficientPermissions",
+          });
+        }
+      }
+
       // Verify the school belongs to this tenant
       const school = await ctx.db.school.findFirst({
         where: { id: input.schoolId, tenantId: ctx.tenantId },

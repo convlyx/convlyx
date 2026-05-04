@@ -13,7 +13,7 @@ export default async function UsersPage() {
     select: { role: true },
   });
   if (!user) redirect("/login");
-  if (!["ADMIN", "SECRETARY"].includes(user.role)) redirect("/");
+  if (user.role !== "ADMIN") redirect("/");
 
   return <UsersPageClient userRole={user.role} />;
 }
