@@ -24,19 +24,26 @@ import { useTranslatedError } from "@/hooks/use-translated-error";
 import { lisbonWallClockToISO } from "@/lib/dates";
 import { track } from "@/lib/posthog";
 
-const createClassFormSchema = z.object({
-  classType: z.enum(["THEORY", "PRACTICAL"]),
-  category: z.enum(LICENSE_CATEGORIES, "Selecione a categoria"),
-  schoolId: z.string().min(1, "Selecione uma escola"),
-  instructorId: z.string().min(1, "Selecione um instrutor"),
-  title: z.string().min(1, "O título é obrigatório"),
-  capacity: z.number().int().min(1, "A capacidade deve ser pelo menos 1"),
-  date: z.string(),
-  startTime: z.string().min(1, "Selecione hora de início"),
-  endTime: z.string().min(1, "Selecione hora de fim"),
-  validFrom: z.string(),
-  validUntil: z.string(),
-});
+const createClassFormSchema = z
+  .object({
+    classType: z.enum(["THEORY", "PRACTICAL"]),
+    // Theory classes don't pick a category (apply to all categories);
+    // practical classes do. Required only when classType === "PRACTICAL".
+    category: z.enum(LICENSE_CATEGORIES).optional(),
+    schoolId: z.string().min(1, "Selecione uma escola"),
+    instructorId: z.string().min(1, "Selecione um instrutor"),
+    title: z.string().min(1, "O título é obrigatório"),
+    capacity: z.number().int().min(1, "A capacidade deve ser pelo menos 1"),
+    date: z.string(),
+    startTime: z.string().min(1, "Selecione hora de início"),
+    endTime: z.string().min(1, "Selecione hora de fim"),
+    validFrom: z.string(),
+    validUntil: z.string(),
+  })
+  .refine((d) => d.classType !== "PRACTICAL" || !!d.category, {
+    message: "Selecione a categoria",
+    path: ["category"],
+  });
 
 type CreateClassFormData = z.infer<typeof createClassFormSchema>;
 
@@ -93,6 +100,7 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
     } else {
       setValue("capacity", 20);
       setSelectedStudents([]);
+      setValue("category", undefined);
     }
   }, [classType, setValue]);
 
@@ -202,7 +210,7 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
             <DialogBody>
               <div className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className={classType === "PRACTICAL" ? "grid grid-cols-2 gap-4" : "grid"}>
               <div className="grid gap-2">
                 <Label>{t("classes.type")}</Label>
                 <Controller
@@ -221,21 +229,23 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
                   )}
                 />
               </div>
-              <div className="grid gap-2">
-                <Label>{t("classes.category")}</Label>
-                <Controller
-                  control={control}
-                  name="category"
-                  render={({ field }) => (
-                    <CategorySelect
-                      value={field.value ?? ""}
-                      onChange={field.onChange}
-                      placeholder={t("classes.categoryRequired")}
-                    />
-                  )}
-                />
-                {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
-              </div>
+              {classType === "PRACTICAL" && (
+                <div className="grid gap-2">
+                  <Label>{t("classes.category")}</Label>
+                  <Controller
+                    control={control}
+                    name="category"
+                    render={({ field }) => (
+                      <CategorySelect
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        placeholder={t("classes.categoryRequired")}
+                      />
+                    )}
+                  />
+                  {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
+                </div>
+              )}
             </div>
 
             {/* School is auto-set from the user's school — hidden field */}

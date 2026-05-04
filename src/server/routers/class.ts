@@ -220,7 +220,7 @@ export const classRouter = router({
           tenantId: ctx.tenantId,
           schoolId: input.schoolId,
           classType: input.classType,
-          category: input.category,
+          category: input.classType === "THEORY" ? null : input.category,
           instructorId: input.instructorId,
           title: input.title,
           startsAt: new Date(input.startsAt),
@@ -278,6 +278,7 @@ export const classRouter = router({
         select: {
           status: true,
           title: true,
+          classType: true,
           startsAt: true,
           endsAt: true,
           instructorId: true,
@@ -293,6 +294,15 @@ export const classRouter = router({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "classes.cannotEditFinished",
+        });
+      }
+
+      // Practical classes must always have a category; theory classes are
+      // category-agnostic and may pass undefined to clear/leave it null.
+      if (session.classType === "PRACTICAL" && !input.category) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "classes.categoryRequired",
         });
       }
 
@@ -330,7 +340,7 @@ export const classRouter = router({
         where: { id: input.id, tenantId: ctx.tenantId },
         data: {
           instructorId: input.instructorId,
-          category: input.category,
+          category: session.classType === "THEORY" ? null : input.category,
           title: input.title,
           capacity: input.capacity,
           startsAt: new Date(input.startsAt),
@@ -579,7 +589,7 @@ function generateRecurringSessions(
   input: {
     schoolId: string;
     classType: "THEORY" | "PRACTICAL";
-    category: import("@/lib/license-categories").LicenseCategory;
+    category?: import("@/lib/license-categories").LicenseCategory;
     instructorId: string;
     title: string;
     capacity: number;
@@ -595,11 +605,12 @@ function generateRecurringSessions(
   userId: string
 ) {
   const { recurrence } = input;
+  const category = input.classType === "THEORY" ? null : (input.category ?? null);
   const sessions: Array<{
     tenantId: string;
     schoolId: string;
     classType: "THEORY" | "PRACTICAL";
-    category: import("@/lib/license-categories").LicenseCategory;
+    category: import("@/lib/license-categories").LicenseCategory | null;
     instructorId: string;
     title: string;
     capacity: number;
@@ -634,7 +645,7 @@ function generateRecurringSessions(
         tenantId,
         schoolId: input.schoolId,
         classType: input.classType,
-        category: input.category,
+        category,
         instructorId: input.instructorId,
         title: input.title,
         capacity: input.capacity,

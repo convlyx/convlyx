@@ -5,7 +5,9 @@ export const createClassSchema = z
   .object({
     schoolId: z.string().uuid(),
     classType: z.enum(["THEORY", "PRACTICAL"]),
-    category: z.enum(LICENSE_CATEGORIES),
+    // Theory classes are category-agnostic (apply to all categories);
+    // practical classes require a specific category.
+    category: z.enum(LICENSE_CATEGORIES).optional(),
     instructorId: z.string().uuid(),
     title: z.string().min(1, "O título é obrigatório"),
     capacity: z.number().int().min(1, "A capacidade deve ser pelo menos 1"),
@@ -25,6 +27,10 @@ export const createClassSchema = z
       })
       .optional(),
   })
+  .refine(
+    (data) => data.classType !== "PRACTICAL" || !!data.category,
+    { message: "Selecione a categoria", path: ["category"] }
+  )
   .refine(
     (data) => {
       // Either one-off (startsAt/endsAt) or recurring, not both
@@ -47,7 +53,9 @@ export const createClassSchema = z
 export const updateClassSchema = z.object({
   id: z.string().uuid(),
   instructorId: z.string().uuid(),
-  category: z.enum(LICENSE_CATEGORIES),
+  // Optional — server enforces required only for practical classes (based on
+  // the existing session's classType).
+  category: z.enum(LICENSE_CATEGORIES).optional(),
   title: z.string().min(1, "O título é obrigatório"),
   capacity: z.number().int().min(1),
   startsAt: z.string().datetime(),

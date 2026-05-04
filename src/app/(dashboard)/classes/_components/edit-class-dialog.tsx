@@ -38,7 +38,8 @@ type ClassData = {
 const editClassFormSchema = z.object({
   id: z.string().uuid(),
   instructorId: z.string().min(1, "Selecione um instrutor"),
-  category: z.enum(LICENSE_CATEGORIES, "Selecione a categoria"),
+  // Optional in the schema; the server enforces required for practical classes.
+  category: z.enum(LICENSE_CATEGORIES).optional(),
   title: z.string().min(1, "O título é obrigatório"),
   capacity: z.number().int().min(1, "A capacidade deve ser pelo menos 1"),
   date: z.string().min(1, "Selecione uma data"),
@@ -171,21 +172,23 @@ export function EditClassDialog({
             <div className="grid gap-4">
               <input type="hidden" {...register("id")} />
 
-              <div className="grid gap-2">
-                <Label>{t("classes.category")}</Label>
-                <Controller
-                  control={control}
-                  name="category"
-                  render={({ field }) => (
-                    <CategorySelect
-                      value={field.value ?? ""}
-                      onChange={field.onChange}
-                      placeholder={t("classes.categoryRequired")}
-                    />
-                  )}
-                />
-                {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
-              </div>
+              {classData.classType === "PRACTICAL" && (
+                <div className="grid gap-2">
+                  <Label>{t("classes.category")}</Label>
+                  <Controller
+                    control={control}
+                    name="category"
+                    render={({ field }) => (
+                      <CategorySelect
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        placeholder={t("classes.categoryRequired")}
+                      />
+                    )}
+                  />
+                  {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
+                </div>
+              )}
 
               <div className="grid gap-2">
                 <Label>{t("classes.instructor")}</Label>
