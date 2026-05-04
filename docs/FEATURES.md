@@ -55,9 +55,9 @@ Living document of everything the app can do, organized by area.
 
 ## Driving Courses (StudentCourse)
 - Each student has one active course (single category) at a time, with full course history
-- "Iniciar curso" action on student profile (admin/secretary) — picks a category, blocked if a course is already active
-- "Concluir curso" / "Abandonar curso" actions with confirmation modals
-- Course history list per student with status badges (Em curso / Concluído / Abandonado), start date, completion date
+- "Iniciar habilitação" action on student profile (admin/secretary) — picks a category, blocked if a habilitação is already active
+- "Concluir habilitação" / "Abandonar habilitação" actions with confirmation modals
+- Habilitação history list per student with status badges (Em curso / Concluída / Abandonada), start date, completion date
 - After completing/abandoning a course, the student can start a new one in a different (or the same) category
 
 ## Exams
