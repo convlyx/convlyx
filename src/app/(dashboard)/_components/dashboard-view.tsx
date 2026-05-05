@@ -141,35 +141,34 @@ export function DashboardView({
                 href={`/classes/${cls.id}`}
                 className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover hover:border-primary/20 transition-all block group"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[cls.classType]}`}>
-                      <BookOpen className="h-5 w-5" />
+                <div className="flex items-start gap-3">
+                  <div className={`flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[cls.classType]}`}>
+                    <BookOpen className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <p className="font-medium group-hover:text-primary transition-colors truncate min-w-0">{cls.title}</p>
+                      <Badge className={classTypeBadgeClass[cls.classType]}>{t(typeKeys[cls.classType])}</Badge>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium group-hover:text-primary transition-colors">{cls.title}</p>
-                        <Badge className={classTypeBadgeClass[cls.classType]}>{t(typeKeys[cls.classType])}</Badge>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
-                        <span className="flex items-center gap-1">
-                          <Users className="h-3.5 w-3.5" />{cls.instructor.name}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <CalendarDays className="h-3.5 w-3.5" />
-                          {format.dateTime(new Date(cls.startsAt), {
-                            weekday: "short", day: "2-digit", month: "2-digit",
-                            hour: "2-digit", minute: "2-digit",
-                          })}
-                          {" · "}
-                          {format.dateTime(new Date(cls.endsAt), {
-                            hour: "2-digit", minute: "2-digit",
-                          })}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5" />{cls._count.enrollments}/{cls.capacity}
-                        </span>
-                      </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground mt-0.5">
+                      <span className="flex items-center gap-1 truncate min-w-0">
+                        <Users className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{cls.instructor.name}</span>
+                      </span>
+                      <span className="flex items-center gap-1 shrink-0">
+                        <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                        {format.dateTime(new Date(cls.startsAt), {
+                          weekday: "short", day: "2-digit", month: "2-digit",
+                          hour: "2-digit", minute: "2-digit",
+                        })}
+                        {" · "}
+                        {format.dateTime(new Date(cls.endsAt), {
+                          hour: "2-digit", minute: "2-digit",
+                        })}
+                      </span>
+                      <span className="flex items-center gap-1 shrink-0">
+                        <Clock className="h-3.5 w-3.5 shrink-0" />{cls._count.enrollments}/{cls.capacity}
+                      </span>
                     </div>
                   </div>
                 </div>

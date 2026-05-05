@@ -113,20 +113,20 @@ export function CoursesAndExamsSection({ studentId, courses, userRole }: Props) 
   return (
     <div className="space-y-6">
       {/* Active course header */}
-      <div className="rounded-xl border bg-card p-5 card-shadow">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
+      <div className="rounded-xl border bg-card p-4 sm:p-5 card-shadow">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <GraduationCap className="h-5 w-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h2 className="text-sm font-medium text-muted-foreground">
                 {t("courses.currentCourse")}
               </h2>
               {activeCourse ? (
-                <div className="flex items-center gap-2 mt-0.5">
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0 mt-0.5">
                   <span className="text-lg font-bold">{t(`categories.${activeCourse.category}`)}</span>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-muted-foreground truncate">
                     · {t(`categories.${activeCourse.category}_desc`)}
                   </span>
                 </div>
@@ -136,7 +136,7 @@ export function CoursesAndExamsSection({ studentId, courses, userRole }: Props) 
             </div>
           </div>
           {canManage && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 sm:shrink-0">
               {activeCourse ? (
                 <>
                   <Button

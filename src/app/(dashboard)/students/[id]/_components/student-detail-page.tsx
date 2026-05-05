@@ -67,23 +67,23 @@ export function StudentDetailPage({
       </Link>
 
       {/* Profile header */}
-      <div className="flex items-start gap-6 rounded-xl border bg-card p-6 card-shadow">
+      <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6 rounded-xl border bg-card p-4 sm:p-6 card-shadow">
         {/* Photo placeholder */}
-        <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <GraduationCap className="h-8 w-8" />
+        <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary self-start">
+          <GraduationCap className="h-7 w-7 sm:h-8 sm:w-8" />
           <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-muted border-2 border-card">
             <Camera className="h-3 w-3 text-muted-foreground" />
           </div>
         </div>
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold">{student.name}</h1>
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold leading-tight">{student.name}</h1>
               <Badge variant={student.status === "ACTIVE" ? "default" : "destructive"}>
                 {student.status === "ACTIVE" ? t("common.active") : t("common.inactive")}
               </Badge>
             </div>
-            <div className="flex gap-2 shrink-0">
+            <div className="flex flex-wrap gap-2 sm:shrink-0">
               <Button
                 variant="outline"
                 size="sm"
@@ -104,23 +104,23 @@ export function StudentDetailPage({
               </Button>
             </div>
           </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <Mail className="h-3.5 w-3.5" />
-              {student.email}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5 min-w-0">
+              <Mail className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{student.email}</span>
             </span>
             {student.phone && (
               <span className="flex items-center gap-1.5">
-                <Phone className="h-3.5 w-3.5" />
+                <Phone className="h-3.5 w-3.5 shrink-0" />
                 {student.phone}
               </span>
             )}
-            <span className="flex items-center gap-1.5">
-              <Building2 className="h-3.5 w-3.5" />
-              {student.school.name}
+            <span className="flex items-center gap-1.5 min-w-0">
+              <Building2 className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{student.school.name}</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5" />
+              <Clock className="h-3.5 w-3.5 shrink-0" />
               {t("users.memberSince")} {format.dateTime(new Date(student.createdAt), { month: "long", year: "numeric" })}
             </span>
           </div>
@@ -166,44 +166,36 @@ export function StudentDetailPage({
             <div className="space-y-2">
               {student.enrollments
                 .slice((historyPage - 1) * HISTORY_PER_PAGE, historyPage * HISTORY_PER_PAGE)
-                .map((enrollment) => (
+                .map((enrollment) => {
+                const displayStatus = resolveEnrollmentDisplay(enrollment.status, enrollment.session.status);
+                return (
                 <Link
                   key={enrollment.id}
                   href={`/classes/${enrollment.session.id}`}
-                  className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                  className="block rounded-lg border p-3 transition-colors hover:bg-muted/50"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
                     <Badge className={classTypeBadgeClass[enrollment.session.classType]}>
                       {t(typeKeys[enrollment.session.classType])}
                     </Badge>
                     <CategoryBadge category={enrollment.session.category} />
-                    <div>
-                      <p className="text-sm font-medium">{enrollment.session.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {enrollment.session.instructor.name}
-                      </p>
-                    </div>
+                    <Badge variant={enrollmentStatusVariant[displayStatus] ?? "outline"} className="ml-auto">
+                      {t(enrollmentStatusKeys[displayStatus] ?? displayStatus)}
+                    </Badge>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <p className="text-sm">
-                        {format.dateTime(new Date(enrollment.session.startsAt), {
-                          day: "2-digit", month: "2-digit", year: "numeric",
-                          hour: "2-digit", minute: "2-digit",
-                        })}
-                      </p>
-                    </div>
-                    {(() => {
-                      const displayStatus = resolveEnrollmentDisplay(enrollment.status, enrollment.session.status);
-                      return (
-                        <Badge variant={enrollmentStatusVariant[displayStatus] ?? "outline"}>
-                          {t(enrollmentStatusKeys[displayStatus] ?? displayStatus)}
-                        </Badge>
-                      );
-                    })()}
+                  <p className="text-sm font-medium truncate">{enrollment.session.title}</p>
+                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground mt-0.5">
+                    <span className="truncate">{enrollment.session.instructor.name}</span>
+                    <span className="shrink-0">
+                      {format.dateTime(new Date(enrollment.session.startsAt), {
+                        day: "2-digit", month: "2-digit", year: "numeric",
+                        hour: "2-digit", minute: "2-digit",
+                      })}
+                    </span>
                   </div>
                 </Link>
-              ))}
+              );
+              })}
             </div>
             <Pagination
               page={historyPage}

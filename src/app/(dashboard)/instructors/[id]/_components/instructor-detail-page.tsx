@@ -60,17 +60,17 @@ export function InstructorDetailPage({
       </Link>
 
       {/* Profile header */}
-      <div className="flex items-start gap-6 rounded-xl border bg-card p-6 card-shadow">
-        <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-          <Users className="h-8 w-8" />
+      <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6 rounded-xl border bg-card p-4 sm:p-6 card-shadow">
+        <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 self-start">
+          <Users className="h-7 w-7 sm:h-8 sm:w-8" />
           <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-muted border-2 border-card">
             <Camera className="h-3 w-3 text-muted-foreground" />
           </div>
         </div>
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold">{instructor.name}</h1>
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold leading-tight">{instructor.name}</h1>
               <Badge variant={instructor.status === "ACTIVE" ? "default" : "destructive"}>
                 {instructor.status === "ACTIVE" ? t("common.active") : t("common.inactive")}
               </Badge>
@@ -78,30 +78,30 @@ export function InstructorDetailPage({
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 shrink-0"
+              className="gap-1.5 sm:shrink-0 self-start"
               onClick={() => setShowEdit(true)}
             >
               <Pencil className="h-3.5 w-3.5" />
               {t("common.edit")}
             </Button>
           </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <Mail className="h-3.5 w-3.5" />
-              {instructor.email}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5 min-w-0">
+              <Mail className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{instructor.email}</span>
             </span>
             {instructor.phone && (
               <span className="flex items-center gap-1.5">
-                <Phone className="h-3.5 w-3.5" />
+                <Phone className="h-3.5 w-3.5 shrink-0" />
                 {instructor.phone}
               </span>
             )}
-            <span className="flex items-center gap-1.5">
-              <Building2 className="h-3.5 w-3.5" />
-              {instructor.school.name}
+            <span className="flex items-center gap-1.5 min-w-0">
+              <Building2 className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{instructor.school.name}</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5" />
+              <Clock className="h-3.5 w-3.5 shrink-0" />
               {t("users.memberSince")} {format.dateTime(new Date(instructor.createdAt), { month: "long", year: "numeric" })}
             </span>
           </div>
@@ -150,29 +150,27 @@ export function InstructorDetailPage({
                 <Link
                   key={session.id}
                   href={`/classes/${session.id}`}
-                  className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                  className="block rounded-lg border p-3 transition-colors hover:bg-muted/50"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
                     <Badge className={classTypeBadgeClass[session.classType]}>
                       {t(typeKeys[session.classType])}
                     </Badge>
-                    <div>
-                      <p className="text-sm font-medium">{session.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {session._count.enrollments}/{session.capacity} {t("nav.students").toLowerCase()}
-                      </p>
-                    </div>
+                    <Badge variant={statusVariant[session.status] ?? "outline"} className="ml-auto">
+                      {t(statusKeys[session.status] ?? session.status)}
+                    </Badge>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <p className="text-sm text-right">
+                  <p className="text-sm font-medium truncate">{session.title}</p>
+                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground mt-0.5">
+                    <span className="truncate">
+                      {session._count.enrollments}/{session.capacity} {t("nav.students").toLowerCase()}
+                    </span>
+                    <span className="shrink-0">
                       {format.dateTime(new Date(session.startsAt), {
                         day: "2-digit", month: "2-digit", year: "numeric",
                         hour: "2-digit", minute: "2-digit",
                       })}
-                    </p>
-                    <Badge variant={statusVariant[session.status] ?? "outline"}>
-                      {t(statusKeys[session.status] ?? session.status)}
-                    </Badge>
+                    </span>
                   </div>
                 </Link>
               ))}

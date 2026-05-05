@@ -82,8 +82,8 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">{t("nav.students")}</h1>
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 sm:flex-none">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[140px] sm:flex-none">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t("common.search") + "..."}
@@ -119,22 +119,19 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
               href={`/students/${student.id}`}
               className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all hover:border-primary/20 group block"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-start gap-3">
                 <UserAvatar name={student.name} className="h-10 w-10 sm:h-11 sm:w-11 bg-primary/10 text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium group-hover:text-primary transition-colors truncate">{student.name}</p>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 ml-auto sm:ml-0" />
-                  </div>
-                  <p className="text-sm text-muted-foreground truncate">{student.email}</p>
-                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                    <Badge variant="secondary">{student.school.name}</Badge>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <p className="font-medium group-hover:text-primary transition-colors truncate min-w-0">{student.name}</p>
                     <CategoryBadge category={student.currentCategory} />
                     <Badge variant={student.status === "ACTIVE" ? "default" : "destructive"}>
                       {student.status === "ACTIVE" ? t("common.active") : t("common.inactive")}
                     </Badge>
                   </div>
+                  <p className="text-sm text-muted-foreground truncate mt-0.5">{student.email}</p>
                 </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
               </div>
             </Link>
           ))}

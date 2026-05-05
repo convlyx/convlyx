@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { trpc } from "@/lib/trpc";
-import { Users, Mail, Building2, Search, Pencil, Phone, BadgeCheck, Clock } from "lucide-react";
+import { Users, Search, Pencil, Phone, BadgeCheck, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -140,21 +140,20 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
                 <UserAvatar name={user.name} className={`h-10 w-10 sm:h-11 sm:w-11 shrink-0 ${roleColorMap[user.role] ?? "bg-muted text-foreground"}`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <p className="font-medium truncate">{user.name}</p>
+                    <p className="font-medium truncate min-w-0">{user.name}</p>
                     <Badge variant="secondary">{t(`roles.${user.role}`)}</Badge>
                     {user.status !== "ACTIVE" && <Badge variant="destructive">{t("common.inactive")}</Badge>}
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground mt-0.5">
-                    <span className="flex items-center gap-1 truncate">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground mt-0.5 min-w-0">
+                    <span className="flex items-center gap-1 truncate min-w-0">
                       {user.emailConfirmed ? (
                         <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-label={t("users.emailConfirmed")} />
                       ) : (
                         <Clock className="h-3.5 w-3.5 shrink-0 text-amber-600" aria-label={t("users.emailPending")} />
                       )}
-                      {user.email}
+                      <span className="truncate">{user.email}</span>
                     </span>
-                    {user.phone && <span className="flex items-center gap-1 truncate"><Phone className="h-3.5 w-3.5 shrink-0" />{user.phone}</span>}
-                    <span className="flex items-center gap-1 truncate"><Building2 className="h-3.5 w-3.5 shrink-0" />{user.school.name}</span>
+                    {user.phone && <span className="flex items-center gap-1 truncate min-w-0"><Phone className="h-3.5 w-3.5 shrink-0" />{user.phone}</span>}
                   </div>
                   <div className="mt-2 flex gap-2 sm:hidden">
                     <Button variant="outline" size="sm" onClick={() => setEditUser(user)}>
