@@ -87,12 +87,12 @@ export async function middleware(request: NextRequest) {
 }
 
 function extractSubdomain(hostname: string): string | null {
-  // Vercel preview deployments use `<project>-<branch>-<team>.vercel.app`
-  // hostnames that don't match the tenant-subdomain pattern. Fall back to a
-  // fixed test tenant so previews are usable end-to-end. Override per branch
-  // by setting PREVIEW_TENANT_SUBDOMAIN in Vercel's preview environment.
+  // Vercel preview deployments (`*.vercel.app`) don't match the tenant-subdomain
+  // pattern. Returning null here disables tenant verification on previews, so
+  // any user from any tenant can log in for testing. Tenant scoping then falls
+  // back to the user's own tenantId via tRPC/dashboard context.
   if (hostname.endsWith(".vercel.app")) {
-    return process.env.PREVIEW_TENANT_SUBDOMAIN ?? "testes";
+    return null;
   }
 
   if (hostname.startsWith("localhost") || hostname.startsWith("127.0.0.1")) {

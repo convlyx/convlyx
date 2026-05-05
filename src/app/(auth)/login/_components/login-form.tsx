@@ -36,13 +36,13 @@ export function LoginForm() {
       return;
     }
 
-    // Validate user belongs to this tenant (if on a subdomain).
-    // Mirror the middleware's *.vercel.app fallback so previews map to the
-    // test tenant instead of treating the long Vercel hostname as a subdomain.
+    // Validate user belongs to this tenant (if on a subdomain). Vercel preview
+    // hostnames (*.vercel.app) skip the check entirely so any user can log in
+    // for testing — tenant scoping falls back to the user's own tenantId.
     const hostname = window.location.hostname;
     let subdomain: string | null;
     if (hostname.endsWith(".vercel.app")) {
-      subdomain = "testes";
+      subdomain = null;
     } else {
       const parts = hostname.split(".");
       subdomain = parts.length >= 3 ? parts[0] : null;
