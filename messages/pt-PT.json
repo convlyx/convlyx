@@ -529,6 +529,9 @@
   },
   "settings": {
     "title": "Definições",
+    "tabSchool": "Escola",
+    "tabAccount": "Conta",
+    "tabGroup": "Grupo",
     "profile": "Perfil",
     "updateName": "Atualizar nome",
     "changePassword": "Alterar palavra-passe",
