@@ -137,7 +137,7 @@ export function StudentPicker({
                   disabled={isDisabled}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => toggle(student.id)}
-                  className="flex items-center gap-2.5 w-full px-3 py-2 text-left cursor-pointer hover:bg-muted/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-left cursor-pointer hover:bg-muted/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed active:scale-100 active:opacity-100"
                 >
                   <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
                     isSelected
