@@ -20,6 +20,24 @@ const supabaseAnon = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
+/**
+ * Map a Supabase Auth error message (English, raw) to an i18n key the client
+ * can translate via `useTranslatedError`. Falls back to a generic key for
+ * unknown errors — the raw message is logged server-side for debugging.
+ */
+function mapSupabaseAuthError(message: string | undefined): string {
+  if (!message) return "users.inviteFailed";
+  const lower = message.toLowerCase();
+  if (lower.includes("already been registered") || lower.includes("already exists")) {
+    return "users.emailAlreadyRegistered";
+  }
+  if (lower.includes("invalid email")) {
+    return "users.invalidEmail";
+  }
+  console.warn("[user] Unmapped Supabase auth error:", message);
+  return "users.inviteFailed";
+}
+
 export const userRouter = router({
   list: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
     .input(
@@ -138,7 +156,7 @@ export const userRouter = router({
       if (authError) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: authError.message,
+          message: mapSupabaseAuthError(authError.message),
         });
       }
 
@@ -198,7 +216,7 @@ export const userRouter = router({
       });
 
       if (error) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+        throw new TRPCError({ code: "BAD_REQUEST", message: mapSupabaseAuthError(error.message) });
       }
 
       return { success: true };
