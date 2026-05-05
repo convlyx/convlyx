@@ -17,6 +17,7 @@ import type { UserRole } from "@/generated/prisma/enums";
 type CalendarFilter = {
   schoolId?: string;
   classType?: "THEORY" | "PRACTICAL";
+  instructorId?: string;
 };
 
 // Enrolled classes — vivid solid colors
@@ -65,6 +66,7 @@ export function ClassCalendar({
   const queryInput = useMemo(() => ({
     ...(filter?.schoolId && { schoolId: filter.schoolId }),
     ...(filter?.classType && { classType: filter.classType }),
+    ...(filter?.instructorId && { instructorId: filter.instructorId }),
     ...(dateRange?.from && { from: dateRange.from }),
     ...(dateRange?.to && { to: dateRange.to }),
   }), [filter, dateRange]);

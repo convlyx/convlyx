@@ -17,6 +17,7 @@ export const classRouter = router({
         schoolId: z.string().uuid().optional(),
         classType: z.enum(["THEORY", "PRACTICAL"]).optional(),
         category: z.enum(LICENSE_CATEGORIES).optional(),
+        instructorId: z.string().uuid().optional(),
         status: z.enum(["ALL", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"]).optional(),
         from: z.string().datetime().optional(),
         to: z.string().datetime().optional(),
@@ -26,11 +27,14 @@ export const classRouter = router({
       // Auto-update class statuses based on current time
       await syncClassStatuses(ctx.db, ctx.tenantId);
 
-      // Instructors see only their classes, students see available + enrolled
+      // Instructors see only their classes, students see available + enrolled.
+      // The role-level instructor pin always wins over an explicit input filter.
       const instructorFilter =
         ctx.user.role === "INSTRUCTOR"
           ? { instructorId: ctx.user.id }
-          : {};
+          : input?.instructorId
+            ? { instructorId: input.instructorId }
+            : {};
 
       return ctx.db.classSession.findMany({
         where: {

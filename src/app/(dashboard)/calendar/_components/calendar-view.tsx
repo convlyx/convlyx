@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { trpc } from "@/lib/trpc";
 import { ClassCalendar } from "./class-calendar";
 import { CalendarFilters } from "./calendar-filters";
 import type { UserRole } from "@/generated/prisma/enums";
@@ -9,8 +10,13 @@ import type { UserRole } from "@/generated/prisma/enums";
 export function CalendarView({ userRole, userId }: { userRole: UserRole; userId: string }) {
   const t = useTranslations("nav");
   const [typeFilter, setTypeFilter] = useState("ALL");
+  const [instructorFilter, setInstructorFilter] = useState("ALL");
 
   const showFilters = userRole === "ADMIN" || userRole === "SECRETARY";
+  const { data: instructors } = trpc.user.list.useQuery(
+    { role: "INSTRUCTOR", status: "ACTIVE" },
+    { enabled: showFilters },
+  );
 
   return (
     <div className="space-y-4">
@@ -20,12 +26,16 @@ export function CalendarView({ userRole, userId }: { userRole: UserRole; userId:
           <CalendarFilters
             typeFilter={typeFilter}
             onTypeChange={setTypeFilter}
+            instructorFilter={instructorFilter}
+            onInstructorChange={setInstructorFilter}
+            instructors={instructors ?? []}
           />
         )}
       </div>
       <ClassCalendar
         filter={{
           ...(typeFilter !== "ALL" && { classType: typeFilter as "THEORY" | "PRACTICAL" }),
+          ...(instructorFilter !== "ALL" && { instructorId: instructorFilter }),
         }}
         userRole={userRole}
         userId={userId}

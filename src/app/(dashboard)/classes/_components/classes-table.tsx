@@ -57,6 +57,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [typeFilter, setTypeFilter] = useState<string>(searchParams.get("type") ?? "ALL");
   const [categoryFilter, setCategoryFilter] = useState<string>(searchParams.get("category") ?? "ALL");
+  const [instructorFilter, setInstructorFilter] = useState<string>(searchParams.get("instructor") ?? "ALL");
   const defaultStatus = (searchParams.get("time") ?? "upcoming") === "upcoming" ? "SCHEDULED" : "COMPLETED";
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") ?? defaultStatus);
   const [page, setPage] = useState(1);
@@ -65,11 +66,17 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   const [editClass, setEditClass] = useState<typeof filteredClasses[number] | null>(null);
 
   const isStudent = userRole === "STUDENT";
+  const canManageStaff = userRole === "ADMIN" || userRole === "SECRETARY";
   const { data: classes, isLoading } = trpc.class.list.useQuery({
     ...(typeFilter !== "ALL" && { classType: typeFilter as "THEORY" | "PRACTICAL" }),
     ...(categoryFilter !== "ALL" && { category: categoryFilter as LicenseCategory }),
+    ...(instructorFilter !== "ALL" && { instructorId: instructorFilter }),
     status: statusFilter as "ALL" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED",
   });
+  const { data: instructors } = trpc.user.list.useQuery(
+    { role: "INSTRUCTOR", status: "ACTIVE" },
+    { enabled: canManageStaff },
+  );
   const { data: myEnrollments } = trpc.enrollment.listByStudent.useQuery(undefined, { enabled: isStudent });
   const enrolledSessionIds = new Set(myEnrollments?.map((e) => e.session.id) ?? []);
 
@@ -120,7 +127,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   const totalPages = Math.ceil(filteredClasses.length / ITEMS_PER_PAGE);
   const paginatedClasses = filteredClasses.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-  useEffect(() => setPage(1), [search, typeFilter, categoryFilter, statusFilter, timeTab]);
+  useEffect(() => setPage(1), [search, typeFilter, categoryFilter, instructorFilter, statusFilter, timeTab]);
 
   function handleSearchChange(value: string) {
     setSearch(value);
@@ -135,6 +142,11 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   function handleCategoryChange(value: string) {
     setCategoryFilter(value);
     updateParams("category", value);
+  }
+
+  function handleInstructorChange(value: string) {
+    setInstructorFilter(value);
+    updateParams("instructor", value);
   }
 
   function handleStatusChange(value: string) {
@@ -216,6 +228,19 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
               ))}
             </SelectContent>
           </Select>
+          {canManageStaff && (
+            <Select value={instructorFilter} onValueChange={handleInstructorChange}>
+              <SelectTrigger className="w-auto min-w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{t("classes.allInstructors")}</SelectItem>
+                {instructors?.map((i) => (
+                  <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           {!isStudent && (
             <Select value={statusFilter} onValueChange={handleStatusChange}>
               <SelectTrigger className="w-auto min-w-[140px]">
