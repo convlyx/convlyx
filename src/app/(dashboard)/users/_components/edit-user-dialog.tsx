@@ -32,6 +32,7 @@ type UserData = {
   status: string;
   qualifiedCategories?: LicenseCategory[];
   school: { id: string; name: string };
+  emailConfirmed?: boolean;
 };
 
 type EditUserDialogProps = {
@@ -183,17 +184,21 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
             </div>
           </DialogBody>
           <DialogFooter className="sm:justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              disabled={resendInviteMutation.isPending}
-              onClick={() => resendInviteMutation.mutate({ id: userData.id })}
-            >
-              <Mail className="h-3.5 w-3.5" />
-              {resendInviteMutation.isPending ? t("common.loading") : t("users.resendInvite")}
-            </Button>
+            {userData.emailConfirmed ? (
+              <span /> /* spacer so save/cancel stay right-aligned */
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                disabled={resendInviteMutation.isPending}
+                onClick={() => resendInviteMutation.mutate({ id: userData.id })}
+              >
+                <Mail className="h-3.5 w-3.5" />
+                {resendInviteMutation.isPending ? t("common.loading") : t("users.resendInvite")}
+              </Button>
+            )}
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={onClose}>
                 {t("common.cancel")}

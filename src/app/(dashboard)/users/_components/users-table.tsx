@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { trpc } from "@/lib/trpc";
-import { Users, Mail, Building2, Search, Pencil, Phone } from "lucide-react";
+import { Users, Mail, Building2, Search, Pencil, Phone, BadgeCheck, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -145,7 +145,14 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
                     {user.status !== "ACTIVE" && <Badge variant="destructive">{t("common.inactive")}</Badge>}
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground mt-0.5">
-                    <span className="flex items-center gap-1 truncate"><Mail className="h-3.5 w-3.5 shrink-0" />{user.email}</span>
+                    <span className="flex items-center gap-1 truncate">
+                      {user.emailConfirmed ? (
+                        <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-label={t("users.emailConfirmed")} />
+                      ) : (
+                        <Clock className="h-3.5 w-3.5 shrink-0 text-amber-600" aria-label={t("users.emailPending")} />
+                      )}
+                      {user.email}
+                    </span>
                     {user.phone && <span className="flex items-center gap-1 truncate"><Phone className="h-3.5 w-3.5 shrink-0" />{user.phone}</span>}
                     <span className="flex items-center gap-1 truncate"><Building2 className="h-3.5 w-3.5 shrink-0" />{user.school.name}</span>
                   </div>
@@ -200,7 +207,16 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
               {paginatedUsers.map((user) => (
                 <TableRow key={user.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <span className="flex items-center gap-1.5">
+                      {user.emailConfirmed ? (
+                        <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-label={t("users.emailConfirmed")} />
+                      ) : (
+                        <Clock className="h-3.5 w-3.5 shrink-0 text-amber-600" aria-label={t("users.emailPending")} />
+                      )}
+                      {user.email}
+                    </span>
+                  </TableCell>
                   <TableCell><Badge variant="secondary">{t(`roles.${user.role}`)}</Badge></TableCell>
                   <TableCell>{user.school.name}</TableCell>
                   <TableCell>

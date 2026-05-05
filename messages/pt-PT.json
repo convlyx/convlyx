@@ -171,6 +171,8 @@
     "userUpdated": "Utilizador atualizado com sucesso",
     "resendInvite": "Reenviar convite",
     "inviteResent": "Convite reenviado por email",
+    "emailConfirmed": "Email confirmado",
+    "emailPending": "Convite pendente",
     "memberSince": "Membro desde",
     "profile": "Perfil",
     "classesAttended": "Aulas assistidas",

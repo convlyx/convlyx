@@ -57,9 +57,22 @@ export const userRouter = router({
         orderBy: { name: "asc" },
       });
 
+      // Merge email-confirmation status from Supabase Auth so the UI can
+      // hide the "resend invite" button for users who already set a password.
+      const confirmedById = new Map<string, boolean>();
+      try {
+        const { data } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+        for (const u of data?.users ?? []) {
+          confirmedById.set(u.id, !!u.email_confirmed_at);
+        }
+      } catch (e) {
+        console.error("[user.list] failed to fetch auth users", e);
+      }
+
       return users.map(({ studentCourses, ...u }) => ({
         ...u,
         currentCategory: studentCourses[0]?.category ?? null,
+        emailConfirmed: confirmedById.get(u.id) ?? false,
       }));
     }),
 
@@ -379,7 +392,13 @@ export const userRouter = router({
         upcoming: enrollments.filter((e) => e.status === "ENROLLED" && new Date(e.session.startsAt) > now).length,
       };
 
-      return { ...student, stats };
+      let emailConfirmed = false;
+      try {
+        const { data } = await supabaseAdmin.auth.admin.getUserById(student.id);
+        emailConfirmed = !!data?.user?.email_confirmed_at;
+      } catch {}
+
+      return { ...student, stats, emailConfirmed };
     }),
 
   /** Instructor profile with class stats and schedule */
@@ -431,6 +450,12 @@ export const userRouter = router({
         totalStudentsTaught: sessions.reduce((acc, s) => acc + s._count.enrollments, 0),
       };
 
-      return { ...instructor, stats };
+      let emailConfirmed = false;
+      try {
+        const { data } = await supabaseAdmin.auth.admin.getUserById(instructor.id);
+        emailConfirmed = !!data?.user?.email_confirmed_at;
+      } catch {}
+
+      return { ...instructor, stats, emailConfirmed };
     }),
 });
