@@ -25,6 +25,7 @@ export default async function SettingsPage() {
           address: true,
           phone: true,
           cancellationNoticeHours: true,
+          practicalSelfEnrollEnabled: true,
           _count: { select: { users: true, sessions: true } },
         },
       },
@@ -49,6 +50,7 @@ export default async function SettingsPage() {
         address: user.school.address ?? "",
         phone: user.school.phone ?? "",
         cancellationNoticeHours: user.school.cancellationNoticeHours,
+        practicalSelfEnrollEnabled: user.school.practicalSelfEnrollEnabled,
         userCount: user.school._count.users,
         classCount: user.school._count.sessions,
       }}

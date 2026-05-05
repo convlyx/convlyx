@@ -39,6 +39,7 @@ type SettingsFormProps = {
     address: string;
     phone: string;
     cancellationNoticeHours: number;
+    practicalSelfEnrollEnabled: boolean;
     userCount: number;
     classCount: number;
   };
@@ -53,6 +54,7 @@ const schoolFormSchema = z.object({
   address: z.string(),
   phone: z.string(),
   cancellationNoticeHours: z.coerce.number().int().min(0).max(168),
+  practicalSelfEnrollEnabled: z.boolean(),
 });
 
 const tenantFormSchema = z.object({
@@ -107,6 +109,7 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
       address: school.address,
       phone: school.phone,
       cancellationNoticeHours: school.cancellationNoticeHours,
+      practicalSelfEnrollEnabled: school.practicalSelfEnrollEnabled,
     },
   });
   const updateSchoolMutation = trpc.school.update.useMutation({
@@ -140,6 +143,7 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
                 address: data.address || undefined,
                 phone: data.phone || undefined,
                 cancellationNoticeHours: data.cancellationNoticeHours,
+                practicalSelfEnrollEnabled: data.practicalSelfEnrollEnabled,
               })
             )}
             className="space-y-3"
@@ -185,6 +189,25 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
                   {schoolForm.formState.errors.cancellationNoticeHours.message}
                 </p>
               )}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="school-practical-self-enroll">{t("practicalSelfEnrollLabel")}</Label>
+              <Select
+                value={schoolForm.watch("practicalSelfEnrollEnabled") ? "yes" : "no"}
+                onValueChange={(v) =>
+                  schoolForm.setValue("practicalSelfEnrollEnabled", v === "yes", {
+                    shouldDirty: true,
+                  })
+                }
+              >
+                <SelectTrigger id="school-practical-self-enroll" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no">{t("practicalSelfEnrollOptionStaffOnly")}</SelectItem>
+                  <SelectItem value="yes">{t("practicalSelfEnrollOptionAllowed")}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <Button type="submit" disabled={updateSchoolMutation.isPending}>
               {updateSchoolMutation.isPending ? tc("loading") : tc("save")}
