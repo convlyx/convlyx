@@ -10,6 +10,7 @@ import { PageTitle } from "@/components/page-title";
 import { PushPrompt } from "@/components/push-prompt";
 import { AnalyticsIdentifier } from "@/components/analytics-identifier";
 
+
 async function getAuthUser() {
   try {
     const supabase = await createClient();
@@ -119,7 +120,6 @@ export default async function DashboardLayout({
         />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
           <AnalyticsIdentifier {...analyticsProps} />
-          <PushPrompt userId={user.id} />
           {children}
         </main>
       </div>

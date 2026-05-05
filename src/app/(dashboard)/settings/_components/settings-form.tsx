@@ -242,15 +242,17 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
         </form>
       </section>
 
-      {/* Push notifications */}
-      <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
-        <div className="flex items-center gap-2">
-          <Bell className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">{t("pushNotifications")}</h2>
-        </div>
-        <p className="text-sm text-muted-foreground">{t("pushDescription")}</p>
-        <PushManager userId={user.id} />
-      </section>
+      {/* Push notifications — only for students/instructors */}
+      {!canEditSchool && (
+        <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
+          <div className="flex items-center gap-2">
+            <Bell className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">{t("pushNotifications")}</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">{t("pushDescription")}</p>
+          <PushManager userId={user.id} />
+        </section>
+      )}
 
 
       {/* Section C: Tenant (ADMIN only) */}
