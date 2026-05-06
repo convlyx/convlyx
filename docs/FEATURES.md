@@ -111,6 +111,7 @@ Living document of everything the app can do, organized by area.
   - Practical classes are filtered to the student's active category only
   - Theory classes are hidden once the student has a PASSED theory exam for their active category
   - Staff (admin/secretary/instructor) bypass these rules so they can enrol students operationally
+- Universal exam scheduling rule: practical exam can only be scheduled after the student has a PASSED theory exam for the same course (`exam.schedule` rejects with `exams.theoryNotPassed` otherwise)
 - Enrollment status tracking: ENROLLED → ATTENDED / NO_SHOW
 - Instructor notes on enrollments: only instructors can write/edit, admin/secretary can view, hidden from students
 - Instructor can flag unavailability with confirmation — cancels the class and deletes all enrollments

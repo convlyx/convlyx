@@ -351,6 +351,7 @@
     "courseNotActive": "Não é possível marcar exames para uma carta de condução inativa",
     "alreadyScheduled": "Já existe um exame deste tipo marcado para esta carta de condução",
     "alreadyPassed": "O aluno já foi aprovado neste tipo de exame",
+    "theoryNotPassed": "É necessário aprovar o exame teórico antes de marcar o exame prático",
     "cannotEditCompleted": "Não é possível editar um exame com resultado registado",
     "cannotCancelCompleted": "Não é possível cancelar um exame com resultado registado",
     "resultAlreadyRecorded": "O resultado deste exame já foi registado",
