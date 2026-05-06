@@ -77,9 +77,23 @@ export function StudentHome({ userName }: { userName: string }) {
   const noShowCount = allEnrollments.filter((e) => e.status === "NO_SHOW").length;
   const enrolledSessionIds = new Set(activeEnrollments.map((e) => e.session.id));
 
-  const nextClass = activeEnrollments
-    .filter((e) => new Date(e.session.startsAt) > new Date() && e.session.status === "SCHEDULED")
-    .sort((a, b) => new Date(a.session.startsAt).getTime() - new Date(b.session.startsAt).getTime())[0];
+  // Only future, still-scheduled enrollments are relevant on the dashboard
+  // "As minhas aulas" panel — past ENROLLED rows would otherwise linger here
+  // until attendance is marked.
+  const now = new Date();
+  const upcomingEnrollments = activeEnrollments
+    .filter(
+      (e) =>
+        new Date(e.session.startsAt) > now &&
+        e.session.status === "SCHEDULED",
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.session.startsAt).getTime() -
+        new Date(b.session.startsAt).getTime(),
+    );
+
+  const nextClass = upcomingEnrollments[0];
 
   const availableClasses = classes?.filter(
     (cls) => cls.status === "SCHEDULED" && !enrolledSessionIds.has(cls.id) && cls._count.enrollments < cls.capacity
@@ -155,7 +169,7 @@ export function StudentHome({ userName }: { userName: string }) {
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
               <CalendarDays className="h-4 w-4 text-primary" />
             </div>
-            <span className="text-lg font-bold">{activeEnrollments.length}</span>
+            <span className="text-lg font-bold">{upcomingEnrollments.length}</span>
             <span className="text-[10px] text-muted-foreground">{t("dashboard.scheduled")}</span>
           </div>
           <div className="w-px h-10 bg-border" />
@@ -192,7 +206,7 @@ export function StudentHome({ userName }: { userName: string }) {
       </div>
 
       {/* My upcoming enrollments */}
-      {activeEnrollments.length > 0 && (
+      {upcomingEnrollments.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold">{t("dashboard.myClasses")}</h2>
@@ -201,7 +215,7 @@ export function StudentHome({ userName }: { userName: string }) {
             </Link>
           </div>
           <div className="space-y-3">
-            {activeEnrollments.slice(0, 4).map((enrollment) => (
+            {upcomingEnrollments.slice(0, 4).map((enrollment) => (
               <div
                 key={enrollment.id}
                 className="flex items-start gap-3 rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
@@ -296,7 +310,7 @@ export function StudentHome({ userName }: { userName: string }) {
         </div>
       )}
 
-      {activeEnrollments.length === 0 && availableClasses.length === 0 && !nextClass && (
+      {upcomingEnrollments.length === 0 && availableClasses.length === 0 && !nextClass && (
         <EmptyState icon={BookOpen} message={t("dashboard.noClassesThisWeek")} />
       )}
     </div>
