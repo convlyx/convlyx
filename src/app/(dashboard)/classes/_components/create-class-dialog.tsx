@@ -74,7 +74,7 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
     || studentsLoading
     || (isStaff && instructorsLoading);
 
-  const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm<CreateClassFormData>({
+  const { register, handleSubmit, reset, control, setValue, setError, getValues, watch, formState: { errors } } = useForm<CreateClassFormData>({
     resolver: zodResolver(createClassFormSchema),
     defaultValues: {
       classType: "THEORY" as "THEORY" | "PRACTICAL",
@@ -166,7 +166,36 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
     onError,
   });
 
+  // Schedule-related fields aren't required in the Zod schema (they belong to
+  // different scheduling modes), so we validate them manually. Returns true
+  // when the schedule slice of the form is valid; sets inline errors otherwise.
+  function validateSchedule(): boolean {
+    let ok = true;
+    if (scheduleMode === "one-off") {
+      if (!getValues("date")) {
+        setError("date", { type: "required", message: t("classes.dateRequired") });
+        ok = false;
+      }
+    } else {
+      if (!getValues("validFrom")) {
+        setError("validFrom", { type: "required", message: t("classes.validFromRequired") });
+        ok = false;
+      }
+      if (!getValues("validUntil")) {
+        setError("validUntil", { type: "required", message: t("classes.validUntilRequired") });
+        ok = false;
+      }
+      if (selectedDays.length === 0) {
+        toast.error(t("classes.daysOfWeekRequired"));
+        ok = false;
+      }
+    }
+    return ok;
+  }
+
   function onSubmit(data: CreateClassFormData) {
+    if (!validateSchedule()) return;
+
     const studentIds = data.classType === "PRACTICAL" && selectedStudents.length > 0
       ? selectedStudents
       : undefined;
@@ -219,7 +248,7 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
           <DialogHeader>
             <DialogTitle>{t("classes.create")}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <form onSubmit={handleSubmit(onSubmit, validateSchedule)} className="flex flex-col flex-1 min-h-0">
             <DialogBody>
               <div className="grid gap-4">
             <div className={classType === "PRACTICAL" ? "grid grid-cols-2 gap-4" : "grid"}>
@@ -438,6 +467,7 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
                         <DatePicker value={field.value} onChange={field.onChange} />
                       )}
                     />
+                    {errors.validFrom && <p className="text-sm text-destructive">{errors.validFrom.message}</p>}
                   </div>
                   <div className="grid gap-2">
                     <Label>{t("classes.validUntil")}</Label>
@@ -448,6 +478,7 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
                         <DatePicker value={field.value} onChange={field.onChange} />
                       )}
                     />
+                    {errors.validUntil && <p className="text-sm text-destructive">{errors.validUntil.message}</p>}
                   </div>
                 </div>
               </>
