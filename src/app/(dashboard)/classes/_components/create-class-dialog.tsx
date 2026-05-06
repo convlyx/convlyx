@@ -50,10 +50,36 @@ type CreateClassFormData = z.infer<typeof createClassFormSchema>;
 type ScheduleMode = "one-off" | "recurring";
 const DAYS_OF_WEEK = [0, 1, 2, 3, 4, 5, 6] as const;
 
-export function CreateClassDialog({ userRole, userId }: { userRole?: string; userId?: string } = {}) {
+type Prefill = { date: string; startTime: string; endTime: string };
+
+export function CreateClassDialog({
+  userRole,
+  userId,
+  open: controlledOpen,
+  onOpenChange,
+  prefill,
+  hideTrigger,
+}: {
+  userRole?: string;
+  userId?: string;
+  /** Optional: parent controls open state. Otherwise self-managed. */
+  open?: boolean;
+  onOpenChange?: (val: boolean) => void;
+  /** Optional pre-filled date + start/end time, e.g. from a calendar click. */
+  prefill?: Prefill;
+  /** Hide the built-in "Criar aula" trigger button (e.g. when the parent
+   *  opens the dialog from elsewhere like a calendar click). */
+  hideTrigger?: boolean;
+} = {}) {
   const t = useTranslations();
   const { onError } = useTranslatedError();
-  const [open, setOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (val: boolean) => {
+    if (isControlled) onOpenChange?.(val);
+    else setInternalOpen(val);
+  };
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>("one-off");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
@@ -90,6 +116,19 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
       validUntil: "",
     },
   });
+
+  // When the dialog is opened with a prefill (e.g. calendar click), populate
+  // the date / start / end time fields. Runs only when prefill changes (not on
+  // every form mutation) so user edits aren't clobbered.
+  useEffect(() => {
+    if (open && prefill) {
+      setScheduleMode("one-off");
+      setValue("date", prefill.date);
+      setValue("startTime", prefill.startTime);
+      setValue("endTime", prefill.endTime);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, prefill]);
 
   // Auto-set capacity when switching class type
   const classType = watch("classType");
@@ -137,9 +176,12 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
   }, [category, instructorId, instructors, setValue]);
 
   const createMutation = trpc.class.create.useMutation({
-    onSuccess: (_data, vars) => {
+    onSuccess: async (_data, vars) => {
       toast.success(t("toast.classCreated"));
-      utils.class.list.invalidate();
+      // Wait for the refetch to settle so the calendar/list shows the new
+      // class before we close the dialog. Without `await`, the dialog closes
+      // before React Query completes the refetch and the user has to refresh.
+      await utils.class.list.invalidate();
       track("class_created", {
         class_type: vars.classType,
         recurring: !!vars.recurrence,
@@ -195,7 +237,9 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>{t("classes.create")}</Button>
+      {!hideTrigger && (
+        <Button onClick={() => setOpen(true)}>{t("classes.create")}</Button>
+      )}
       <Dialog
         open={open}
         onOpenChange={(val) => {

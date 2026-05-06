@@ -7,11 +7,12 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
-import type { EventClickArg } from "@fullcalendar/core";
+import type { DateSelectArg, EventClickArg } from "@fullcalendar/core";
 import { trpc } from "@/lib/trpc";
 import { ClassDetailDialog } from "./class-detail-dialog";
 import { ExamDetailDialog } from "./exam-detail-dialog";
 import { RecordExamResultDialog } from "@/app/(dashboard)/students/[id]/_components/record-exam-result-dialog";
+import { CreateClassDialog } from "@/app/(dashboard)/classes/_components/create-class-dialog";
 import type { UserRole } from "@/generated/prisma/enums";
 
 type CalendarFilter = {
@@ -48,6 +49,16 @@ const statusColors: Record<string, { bg: string; border: string }> = {
 
 const EXAM_PREFIX = "exam:";
 
+function pad(n: number) {
+  return String(n).padStart(2, "0");
+}
+function formatLocalDate(d: Date) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+function formatLocalTime(d: Date) {
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function ClassCalendar({
   filter,
   userRole,
@@ -62,6 +73,10 @@ export function ClassCalendar({
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [recordResultFor, setRecordResultFor] = useState<{ examId: string; studentId: string } | null>(null);
+  const [createPrefill, setCreatePrefill] = useState<{ date: string; startTime: string; endTime: string } | null>(null);
+
+  // Staff and instructors can create classes by clicking/dragging on the calendar.
+  const canCreate = userRole === "ADMIN" || userRole === "SECRETARY" || userRole === "INSTRUCTOR";
 
   const queryInput = useMemo(() => ({
     ...(filter?.schoolId && { schoolId: filter.schoolId }),
@@ -187,6 +202,40 @@ export function ClassCalendar({
     });
   }
 
+  // Click on an empty slot OR drag-select a range → open the create dialog
+  // with date / start / end pre-filled. FullCalendar's `select` event fires
+  // for both single-slot clicks (30min span by default) and drag-selections.
+  function handleSelect(arg: DateSelectArg) {
+    // Month view → all-day click. Pre-fill 09:00–10:00 since the slot has
+    // no time component.
+    if (arg.allDay) {
+      const start = new Date(arg.start);
+      start.setHours(9, 0, 0, 0);
+      const end = new Date(start);
+      end.setHours(10, 0, 0, 0);
+      setCreatePrefill({
+        date: formatLocalDate(start),
+        startTime: formatLocalTime(start),
+        endTime: formatLocalTime(end),
+      });
+      return;
+    }
+    const startsAt = arg.start;
+    let endsAt = arg.end;
+    // Single-slot click resolves to a 30min span; treat as a 1h class default
+    // and visually extend the selection so the highlight matches the prefill.
+    const dragMs = endsAt.getTime() - startsAt.getTime();
+    if (dragMs <= 30 * 60 * 1000) {
+      endsAt = new Date(startsAt.getTime() + 60 * 60 * 1000);
+      arg.view.calendar.select({ start: startsAt, end: endsAt });
+    }
+    setCreatePrefill({
+      date: formatLocalDate(startsAt),
+      startTime: formatLocalTime(startsAt),
+      endTime: formatLocalTime(endsAt),
+    });
+  }
+
 
   return (
     <div className="space-y-4">
@@ -213,10 +262,13 @@ export function ClassCalendar({
             slotMaxTime="22:00:00"
             allDaySlot={false}
             nowIndicator
-            selectable={false}
+            selectable={canCreate}
+            selectMirror={canCreate}
+            longPressDelay={250}
             eventDisplay="block"
             events={allEvents}
             eventClick={handleEventClick}
+            select={canCreate ? handleSelect : undefined}
             datesSet={handleDatesSet}
             height="auto"
             eventContent={(arg) => {
@@ -294,6 +346,17 @@ export function ClassCalendar({
           studentId={recordResultFor.studentId}
           open
           onClose={() => setRecordResultFor(null)}
+        />
+      )}
+
+      {canCreate && (
+        <CreateClassDialog
+          userRole={userRole}
+          userId={userId}
+          hideTrigger
+          open={createPrefill !== null}
+          onOpenChange={(val) => { if (!val) setCreatePrefill(null); }}
+          prefill={createPrefill ?? undefined}
         />
       )}
     </div>
