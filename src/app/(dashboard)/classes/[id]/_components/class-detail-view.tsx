@@ -137,7 +137,16 @@ export function ClassDetailView({
   const noShowStudents = classDetail.enrollments.filter((e) => e.status === "NO_SHOW");
   const spotsLeft = classDetail.capacity - classDetail.enrollments.length;
   const enrolledStudentIds = new Set(classDetail.enrollments.map((e) => e.student.id));
-  const availableStudents = allStudents?.filter((s) => !enrolledStudentIds.has(s.id)) ?? [];
+  // For practical classes, only students whose active StudentCourse matches
+  // the class's category are eligible to be added. Theory classes have no
+  // category, so any unenrolled student is eligible.
+  const availableStudents = allStudents?.filter((s) => {
+    if (enrolledStudentIds.has(s.id)) return false;
+    if (classDetail.classType === "PRACTICAL" && classDetail.category) {
+      return s.currentCategory === classDetail.category;
+    }
+    return true;
+  }) ?? [];
 
   const isActive = classDetail.status === "SCHEDULED" || classDetail.status === "IN_PROGRESS";
   const canMarkAttendance = classDetail.status === "IN_PROGRESS" || classDetail.status === "COMPLETED";

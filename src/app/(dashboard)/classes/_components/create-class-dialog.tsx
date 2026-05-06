@@ -104,6 +104,18 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
     }
   }, [classType, setValue]);
 
+  // Practical classes are scoped to a single category — only students whose
+  // active StudentCourse matches the chosen category are eligible. Clear any
+  // previously selected students when the category changes.
+  const categoryWatched = watch("category");
+  useEffect(() => {
+    setSelectedStudents([]);
+  }, [categoryWatched]);
+
+  const eligibleStudents = students && categoryWatched
+    ? students.filter((s) => s.currentCategory === categoryWatched)
+    : [];
+
   // Auto-select when only one option
   const schoolId = watch("schoolId");
   const instructorId = watch("instructorId");
@@ -311,12 +323,13 @@ export function CreateClassDialog({ userRole, userId }: { userRole?: string; use
               {errors.capacity && <p className="text-sm text-destructive">{errors.capacity.message}</p>}
             </div>
 
-            {/* Student assignment — only for practical classes */}
-            {watch("classType") === "PRACTICAL" && students && students.length > 0 && (
+            {/* Student assignment — only for practical classes, filtered to
+                the selected category. Hidden until a category is picked. */}
+            {watch("classType") === "PRACTICAL" && categoryWatched && (
               <div className="grid gap-2">
                 <Label>{t("classes.assignStudents")}</Label>
                 <StudentPicker
-                  students={students}
+                  students={eligibleStudents}
                   selected={selectedStudents}
                   onChange={setSelectedStudents}
                   max={watch("capacity")}
