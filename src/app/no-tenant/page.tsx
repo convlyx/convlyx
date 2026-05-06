@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { LandingPage } from "./_components/landing-page";
 
 const TITLE = "Convlyx · Software de gestão para escolas de condução";
@@ -58,7 +59,21 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Page() {
+export default async function Page() {
+  const t = await getTranslations("landing");
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [1, 2, 3, 4, 5, 6, 7].map((n) => ({
+      "@type": "Question",
+      name: t(`faqQ${n}` as never),
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: t(`faqA${n}` as never),
+      },
+    })),
+  };
+
   // Multiple JSON-LD blocks: Organization (brand identity, helps Google
   // recognize "Convlyx" as a name and not a typo), WebSite (canonical site
   // entry), and SoftwareApplication (the product). `alternateName` and
@@ -122,6 +137,11 @@ export default function Page() {
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <LandingPage />
     </>

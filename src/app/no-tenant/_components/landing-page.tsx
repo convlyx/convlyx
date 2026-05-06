@@ -3,7 +3,8 @@
 import { useTranslations } from "next-intl";
 import {
   CalendarDays, Users, BookOpen, Bell, Shield, BarChart3,
-  ChevronRight, ArrowRight, Smartphone, Globe, Check,
+  ChevronRight, ArrowRight, Smartphone, Globe, Check, HelpCircle,
+  Sparkles, CalendarCheck, ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { LucideIcon } from "lucide-react";
@@ -179,6 +180,64 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* Why Convlyx — dark inverted band breaks the white-section run */}
+      <section className="relative py-16 md:py-24 overflow-hidden">
+        {/* Brand green gradient — matches stats bar & CTA for visual coherence */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-700 via-primary to-emerald-600" />
+        {/* Dot grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+        {/* Decorative blur orbs */}
+        <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-white/8" />
+        <div className="absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-emerald-300/10" />
+        <div className="absolute top-1/2 left-1/4 h-48 w-48 rounded-full bg-white/5 blur-3xl" />
+        <div className="absolute top-1/3 right-1/4 h-32 w-32 rounded-full bg-emerald-300/10 blur-2xl" />
+
+        <div className="relative mx-auto max-w-5xl px-6">
+          <div className="text-center mb-14">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-medium text-emerald-200 mb-5 backdrop-blur-sm">
+              <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
+              {t("landing.whyKicker")}
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">
+              {t("landing.whyTitle")}
+            </h2>
+          </div>
+
+          <div className="grid gap-5 md:gap-6">
+            <WhyBlock
+              number="01"
+              icon={Sparkles}
+              title={t("landing.whyP1Title")}
+              body={t("landing.whyP1")}
+              accent="from-primary/30 to-emerald-400/20"
+              ring="ring-primary/30"
+            />
+            <WhyBlock
+              number="02"
+              icon={CalendarCheck}
+              title={t("landing.whyP2Title")}
+              body={t("landing.whyP2")}
+              accent="from-cyan-400/30 to-blue-500/20"
+              ring="ring-cyan-300/30"
+            />
+            <WhyBlock
+              number="03"
+              icon={ShieldCheck}
+              title={t("landing.whyP3Title")}
+              body={t("landing.whyP3")}
+              accent="from-emerald-400/30 to-green-500/20"
+              ring="ring-emerald-300/30"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* How it works */}
       <section className="py-14 md:py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-primary/5 to-emerald-50 dark:from-emerald-950/20 dark:via-primary/5 dark:to-emerald-950/20 -z-10" />
@@ -204,28 +263,31 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Security / multi-tenant */}
-      <section className="py-14 md:py-20 relative">
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-emerald-400/8 blur-[120px] -z-10" />
-        <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-primary/5 blur-[80px] -z-10" />
+      {/* Security / multi-tenant — same brand green as stats bar / Why / CTA */}
+      <section className="relative py-16 md:py-24 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-700 via-primary to-emerald-600" />
+        {/* Decorative orbs */}
+        <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-emerald-400/10" />
+        <div className="absolute -top-20 -left-20 h-72 w-72 rounded-full bg-white/8" />
+        <div className="absolute top-1/2 right-1/4 h-40 w-40 rounded-full bg-emerald-300/10 blur-3xl" />
 
-        <div className="mx-auto max-w-6xl px-6">
+        <div className="relative mx-auto max-w-6xl px-6">
           <div className="flex flex-col lg:flex-row items-center gap-12">
-            <div className="flex-1 space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
+            <div className="flex-1 space-y-6 text-primary-foreground">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-medium text-emerald-100 backdrop-blur-sm">
                 <Shield className="h-3.5 w-3.5" />
                 {t("landing.securityBadge")}
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold">{t("landing.multiTenantTitle")}</h2>
-              <p className="text-muted-foreground text-lg leading-relaxed">
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{t("landing.multiTenantTitle")}</h2>
+              <p className="text-white/80 text-lg leading-relaxed">
                 {t("landing.multiTenantDesc")}
               </p>
               <div className="flex items-center gap-3 pt-2">
-                <Globe className="h-5 w-5 text-primary shrink-0" />
-                <div className="rounded-lg bg-muted border px-4 py-2.5">
+                <Globe className="h-5 w-5 text-white shrink-0" />
+                <div className="rounded-lg bg-white/10 border border-white/20 px-4 py-2.5 backdrop-blur-sm">
                   <span className="text-sm font-mono">
-                    <span className="text-primary font-semibold">{t("landing.yourSchool")}</span>
-                    <span className="text-muted-foreground">.convlyx.com</span>
+                    <span className="text-white font-semibold">{t("landing.yourSchool")}</span>
+                    <span className="text-white/60">.convlyx.com</span>
                   </span>
                 </div>
               </div>
@@ -236,22 +298,45 @@ export function LandingPage() {
                   icon={Shield}
                   title={t("landing.isolationTitle")}
                   description={t("landing.isolationDesc")}
-                  gradient="from-primary/10 to-emerald-400/10"
+                  gradient="from-emerald-300/30 to-primary/20"
                 />
                 <TrustCard
                   icon={Users}
                   title={t("landing.rolesTitle")}
                   description={t("landing.rolesDesc")}
-                  gradient="from-blue-500/10 to-cyan-400/10"
+                  gradient="from-cyan-300/30 to-blue-400/20"
                 />
                 <TrustCard
                   icon={BarChart3}
                   title={t("landing.dataTitle")}
                   description={t("landing.dataDesc")}
-                  gradient="from-emerald-500/10 to-green-400/10"
+                  gradient="from-emerald-300/30 to-green-400/20"
                 />
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="py-14 md:py-20 relative">
+        <div className="absolute bottom-0 left-0 w-72 h-72 rounded-full bg-emerald-400/5 blur-[100px] -z-10" />
+        <div className="mx-auto max-w-3xl px-6">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary mb-4">
+              <HelpCircle className="h-3.5 w-3.5" />
+              {t("landing.faqKicker")}
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold">{t("landing.faqTitle")}</h2>
+          </div>
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+              <FaqItem
+                key={n}
+                question={t(`landing.faqQ${n}` as never)}
+                answer={t(`landing.faqA${n}` as never)}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -368,15 +453,62 @@ function Step({ number, title, description }: { number: number; title: string; d
   );
 }
 
+function WhyBlock({
+  number,
+  icon: Icon,
+  title,
+  body,
+  accent,
+  ring,
+}: {
+  number: string;
+  icon: LucideIcon;
+  title: string;
+  body: string;
+  accent: string;
+  ring: string;
+}) {
+  return (
+    <div className="group relative flex flex-col md:flex-row gap-5 md:gap-7 rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-6 md:p-8 hover:border-white/25 hover:bg-white/[0.13] transition-all">
+      <div className="flex md:flex-col items-center md:items-start gap-4 md:gap-4 md:w-36 shrink-0">
+        <div
+          className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${accent} ring-1 ${ring} group-hover:scale-105 transition-transform`}
+        >
+          <Icon className="h-6 w-6 text-white" />
+        </div>
+        <span className="text-4xl md:text-5xl font-bold text-white/15 leading-none tracking-tight">
+          {number}
+        </span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="text-lg md:text-xl font-semibold text-white mb-2">{title}</h3>
+        <p className="text-sm md:text-base text-white/70 leading-relaxed">{body}</p>
+      </div>
+    </div>
+  );
+}
+
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  return (
+    <details className="group rounded-xl border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/20">
+      <summary className="flex cursor-pointer items-center justify-between gap-4 list-none [&::-webkit-details-marker]:hidden">
+        <h3 className="font-semibold text-base">{question}</h3>
+        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 transition-transform group-open:rotate-90" />
+      </summary>
+      <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{answer}</p>
+    </details>
+  );
+}
+
 function TrustCard({ icon: Icon, title, description, gradient }: { icon: LucideIcon; title: string; description: string; gradient: string }) {
   return (
-    <div className="flex items-center gap-4 rounded-xl border bg-card p-4 shadow-md shadow-primary/3 hover:shadow-lg hover:shadow-primary/8 transition-all hover:border-primary/10">
-      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradient}`}>
-        <Icon className="h-5 w-5 text-foreground" />
+    <div className="flex items-center gap-4 rounded-xl border border-white/15 bg-white/10 p-4 backdrop-blur-md hover:border-white/25 hover:bg-white/[0.13] transition-all">
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} ring-1 ring-white/20`}>
+        <Icon className="h-5 w-5 text-white" />
       </div>
       <div>
-        <p className="font-semibold text-sm">{title}</p>
-        <p className="text-xs text-muted-foreground">{description}</p>
+        <p className="font-semibold text-sm text-white">{title}</p>
+        <p className="text-xs text-white/70">{description}</p>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 const publicPaths = ["/login", "/register", "/reset-password", "/update-password", "/install"];
 
 // Root domains that should not serve the app (no subdomain)
-const ROOT_DOMAINS = ["convlyx.com", "www.convlyx.com"];
+const ROOT_DOMAINS = ["convlyx.com", "www.convlyx.com", "localhost:3000"];
 
 // Reserved subdomains that are not real schools
 const RESERVED_SUBDOMAINS = ["admin", "www", "api"];
@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
   // 1. Resolve tenant from subdomain
   const subdomain = extractSubdomain(hostname);
 
-  // 2. Root domain — only "/" serves the landing page; allow SEO files and 404 everything else
+  // 2. Root domain — "/" + dedicated SEO landing pages; allow SEO files; 404 otherwise.
   const isRootDomain = ROOT_DOMAINS.some((d) => hostname === d || hostname === `${d}:443`);
   if (isRootDomain) {
     if (pathname.startsWith("/api/")) {
@@ -45,6 +45,16 @@ export async function middleware(request: NextRequest) {
     }
     if (pathname === "/") {
       return NextResponse.rewrite(new URL("/no-tenant", request.url));
+    }
+    // Dedicated SEO landing pages — keyword-targeted alternate entry points
+    // for searches like "software escola condução", etc.
+    const SEO_PAGES = [
+      "/software-escola-conducao",
+      "/calendario-aulas-conducao",
+      "/gestao-alunos-conducao",
+    ];
+    if (SEO_PAGES.includes(pathname)) {
+      return response;
     }
     // Allow SEO/PWA files served from public/ and Next.js internals
     const ALLOWED = ["/robots.txt", "/sitemap.xml", "/favicon", "/manifest.json", "/sw.js", "/og-image"];
