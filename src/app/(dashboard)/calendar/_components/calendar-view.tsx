@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { trpc } from "@/lib/trpc";
 import { ClassCalendar } from "./class-calendar";
 import { CalendarFilters } from "./calendar-filters";
+import { CreateClassDialog } from "@/app/(dashboard)/classes/_components/create-class-dialog";
 import type { UserRole } from "@/generated/prisma/enums";
 
 export function CalendarView({ userRole, userId }: { userRole: UserRole; userId: string }) {
@@ -13,6 +14,7 @@ export function CalendarView({ userRole, userId }: { userRole: UserRole; userId:
   const [instructorFilter, setInstructorFilter] = useState("ALL");
 
   const showFilters = userRole === "ADMIN" || userRole === "SECRETARY";
+  const canCreate = userRole === "ADMIN" || userRole === "SECRETARY" || userRole === "INSTRUCTOR";
   const { data: instructors } = trpc.user.list.useQuery(
     { role: "INSTRUCTOR", status: "ACTIVE" },
     { enabled: showFilters },
@@ -22,15 +24,18 @@ export function CalendarView({ userRole, userId }: { userRole: UserRole; userId:
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">{t("calendar")}</h1>
-        {showFilters && (
-          <CalendarFilters
-            typeFilter={typeFilter}
-            onTypeChange={setTypeFilter}
-            instructorFilter={instructorFilter}
-            onInstructorChange={setInstructorFilter}
-            instructors={instructors ?? []}
-          />
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {showFilters && (
+            <CalendarFilters
+              typeFilter={typeFilter}
+              onTypeChange={setTypeFilter}
+              instructorFilter={instructorFilter}
+              onInstructorChange={setInstructorFilter}
+              instructors={instructors ?? []}
+            />
+          )}
+          {canCreate && <CreateClassDialog userRole={userRole} userId={userId} />}
+        </div>
       </div>
       <ClassCalendar
         filter={{
