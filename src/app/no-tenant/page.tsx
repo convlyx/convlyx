@@ -59,29 +59,69 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
+  // Multiple JSON-LD blocks: Organization (brand identity, helps Google
+  // recognize "Convlyx" as a name and not a typo), WebSite (canonical site
+  // entry), and SoftwareApplication (the product). `alternateName` and
+  // `sameAs` are the strongest signals against the "Convex" autocorrect.
+  const orgSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${URL}#organization`,
+    name: "Convlyx",
+    alternateName: ["Convlyx SaaS", "Convlyx Driving School Software"],
+    url: URL,
+    logo: `${URL}/favicon.png`,
+    description: DESCRIPTION,
+    inLanguage: "pt-PT",
+    // Replace these with real profile URLs once they exist; even placeholders
+    // help Google associate the brand if the URLs eventually resolve.
+    sameAs: [
+      // "https://www.linkedin.com/company/convlyx",
+      // "https://twitter.com/convlyx",
+      // "https://www.instagram.com/convlyx",
+      // "https://www.facebook.com/convlyx",
+    ].filter(Boolean),
+  };
+
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${URL}#website`,
+    url: URL,
+    name: "Convlyx",
+    inLanguage: "pt-PT",
+    publisher: { "@id": `${URL}#organization` },
+  };
+
+  const appSchema = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Convlyx",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    description: DESCRIPTION,
+    url: URL,
+    inLanguage: "pt-PT",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+    publisher: { "@id": `${URL}#organization` },
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "SoftwareApplication",
-            name: "Convlyx",
-            applicationCategory: "BusinessApplication",
-            operatingSystem: "Web",
-            description: DESCRIPTION,
-            url: URL,
-            inLanguage: "pt-PT",
-            offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
-            publisher: {
-              "@type": "Organization",
-              name: "Convlyx",
-              url: URL,
-            },
-          }),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }}
       />
       <LandingPage />
     </>
