@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { SiteFooter } from "./site-footer";
 import {
   CalendarDays, Users, BookOpen, Bell, Shield, BarChart3,
   ChevronRight, ArrowRight, Smartphone, Globe, Check, HelpCircle,
@@ -378,39 +379,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="relative border-t bg-gradient-to-b from-background to-primary/3 py-12">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="flex flex-col items-center gap-6">
-            {/* Logo */}
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-emerald-500 shadow-md shadow-primary/20">
-                <img src="/favicon.png" alt="" width={22} height={22} className="brightness-0 invert" />
-              </div>
-              <span className="text-lg font-bold bg-gradient-to-r from-primary to-emerald-500 bg-clip-text text-transparent">{t("common.appName")}</span>
-            </div>
-
-            {/* Description */}
-            <p className="text-sm text-muted-foreground text-center max-w-md">
-              {t("common.appDescription")}
-            </p>
-
-            {/* Links */}
-            <div className="flex items-center gap-6 text-sm">
-              <button onClick={() => scrollTo("features")} className="text-muted-foreground hover:text-primary transition-colors">{t("landing.seeFeatures")}</button>
-              <button onClick={() => scrollTo("demo")} className="text-muted-foreground hover:text-primary transition-colors">{t("landing.requestDemo")}</button>
-            </div>
-
-            {/* Divider */}
-            <div className="w-full max-w-xs h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-
-            {/* Copyright */}
-            <p className="text-xs text-muted-foreground">
-              {t("auth.copyright", { year: new Date().getFullYear().toString() })}
-            </p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

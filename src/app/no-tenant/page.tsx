@@ -74,6 +74,20 @@ export default async function Page() {
     })),
   };
 
+  const howToSchema = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: t("howItWorksTitle"),
+    description: t("featuresDescription"),
+    inLanguage: "pt-PT",
+    step: [1, 2, 3].map((n) => ({
+      "@type": "HowToStep",
+      position: n,
+      name: t(`step${n}Title` as never),
+      text: t(`step${n}Desc` as never),
+    })),
+  };
+
   // Multiple JSON-LD blocks: Organization (brand identity, helps Google
   // recognize "Convlyx" as a name and not a typo), WebSite (canonical site
   // entry), and SoftwareApplication (the product). `alternateName` and
@@ -142,6 +156,11 @@ export default async function Page() {
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
       <LandingPage />
     </>
