@@ -54,7 +54,13 @@ export function CreateSchoolDialog() {
   return (
     <>
       <Button onClick={() => setOpen(true)}>{t("schools.create")}</Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(val) => {
+          setOpen(val);
+          if (!val) reset();
+        }}
+      >
         <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("schools.create")}</DialogTitle>
@@ -83,7 +89,10 @@ export function CreateSchoolDialog() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                reset();
+              }}
             >
               {t("common.cancel")}
             </Button>

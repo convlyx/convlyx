@@ -44,7 +44,7 @@ export function StartCourseDialog({ studentId, open, onClose }: Props) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { setCategory(""); onClose(); } }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("courses.startCourse")}</DialogTitle>
@@ -60,7 +60,7 @@ export function StartCourseDialog({ studentId, open, onClose }: Props) {
           </div>
         </DialogBody>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>{t("common.cancel")}</Button>
+          <Button variant="outline" onClick={() => { setCategory(""); onClose(); }}>{t("common.cancel")}</Button>
           <Button onClick={onSubmit} disabled={!category || startMutation.isPending}>
             {startMutation.isPending ? t("common.loading") : t("common.save")}
           </Button>

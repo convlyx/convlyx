@@ -40,16 +40,19 @@ export function CreateUserDialog({ fixedRole, buttonLabel }: CreateUserDialogPro
 
   const defaultRole = fixedRole ?? "STUDENT";
 
+  const buildDefaults = (): CreateUserInput => ({
+    name: "",
+    email: "",
+    phone: "",
+    role: defaultRole,
+    schoolId: schools?.length === 1 ? schools[0].id : "",
+    initialCategory: undefined,
+    qualifiedCategories: [],
+  });
+
   const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm<CreateUserInput>({
     resolver: zodResolver(createUserSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      role: defaultRole,
-      schoolId: "",
-      initialCategory: undefined,
-      qualifiedCategories: [],
-    },
+    defaultValues: buildDefaults(),
   });
 
   // Auto-select when only one school
@@ -68,14 +71,7 @@ export function CreateUserDialog({ fixedRole, buttonLabel }: CreateUserDialogPro
       toast.success(t("toast.inviteSent"));
       utils.user.list.invalidate();
       setOpen(false);
-      reset({
-        name: "",
-        email: "",
-        role: defaultRole,
-        schoolId: schools?.length === 1 ? schools[0].id : "",
-        initialCategory: undefined,
-        qualifiedCategories: [],
-      });
+      reset(buildDefaults());
     },
     onError,
   });
@@ -91,7 +87,13 @@ export function CreateUserDialog({ fixedRole, buttonLabel }: CreateUserDialogPro
   return (
     <>
       <Button onClick={() => setOpen(true)}>{label}</Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(val) => {
+          setOpen(val);
+          if (!val) reset(buildDefaults());
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{label}</DialogTitle>
@@ -187,7 +189,14 @@ export function CreateUserDialog({ fixedRole, buttonLabel }: CreateUserDialogPro
               </div>
             </DialogBody>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setOpen(false);
+                  reset(buildDefaults());
+                }}
+              >
                 {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={createMutation.isPending || schoolsLoading}>

@@ -136,7 +136,7 @@ export function ScheduleExamDialog({ studentId, courseId, category, open, onClos
           </div>
         </DialogBody>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>{t("common.cancel")}</Button>
+          <Button variant="outline" onClick={() => { reset(); onClose(); }}>{t("common.cancel")}</Button>
           <Button onClick={onSubmit} disabled={!date || scheduleMutation.isPending}>
             {scheduleMutation.isPending ? t("common.loading") : t("common.save")}
           </Button>

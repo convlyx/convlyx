@@ -31,13 +31,18 @@ export function RecordExamResultDialog({ examId, studentId, open, onClose }: Pro
   const [result, setResult] = useState<ResultValue>("PASSED");
   const [notes, setNotes] = useState("");
 
+  function reset() {
+    setResult("PASSED");
+    setNotes("");
+  }
+
   const mutation = trpc.exam.recordResult.useMutation({
     onSuccess: () => {
       toast.success(t("toast.examResultRecorded"));
       utils.user.studentProfile.invalidate({ id: studentId });
       utils.course.listByStudent.invalidate({ studentId });
       utils.exam.list.invalidate();
-      setNotes("");
+      reset();
       onClose();
     },
     onError,
@@ -52,7 +57,7 @@ export function RecordExamResultDialog({ examId, studentId, open, onClose }: Pro
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { reset(); onClose(); } }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("exams.recordResult")}</DialogTitle>
@@ -86,7 +91,7 @@ export function RecordExamResultDialog({ examId, studentId, open, onClose }: Pro
           </div>
         </DialogBody>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>{t("common.cancel")}</Button>
+          <Button variant="outline" onClick={() => { reset(); onClose(); }}>{t("common.cancel")}</Button>
           <Button onClick={onSubmit} disabled={mutation.isPending}>
             {mutation.isPending ? t("common.loading") : t("common.save")}
           </Button>

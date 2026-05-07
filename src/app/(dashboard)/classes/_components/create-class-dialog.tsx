@@ -244,7 +244,7 @@ export function CreateClassDialog({
         open={open}
         onOpenChange={(val) => {
           setOpen(val);
-          if (!val) { reset(); setScheduleMode("one-off"); setSelectedDays([]); }
+          if (!val) { reset(); setScheduleMode("one-off"); setSelectedDays([]); setSelectedStudents([]); }
         }}
       >
         <DialogContent className="sm:max-w-lg">
