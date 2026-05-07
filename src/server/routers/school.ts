@@ -31,6 +31,7 @@ export const schoolRouter = router({
           address: true,
           phone: true,
           cancellationNoticeHours: true,
+          practicalSelfEnrollEnabled: true,
           createdAt: true,
         },
       });
@@ -72,6 +73,9 @@ export const schoolRouter = router({
           phone: input.phone,
           ...(input.cancellationNoticeHours !== undefined && {
             cancellationNoticeHours: input.cancellationNoticeHours,
+          }),
+          ...(input.practicalSelfEnrollEnabled !== undefined && {
+            practicalSelfEnrollEnabled: input.practicalSelfEnrollEnabled,
           }),
         },
       });

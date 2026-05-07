@@ -106,6 +106,12 @@ Living document of everything the app can do, organized by area.
 - Attendance marking: Present / No-show (admin, secretary, instructor) — only for in-progress or completed classes
 - Bulk attendance: "Mark all present" button — only for in-progress or completed classes
 - Student self-cancellation gated by per-school notice window — cancel button is disabled with explanatory hint when class starts within the window; server enforces the same rule and returns a translatable error
+- Universal student access rules (server-enforced on `class.list` + `enrollment.enroll`):
+  - Without an active StudentCourse, the student sees no classes and can't enroll
+  - Practical classes are filtered to the student's active category only
+  - Theory classes are hidden once the student has a PASSED theory exam for their active category
+  - Staff (admin/secretary/instructor) bypass these rules so they can enrol students operationally
+- Universal exam scheduling rule: practical exam can only be scheduled after the student has a PASSED theory exam for the same course (`exam.schedule` rejects with `exams.theoryNotPassed` otherwise)
 - Enrollment status tracking: ENROLLED → ATTENDED / NO_SHOW
 - Instructor notes on enrollments: only instructors can write/edit, admin/secretary can view, hidden from students
 - Instructor can flag unavailability with confirmation — cancels the class and deletes all enrollments
@@ -162,6 +168,7 @@ Living document of everything the app can do, organized by area.
 - Change password (via Supabase Auth)
 - School info section: edit name, address, phone (admin, secretary)
 - Per-school cancellation notice window (hours) — students can't self-cancel within X hours of class start (default 24, range 0-168, configurable by admin/secretary; staff bypass)
+- Per-school practical self-enrollment toggle — when off (default), students cannot self-enrol in PRACTICAL classes (only staff can assign them); theory self-enrolment unaffected. Configurable by admin/secretary
 - Tenant/group section: edit group name (admin only)
 
 ## Notifications

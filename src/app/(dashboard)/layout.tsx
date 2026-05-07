@@ -65,6 +65,11 @@ export default async function DashboardLayout({
   const user = await getDbUser(authUser.id);
 
   if (!user) {
+    // The auth session is valid but no matching User row exists in the DB
+    // (e.g. preview env where DATABASE_URL points to a DB that doesn't have
+    // this auth user). Sign out the auth session before redirecting so the
+    // middleware doesn't bounce us straight back here in an infinite loop.
+    await supabase.auth.signOut();
     redirect("/login");
   }
 
