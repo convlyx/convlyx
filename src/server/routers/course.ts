@@ -67,7 +67,8 @@ export const courseRouter = router({
       });
     }),
 
-  /** Start a new course. Enforces single-active-course-per-student rule. */
+  /** Start a new course. A student may have multiple in-progress courses
+   *  (e.g. A + B), but not two active for the same category. */
   start: roleProtectedProcedure(["ADMIN", "SECRETARY"])
     .input(startCourseSchema)
     .mutation(async ({ ctx, input }) => {
@@ -85,11 +86,13 @@ export const courseRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
       }
 
-      // Reject if there's already an in-progress course
+      // Reject only if there's already an in-progress course for the same
+      // category — different categories can run in parallel.
       const existing = await ctx.db.studentCourse.findFirst({
         where: {
           tenantId: ctx.tenantId,
           studentId: input.studentId,
+          category: input.category,
           status: "IN_PROGRESS",
         },
         select: { id: true },
@@ -98,7 +101,7 @@ export const courseRouter = router({
       if (existing) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "courses.alreadyHasActive",
+          message: "courses.alreadyHasActiveForCategory",
         });
       }
 

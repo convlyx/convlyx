@@ -9,17 +9,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { CategorySelect } from "@/components/category-select";
-import type { LicenseCategory } from "@/lib/license-categories";
+import { LICENSE_CATEGORIES, type LicenseCategory } from "@/lib/license-categories";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 
 type Props = {
   studentId: string;
+  /** Categories the student already has an in-progress course for; excluded from the picker. */
+  excludeCategories?: readonly LicenseCategory[];
   open: boolean;
   onClose: () => void;
 };
 
-export function StartCourseDialog({ studentId, open, onClose }: Props) {
+export function StartCourseDialog({ studentId, excludeCategories, open, onClose }: Props) {
   const t = useTranslations();
   const { onError } = useTranslatedError();
   const utils = trpc.useUtils();
@@ -56,6 +58,9 @@ export function StartCourseDialog({ studentId, open, onClose }: Props) {
               value={category}
               onChange={setCategory}
               placeholder={t("courses.selectCategory")}
+              allowedCategories={LICENSE_CATEGORIES.filter(
+                (c) => !excludeCategories?.includes(c),
+              )}
             />
           </div>
         </DialogBody>

@@ -80,7 +80,8 @@ export function CoursesAndExamsSection({ studentId, courses, userRole }: Props) 
   const [cancelExamId, setCancelExamId] = useState<string | null>(null);
 
   const canManage = userRole === "ADMIN" || userRole === "SECRETARY";
-  const activeCourse = courses.find((c) => c.status === "IN_PROGRESS") ?? null;
+  const activeCourses = courses.filter((c) => c.status === "IN_PROGRESS");
+  const activeCategories = activeCourses.map((c) => c.category);
 
   const completeMutation = trpc.course.complete.useMutation({
     onSuccess: () => {
@@ -112,69 +113,80 @@ export function CoursesAndExamsSection({ studentId, courses, userRole }: Props) 
 
   return (
     <div className="space-y-6">
-      {/* Active course header */}
-      <div className="rounded-xl border bg-card p-4 sm:p-5 card-shadow">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <GraduationCap className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-sm font-medium text-muted-foreground">
-                {t("courses.currentCourse")}
-              </h2>
-              {activeCourse ? (
-                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0 mt-0.5">
-                  <span className="text-lg font-bold">{t(`categories.${activeCourse.category}`)}</span>
-                  <span className="text-sm text-muted-foreground truncate">
-                    · {t(`categories.${activeCourse.category}_desc`)}
-                  </span>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground mt-0.5">{t("courses.noActiveCourse")}</p>
-              )}
-            </div>
-          </div>
+      {/* Active courses — one card per in-progress course (e.g. A + B in parallel) */}
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-medium text-muted-foreground">
+            {activeCourses.length > 1 ? t("courses.currentCourses") : t("courses.currentCourse")}
+          </h2>
           {canManage && (
-            <div className="flex flex-wrap gap-2 sm:shrink-0">
-              {activeCourse ? (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() => setScheduleForCourse(activeCourse)}
-                  >
-                    <CalendarPlus className="h-3.5 w-3.5" />
-                    {t("exams.schedule")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() => setCompleteId(activeCourse.id)}
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    {t("courses.completeCourse")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() => setAbandonId(activeCourse.id)}
-                  >
-                    <XCircle className="h-3.5 w-3.5" />
-                    {t("courses.abandonCourse")}
-                  </Button>
-                </>
-              ) : (
-                <Button size="sm" onClick={() => setShowStart(true)}>
-                  {t("courses.startCourse")}
-                </Button>
-              )}
-            </div>
+            <Button size="sm" onClick={() => setShowStart(true)}>
+              {t("courses.startCourse")}
+            </Button>
           )}
         </div>
+
+        {activeCourses.length === 0 ? (
+          <div className="rounded-xl border bg-card p-4 sm:p-5 card-shadow">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <GraduationCap className="h-5 w-5" />
+              </div>
+              <p className="text-sm text-muted-foreground">{t("courses.noActiveCourse")}</p>
+            </div>
+          </div>
+        ) : (
+          activeCourses.map((course) => (
+            <div key={course.id} className="rounded-xl border bg-card p-4 sm:p-5 card-shadow">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <GraduationCap className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0">
+                      <span className="text-lg font-bold">{t(`categories.${course.category}`)}</span>
+                      <span className="text-sm text-muted-foreground truncate">
+                        · {t(`categories.${course.category}_desc`)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {canManage && (
+                  <div className="flex flex-wrap gap-2 sm:shrink-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => setScheduleForCourse(course)}
+                    >
+                      <CalendarPlus className="h-3.5 w-3.5" />
+                      {t("exams.schedule")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => setCompleteId(course.id)}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {t("courses.completeCourse")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => setAbandonId(course.id)}
+                    >
+                      <XCircle className="h-3.5 w-3.5" />
+                      {t("courses.abandonCourse")}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Course history */}
@@ -273,6 +285,7 @@ export function CoursesAndExamsSection({ studentId, courses, userRole }: Props) 
 
       <StartCourseDialog
         studentId={studentId}
+        excludeCategories={activeCategories}
         open={showStart}
         onClose={() => setShowStart(false)}
       />

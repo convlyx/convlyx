@@ -318,6 +318,7 @@
   "courses": {
     "title": "Cartas de condução",
     "currentCourse": "Carta atual",
+    "currentCourses": "Cartas em curso",
     "courseHistory": "Histórico de cartas",
     "startCourse": "Iniciar carta de condução",
     "completeCourse": "Concluir carta de condução",
@@ -328,6 +329,7 @@
     "noActiveCourse": "Sem carta de condução ativa",
     "selectCategory": "Selecione a categoria",
     "alreadyHasActive": "O aluno já tem uma carta de condução ativa. Conclua ou abandone a atual antes de iniciar uma nova.",
+    "alreadyHasActiveForCategory": "O aluno já tem uma carta ativa para esta categoria. Conclua ou abandone a atual antes de iniciar outra para a mesma categoria.",
     "notFound": "Carta de condução não encontrada",
     "notActive": "Carta de condução não está ativa",
     "statusInProgress": "Em curso",
