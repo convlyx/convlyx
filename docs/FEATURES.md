@@ -80,7 +80,7 @@ Living document of everything the app can do, organized by area.
 - Past / upcoming tabs with URL sync
 - Clickable cards → class detail page (admin, secretary)
 - Create class — one-off or recurring (by day of week + date range)
-- Practical classes: capacity limited to 1-2 students, assign students on creation via searchable picker
+- Practical classes: capacity limited to 1-4 students, assign students on creation via searchable picker
 - Theory classes: configurable capacity, students self-enroll
 - Edit class (instructor, title, capacity, date/time) with confirmation
 - Schedule conflict detection: prevents creating/editing classes when instructor already has a class at that time

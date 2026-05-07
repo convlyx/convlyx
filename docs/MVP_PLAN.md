@@ -17,7 +17,7 @@ A platform that helps Portuguese driving schools (escolas de condução) manage 
 | Tenant (group) + school hierarchy | Group-wide analytics dashboard |
 | Calendar view (classes + availability) | Vehicle/fleet management |
 | Theoretical class scheduling + enrollment | Payments & billing |
-| Practical class scheduling (1-2 students) | IMT category tracking |
+| Practical class scheduling (1-4 students) | IMT category tracking |
 | Secretary/Instructor/Student views | Notifications (email/push) |
 | Recurring class creation (weekly patterns) | Mobile app (React Native — near-term, post-MVP) |
 | Student self-service booking/canceling | — |
@@ -192,7 +192,7 @@ This is why Prisma was chosen over raw Supabase client for data access.
    │ title              │
    │ starts_at (datetime)│
    │ ends_at (datetime)  │
-   │ capacity           │    (theory: e.g. 30, practical: 1-2)
+   │ capacity           │    (theory: e.g. 30, practical: 1-4)
    │ status (enum)      │
    │ created_at         │
    │ updated_at         │
@@ -273,7 +273,7 @@ No recurrence tables, no pattern tracking. Simple.
 
 ### Secretary / Admin
 - **Calendar** — full month/week/day view of all classes (theory + practical), filterable by school, instructor, type
-- **Create Class** — unified form: type (theory/practical), school, instructor, capacity (theory: N students, practical: 1-2), schedule mode:
+- **Create Class** — unified form: type (theory/practical), school, instructor, capacity (theory: N students, practical: 1-4), schedule mode:
   - **One-off**: pick a specific date + time
   - **Recurring**: pick days of week + time slots + date range (e.g. "Mon 16-17, Tue 18-19 & 19-20, for the next month") → generates individual sessions
 - **Students List** — table with search, filter by school, enrollment status
@@ -378,7 +378,7 @@ saas/
 - [ ] Instructor calendar — personal schedule
 - [ ] Student calendar — enrolled + available classes
 - [ ] Theory class enrollment (student self-service)
-- [ ] Practical class booking (student self-service, max 2 students)
+- [ ] Practical class booking (student self-service, max 4 students)
 - [ ] Cancel enrollment/booking
 
 ### Phase 3 — Polish & Validation (Week 4)

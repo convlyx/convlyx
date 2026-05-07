@@ -15,7 +15,7 @@ export const createClassSchema = z
     startsAt: z.string().datetime(),
     endsAt: z.string().datetime(),
     // Optional: assign students directly (practical classes)
-    studentIds: z.array(z.string().uuid()).max(2).optional(),
+    studentIds: z.array(z.string().uuid()).max(4).optional(),
     // Optional recurrence params
     recurrence: z
       .object({

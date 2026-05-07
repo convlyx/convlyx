@@ -335,7 +335,7 @@ export function CreateClassDialog({
                   control={control}
                   name="capacity"
                   render={({ field }) => {
-                    const val = field.value <= 2 ? String(field.value) : "1";
+                    const val = field.value >= 1 && field.value <= 4 ? String(field.value) : "1";
                     return (
                       <Select value={val} onValueChange={(v) => field.onChange(Number(v))}>
                         <SelectTrigger className="w-full">
@@ -344,6 +344,8 @@ export function CreateClassDialog({
                         <SelectContent>
                           <SelectItem value="1">1 {t("nav.students").toLowerCase()}</SelectItem>
                           <SelectItem value="2">2 {t("nav.students").toLowerCase()}</SelectItem>
+                          <SelectItem value="3">3 {t("nav.students").toLowerCase()}</SelectItem>
+                          <SelectItem value="4">4 {t("nav.students").toLowerCase()}</SelectItem>
                         </SelectContent>
                       </Select>
                     );

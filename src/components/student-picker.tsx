@@ -17,7 +17,7 @@ export function StudentPicker({
   students,
   selected,
   onChange,
-  max = 2,
+  max = 4,
 }: {
   students: Student[];
   selected: string[];
