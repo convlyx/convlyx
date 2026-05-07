@@ -100,7 +100,7 @@ export function CreateClassDialog({
     || studentsLoading
     || (isStaff && instructorsLoading);
 
-  const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } = useForm<CreateClassFormData>({
+  const { register, handleSubmit, reset, control, setValue, setError, getValues, watch, formState: { errors } } = useForm<CreateClassFormData>({
     resolver: zodResolver(createClassFormSchema),
     defaultValues: {
       classType: "THEORY" as "THEORY" | "PRACTICAL",
@@ -142,6 +142,18 @@ export function CreateClassDialog({
       setValue("category", undefined);
     }
   }, [classType, setValue]);
+
+  // Practical classes are scoped to a single category — only students whose
+  // active StudentCourse matches the chosen category are eligible. Clear any
+  // previously selected students when the category changes.
+  const categoryWatched = watch("category");
+  useEffect(() => {
+    setSelectedStudents([]);
+  }, [categoryWatched]);
+
+  const eligibleStudents = students && categoryWatched
+    ? students.filter((s) => s.currentCategory === categoryWatched)
+    : [];
 
   // Auto-select when only one option
   const schoolId = watch("schoolId");
@@ -196,7 +208,36 @@ export function CreateClassDialog({
     onError,
   });
 
+  // Schedule-related fields aren't required in the Zod schema (they belong to
+  // different scheduling modes), so we validate them manually. Returns true
+  // when the schedule slice of the form is valid; sets inline errors otherwise.
+  function validateSchedule(): boolean {
+    let ok = true;
+    if (scheduleMode === "one-off") {
+      if (!getValues("date")) {
+        setError("date", { type: "required", message: t("classes.dateRequired") });
+        ok = false;
+      }
+    } else {
+      if (!getValues("validFrom")) {
+        setError("validFrom", { type: "required", message: t("classes.validFromRequired") });
+        ok = false;
+      }
+      if (!getValues("validUntil")) {
+        setError("validUntil", { type: "required", message: t("classes.validUntilRequired") });
+        ok = false;
+      }
+      if (selectedDays.length === 0) {
+        toast.error(t("classes.daysOfWeekRequired"));
+        ok = false;
+      }
+    }
+    return ok;
+  }
+
   function onSubmit(data: CreateClassFormData) {
+    if (!validateSchedule()) return;
+
     const studentIds = data.classType === "PRACTICAL" && selectedStudents.length > 0
       ? selectedStudents
       : undefined;
@@ -251,7 +292,7 @@ export function CreateClassDialog({
           <DialogHeader>
             <DialogTitle>{t("classes.create")}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <form onSubmit={handleSubmit(onSubmit, validateSchedule)} className="flex flex-col flex-1 min-h-0">
             <DialogBody>
               <div className="grid gap-4">
             <div className={classType === "PRACTICAL" ? "grid grid-cols-2 gap-4" : "grid"}>
@@ -357,12 +398,13 @@ export function CreateClassDialog({
               {errors.capacity && <p className="text-sm text-destructive">{errors.capacity.message}</p>}
             </div>
 
-            {/* Student assignment — only for practical classes */}
-            {watch("classType") === "PRACTICAL" && students && students.length > 0 && (
+            {/* Student assignment — only for practical classes, filtered to
+                the selected category. Hidden until a category is picked. */}
+            {watch("classType") === "PRACTICAL" && categoryWatched && (
               <div className="grid gap-2">
                 <Label>{t("classes.assignStudents")}</Label>
                 <StudentPicker
-                  students={students}
+                  students={eligibleStudents}
                   selected={selectedStudents}
                   onChange={setSelectedStudents}
                   max={watch("capacity")}
@@ -471,6 +513,7 @@ export function CreateClassDialog({
                         <DatePicker value={field.value} onChange={field.onChange} />
                       )}
                     />
+                    {errors.validFrom && <p className="text-sm text-destructive">{errors.validFrom.message}</p>}
                   </div>
                   <div className="grid gap-2">
                     <Label>{t("classes.validUntil")}</Label>
@@ -481,6 +524,7 @@ export function CreateClassDialog({
                         <DatePicker value={field.value} onChange={field.onChange} />
                       )}
                     />
+                    {errors.validUntil && <p className="text-sm text-destructive">{errors.validUntil.message}</p>}
                   </div>
                 </div>
               </>

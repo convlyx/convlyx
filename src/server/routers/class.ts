@@ -9,6 +9,7 @@ import {
 import { LICENSE_CATEGORIES } from "@/lib/license-categories";
 import { syncClassStatuses } from "../lib/class-status";
 import { createNotification, createNotifications, formatClassTime } from "../lib/notifications";
+import { getStudentClassAccess } from "../lib/student-access";
 
 export const classRouter = router({
   list: protectedProcedure
@@ -36,10 +37,33 @@ export const classRouter = router({
             ? { instructorId: input.instructorId }
             : {};
 
+      // Students only see classes relevant to their active carta de condução:
+      // practical classes match their active category; theory classes are
+      // hidden once they've passed the theory exam for that category. Without
+      // an active course, no classes are visible.
+      let studentFilter: object = {};
+      if (ctx.user.role === "STUDENT") {
+        const { activeCategory, canSeeTheory } = await getStudentClassAccess(
+          ctx.db,
+          ctx.tenantId,
+          ctx.user.id,
+        );
+        if (!activeCategory) {
+          return [];
+        }
+        studentFilter = {
+          OR: [
+            ...(canSeeTheory ? [{ classType: "THEORY" as const }] : []),
+            { classType: "PRACTICAL" as const, category: activeCategory },
+          ],
+        };
+      }
+
       return ctx.db.classSession.findMany({
         where: {
           tenantId: ctx.tenantId,
           ...instructorFilter,
+          ...studentFilter,
           ...(input?.schoolId && { schoolId: input.schoolId }),
           ...(input?.classType && { classType: input.classType }),
           ...(input?.category && { category: input.category }),

@@ -2,6 +2,7 @@ import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, roleProtectedProcedure } from "../trpc";
 import { createNotification, formatClassTime } from "../lib/notifications";
+import { getStudentClassAccess } from "../lib/student-access";
 
 export const enrollmentRouter = router({
   /** Enroll a student in a class session */
@@ -35,6 +36,9 @@ export const enrollmentRouter = router({
           status: true,
           instructorId: true,
           schoolId: true,
+          classType: true,
+          category: true,
+          school: { select: { practicalSelfEnrollEnabled: true } },
           _count: {
             select: {
               enrollments: true,
@@ -76,6 +80,43 @@ export const enrollmentRouter = router({
           code: "BAD_REQUEST",
           message: "enrollment.classNotAvailable",
         });
+      }
+
+      // Domain rules for student self-enrollment: class must match active
+      // course's category (practical) or be theory (only if not yet passed).
+      // Staff bypass these checks since they enrol students operationally.
+      if (ctx.user.role === "STUDENT" && studentId === ctx.user.id) {
+        const { activeCategory, canSeeTheory } = await getStudentClassAccess(
+          ctx.db,
+          ctx.tenantId,
+          ctx.user.id,
+        );
+        if (!activeCategory) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "enrollment.noActiveCourse",
+          });
+        }
+        if (session.classType === "THEORY" && !canSeeTheory) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "enrollment.theoryAlreadyPassed",
+          });
+        }
+        if (session.classType === "PRACTICAL") {
+          if (!session.school.practicalSelfEnrollEnabled) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "enrollment.practicalSelfEnrollDisabled",
+            });
+          }
+          if (session.category !== activeCategory) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "enrollment.categoryMismatch",
+            });
+          }
+        }
       }
 
       if (session._count.enrollments >= session.capacity) {

@@ -110,6 +110,11 @@ model School {
   // Minimum notice (in hours) a student must give to cancel an enrollment.
   // 0 = always allowed; staff (admin/secretary/instructor) bypass this.
   cancellationNoticeHours Int @default(24) @map("cancellation_notice_hours")
+  // When false, students cannot self-enrol in PRACTICAL classes — only staff
+  // can assign them. Theory self-enrolment is unaffected. Default is false to
+  // match the most common driving-school workflow where practical classes
+  // are 1-on-1 and staff-assigned at creation time.
+  practicalSelfEnrollEnabled Boolean @default(false) @map("practical_self_enroll_enabled")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

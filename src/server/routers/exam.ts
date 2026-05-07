@@ -150,6 +150,25 @@ export const examRouter = router({
         });
       }
 
+      // Practical exams require the theory exam for the same course to have
+      // been passed first (IMT regulation — universal, not configurable).
+      if (input.type === "PRACTICAL") {
+        const theoryPassed = await ctx.db.exam.findFirst({
+          where: {
+            courseId: course.id,
+            type: "THEORY",
+            result: "PASSED",
+          },
+          select: { id: true },
+        });
+        if (!theoryPassed) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "exams.theoryNotPassed",
+          });
+        }
+      }
+
       // Verify accompanying instructor (if provided) belongs to this tenant
       if (input.instructorId) {
         const instructor = await ctx.db.user.findFirst({

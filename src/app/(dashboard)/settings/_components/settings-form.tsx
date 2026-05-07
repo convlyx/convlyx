@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { PushManager } from "@/components/push-manager";
 import { InstallQR } from "./install-qr";
+import { Tabs, TabsList, TabsTab, TabsPanel } from "@/components/ui/tabs";
 import { Building2, Lock, Bell, Users2 } from "lucide-react";
 
 type SettingsFormProps = {
@@ -39,6 +40,7 @@ type SettingsFormProps = {
     address: string;
     phone: string;
     cancellationNoticeHours: number;
+    practicalSelfEnrollEnabled: boolean;
     userCount: number;
     classCount: number;
   };
@@ -53,6 +55,7 @@ const schoolFormSchema = z.object({
   address: z.string(),
   phone: z.string(),
   cancellationNoticeHours: z.coerce.number().int().min(0).max(168),
+  practicalSelfEnrollEnabled: z.boolean(),
 });
 
 const tenantFormSchema = z.object({
@@ -107,6 +110,7 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
       address: school.address,
       phone: school.phone,
       cancellationNoticeHours: school.cancellationNoticeHours,
+      practicalSelfEnrollEnabled: school.practicalSelfEnrollEnabled,
     },
   });
   const updateSchoolMutation = trpc.school.update.useMutation({
@@ -121,82 +125,104 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
     onError,
   });
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">{t("title")}</h1>
+  // Students/instructors only have one section ("Conta"); skip the tab strip
+  // entirely for them. Admins see all three tabs, secretaries see two.
+  const useTabs = canEditSchool;
+  const defaultTab = canEditSchool ? "school" : "account";
 
-      {/* School info (ADMIN + SECRETARY) */}
-      {canEditSchool && (
-        <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">{t("schoolInfo")}</h2>
+  const schoolPanel = (
+    <>
+      <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
+        <div className="flex items-center gap-2">
+          <Building2 className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold">{t("schoolInfo")}</h2>
+        </div>
+        <form
+          onSubmit={schoolForm.handleSubmit((data) =>
+            updateSchoolMutation.mutate({
+              id: school.id,
+              name: data.name,
+              address: data.address || undefined,
+              phone: data.phone || undefined,
+              cancellationNoticeHours: data.cancellationNoticeHours,
+              practicalSelfEnrollEnabled: data.practicalSelfEnrollEnabled,
+            })
+          )}
+          className="space-y-3"
+        >
+          <div className="grid gap-2">
+            <Label htmlFor="school-name">{tc("name")}</Label>
+            <Input id="school-name" {...schoolForm.register("name")} />
+            {schoolForm.formState.errors.name && <p className="text-sm text-destructive">{schoolForm.formState.errors.name.message}</p>}
           </div>
-          <form
-            onSubmit={schoolForm.handleSubmit((data) =>
-              updateSchoolMutation.mutate({
-                id: school.id,
-                name: data.name,
-                address: data.address || undefined,
-                phone: data.phone || undefined,
-                cancellationNoticeHours: data.cancellationNoticeHours,
-              })
+          <div className="grid gap-2">
+            <Label htmlFor="school-address">{tc("address")}</Label>
+            <Input id="school-address" {...schoolForm.register("address")} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="school-phone">{tc("phone")}</Label>
+            <Input id="school-phone" {...schoolForm.register("phone")} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="school-cancellation-notice">{t("cancellationNoticeLabel")}</Label>
+            <Select
+              value={String(schoolForm.watch("cancellationNoticeHours") ?? 24)}
+              onValueChange={(v) =>
+                schoolForm.setValue("cancellationNoticeHours", Number(v), {
+                  shouldDirty: true,
+                })
+              }
+            >
+              <SelectTrigger id="school-cancellation-notice" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CANCELLATION_NOTICE_OPTIONS.map((hours) => (
+                  <SelectItem key={hours} value={String(hours)}>
+                    {hours === 0
+                      ? t("cancellationNoticeOptionAlways")
+                      : t("cancellationNoticeOptionHours", { hours })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {schoolForm.formState.errors.cancellationNoticeHours && (
+              <p className="text-sm text-destructive">
+                {schoolForm.formState.errors.cancellationNoticeHours.message}
+              </p>
             )}
-            className="space-y-3"
-          >
-            <div className="grid gap-2">
-              <Label htmlFor="school-name">{tc("name")}</Label>
-              <Input id="school-name" {...schoolForm.register("name")} />
-              {schoolForm.formState.errors.name && <p className="text-sm text-destructive">{schoolForm.formState.errors.name.message}</p>}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="school-address">{tc("address")}</Label>
-              <Input id="school-address" {...schoolForm.register("address")} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="school-phone">{tc("phone")}</Label>
-              <Input id="school-phone" {...schoolForm.register("phone")} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="school-cancellation-notice">{t("cancellationNoticeLabel")}</Label>
-              <Select
-                value={String(schoolForm.watch("cancellationNoticeHours") ?? 24)}
-                onValueChange={(v) =>
-                  schoolForm.setValue("cancellationNoticeHours", Number(v), {
-                    shouldDirty: true,
-                  })
-                }
-              >
-                <SelectTrigger id="school-cancellation-notice" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CANCELLATION_NOTICE_OPTIONS.map((hours) => (
-                    <SelectItem key={hours} value={String(hours)}>
-                      {hours === 0
-                        ? t("cancellationNoticeOptionAlways")
-                        : t("cancellationNoticeOptionHours", { hours })}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {schoolForm.formState.errors.cancellationNoticeHours && (
-                <p className="text-sm text-destructive">
-                  {schoolForm.formState.errors.cancellationNoticeHours.message}
-                </p>
-              )}
-            </div>
-            <Button type="submit" disabled={updateSchoolMutation.isPending}>
-              {updateSchoolMutation.isPending ? tc("loading") : tc("save")}
-            </Button>
-          </form>
-        </section>
-      )}
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="school-practical-self-enroll">{t("practicalSelfEnrollLabel")}</Label>
+            <Select
+              value={schoolForm.watch("practicalSelfEnrollEnabled") ? "yes" : "no"}
+              onValueChange={(v) =>
+                schoolForm.setValue("practicalSelfEnrollEnabled", v === "yes", {
+                  shouldDirty: true,
+                })
+              }
+            >
+              <SelectTrigger id="school-practical-self-enroll" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="no">{t("practicalSelfEnrollOptionStaffOnly")}</SelectItem>
+                <SelectItem value="yes">{t("practicalSelfEnrollOptionAllowed")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button type="submit" disabled={updateSchoolMutation.isPending}>
+            {updateSchoolMutation.isPending ? tc("loading") : tc("save")}
+          </Button>
+        </form>
+      </section>
 
-      {/* Install QR (ADMIN + SECRETARY) */}
-      {canEditSchool && <InstallQR subdomain={school.subdomain} schoolName={school.name} />}
+      <InstallQR subdomain={school.subdomain} schoolName={school.name} />
+    </>
+  );
 
-      {/* Password */}
+  const accountPanel = (
+    <>
       <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
         <div className="flex items-center gap-2">
           <Lock className="h-5 w-5 text-muted-foreground" />
@@ -242,7 +268,6 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
         </form>
       </section>
 
-      {/* Push notifications — only for students/instructors */}
       {!canEditSchool && (
         <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
           <div className="flex items-center gap-2">
@@ -253,31 +278,53 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
           <PushManager userId={user.id} />
         </section>
       )}
+    </>
+  );
 
+  const groupPanel = isAdmin && (
+    <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
+      <div className="flex items-center gap-2">
+        <Users2 className="h-5 w-5 text-muted-foreground" />
+        <h2 className="text-lg font-semibold">{t("tenantInfo")}</h2>
+      </div>
+      <form
+        onSubmit={tenantForm.handleSubmit((data) =>
+          updateTenantMutation.mutate({ name: data.name })
+        )}
+        className="space-y-3"
+      >
+        <div className="grid gap-2">
+          <Label htmlFor="tenant-name">{t("groupName")}</Label>
+          <Input id="tenant-name" {...tenantForm.register("name")} />
+          {tenantForm.formState.errors.name && <p className="text-sm text-destructive">{tenantForm.formState.errors.name.message}</p>}
+        </div>
+        <Button type="submit" disabled={updateTenantMutation.isPending}>
+          {updateTenantMutation.isPending ? tc("loading") : tc("save")}
+        </Button>
+      </form>
+    </section>
+  );
 
-      {/* Section C: Tenant (ADMIN only) */}
-      {isAdmin && (
-        <section className="rounded-xl border bg-card p-5 card-shadow space-y-4">
-          <div className="flex items-center gap-2">
-            <Users2 className="h-5 w-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">{t("tenantInfo")}</h2>
-          </div>
-          <form
-            onSubmit={tenantForm.handleSubmit((data) =>
-              updateTenantMutation.mutate({ name: data.name })
-            )}
-            className="space-y-3"
-          >
-            <div className="grid gap-2">
-              <Label htmlFor="tenant-name">{t("groupName")}</Label>
-              <Input id="tenant-name" {...tenantForm.register("name")} />
-              {tenantForm.formState.errors.name && <p className="text-sm text-destructive">{tenantForm.formState.errors.name.message}</p>}
-            </div>
-            <Button type="submit" disabled={updateTenantMutation.isPending}>
-              {updateTenantMutation.isPending ? tc("loading") : tc("save")}
-            </Button>
-          </form>
-        </section>
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">{t("title")}</h1>
+
+      {useTabs ? (
+        <Tabs defaultValue={defaultTab}>
+          <TabsList>
+            {canEditSchool && <TabsTab value="school">{t("tabSchool")}</TabsTab>}
+            <TabsTab value="account">{t("tabAccount")}</TabsTab>
+            {isAdmin && <TabsTab value="group">{t("tabGroup")}</TabsTab>}
+          </TabsList>
+
+          {canEditSchool && (
+            <TabsPanel value="school">{schoolPanel}</TabsPanel>
+          )}
+          <TabsPanel value="account">{accountPanel}</TabsPanel>
+          {isAdmin && <TabsPanel value="group">{groupPanel}</TabsPanel>}
+        </Tabs>
+      ) : (
+        <div className="space-y-6">{accountPanel}</div>
       )}
     </div>
   );

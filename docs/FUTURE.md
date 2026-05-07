@@ -23,10 +23,10 @@ Living document of things to build, improve, or investigate post-MVP.
 
 ## Multi-Tenancy
 - [ ] Same email across multiple tenants — decouple `User.id` from Supabase `auth.id` so one auth account can have a User row per tenant. Login resolves the correct User based on the subdomain. Currently Supabase enforces email uniqueness in `auth.users`, blocking same-email admins across schools.
-- [ ] Multi-school users — instructor/secretary working across schools in same tenant
+- [ ] **Multi-school users — split User identity from school membership.** Currently `User` has a single `schoolId` and `role`, with `@@unique([tenantId, email])` blocking the same person from existing in two schools within the same tenant. Refactor to introduce a `Membership` table `(userId, schoolId, role, status)` so João can be SECRETARY at School A and INSTRUCTOR at School B (and the history is preserved when someone moves schools). **Trigger to revisit**: first real customer with this need, OR data-visualization/dashboards that need cross-school aggregation. **Discipline rule until then**: keep school-scoping logic flowing through `ctx.user.schoolId` — never read `user.school` or membership fields directly in business logic. With that discipline, the eventual refactor is contained to the auth-context builder + a school-switcher UI; queries don't have to be rewritten.
 - [ ] DB-per-tenant migration when scaling beyond free tier
 - [ ] Per-tenant accent color / branding customization
-- [ ] Tenant-level feature flags (enable/disable practical self-booking per school)
+- [x] ~~Tenant-level feature flags (enable/disable practical self-booking per school)~~ — done as a per-school setting `practicalSelfEnrollEnabled`
 - [ ] Custom domain per school (escola.pt instead of escola.convlyx.com)
 
 ## Classes & Scheduling
