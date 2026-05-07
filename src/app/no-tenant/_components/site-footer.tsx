@@ -3,6 +3,29 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
+function InstagramIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
+
+function FacebookIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    </svg>
+  );
+}
+
+const SOCIAL_LINKS = [
+  { href: "https://www.instagram.com/convlyx/", label: "Instagram", Icon: InstagramIcon },
+  { href: "https://www.facebook.com/profile.php?id=61589251470921", label: "Facebook", Icon: FacebookIcon },
+];
+
 /**
  * Universal footer used on the main landing page and all SEO landing pages.
  * Anchor buttons rely on each page exposing the same ids: `#features` and `#demo`.
@@ -32,6 +55,22 @@ export function SiteFooter() {
           <p className="text-sm text-muted-foreground text-center max-w-md">
             {t("common.appDescription")}
           </p>
+
+          {/* Social links */}
+          <div className="flex items-center gap-3">
+            {SOCIAL_LINKS.map(({ href, label, Icon }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="me noopener noreferrer"
+                aria-label={label}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/15 text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all"
+              >
+                <Icon className="h-4 w-4" />
+              </a>
+            ))}
+          </div>
 
           {/* In-page anchors */}
           <div className="flex items-center gap-6 text-sm">

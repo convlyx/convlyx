@@ -4,7 +4,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 const publicPaths = ["/login", "/register", "/reset-password", "/update-password", "/install"];
 
 // Root domains that should not serve the app (no subdomain)
-const ROOT_DOMAINS = ["convlyx.com", "www.convlyx.com"];
+const ROOT_DOMAINS = ["convlyx.com", "www.convlyx.com", "localhost:3000"];
 
 // Reserved subdomains that are not real schools
 const RESERVED_SUBDOMAINS = ["admin", "www", "api"];

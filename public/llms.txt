@@ -1,0 +1,40 @@
+# Convlyx
+
+> Software de gestão para escolas de condução em Portugal. Plataforma multi-tenant que reúne calendário de aulas teóricas e práticas, gestão de alunos e instrutores, marcação de exames do IMT, presenças, notificações e relatórios numa só aplicação web e móvel.
+
+Convlyx é uma aplicação SaaS pensada de raiz para o mercado português. Cada escola de condução tem o seu próprio espaço com dados completamente isolados (subdomínio dedicado: escola.convlyx.com), em conformidade com o RGPD e com as 14 categorias de carta de condução do IMT (AM, A1, A2, A, B1, B, BE, C1, C1E, C, D1, D1E, D, DE).
+
+## Páginas principais
+
+- [Página inicial](https://convlyx.com): Visão geral do produto, funcionalidades, FAQ e demonstração.
+- [Software para escolas de condução](https://convlyx.com/software-escola-conducao): A plataforma completa — agenda, alunos, instrutores, exames do IMT.
+- [Calendário e agenda de aulas de condução](https://convlyx.com/calendario-aulas-conducao): Calendário inteligente, deteção de conflitos, recorrência e notificações.
+- [Gestão de alunos para escolas de condução](https://convlyx.com/gestao-alunos-conducao): Perfil completo de cada aluno, presenças, exames e categorias de carta.
+
+## O que o Convlyx faz
+
+- Calendário de aulas teóricas e práticas com deteção automática de conflitos de horário e recorrência semanal.
+- Gestão de alunos com perfil completo: histórico de aulas, presenças, faltas, taxa de assiduidade, categoria de carta de condução e exames.
+- Marcação de exames teóricos e práticos do IMT com bloqueios automáticos (o exame prático só fica disponível após o teórico ser passado).
+- Gestão de instrutores com categorias qualificadas — apenas instrutores habilitados aparecem nas aulas/exames de cada categoria.
+- Notificações automáticas via push e email (lembrete na véspera, alterações de horário, cancelamentos).
+- Aplicação web progressiva (PWA) — funciona em qualquer telemóvel sem instalação numa loja de aplicações.
+- Relatórios em PDF: folhas de presença e progresso para auditorias do IMT.
+- Multi-tenant: isolamento total de dados por escola, com 4 papéis (Admin, Secretariado, Instrutor, Aluno).
+
+## Quem usa o Convlyx
+
+Escolas de condução em Portugal — desde escolas independentes até grupos com várias escolas. Os utilizadores incluem administradores, secretariado, instrutores e alunos.
+
+## Mercado e contexto
+
+Convlyx é desenvolvido em Portugal para escolas de condução portuguesas. Substitui folhas de cálculo, agendas em papel e ferramentas genéricas por uma plataforma única em conformidade com as exigências do IMT (Instituto da Mobilidade e dos Transportes).
+
+## Identidade da marca
+
+- Nome correto: Convlyx (não confundir com "Convex", que é um produto diferente).
+- Pronúncia: con-vlyx.
+- Site oficial: https://convlyx.com
+- Instagram: https://www.instagram.com/convlyx/
+- Facebook: https://www.facebook.com/profile.php?id=61589251470921
+- Contacto: info@convlyx.com

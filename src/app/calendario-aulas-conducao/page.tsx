@@ -38,6 +38,18 @@ const breadcrumbSchema = {
   ],
 };
 
+const serviceSchema = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  name: "Calendário e agenda de aulas para escolas de condução",
+  serviceType: "Class scheduling software",
+  description: DESCRIPTION,
+  url: URL,
+  inLanguage: "pt-PT",
+  areaServed: { "@type": "Country", name: "Portugal" },
+  provider: { "@id": "https://convlyx.com#organization" },
+};
+
 export default function Page() {
   return (
     <>
@@ -45,6 +57,11 @@ export default function Page() {
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
       />
       <SeoLanding
         kicker="Calendário e agenda de aulas de condução"

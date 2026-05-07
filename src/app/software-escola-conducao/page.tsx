@@ -38,6 +38,19 @@ const breadcrumbSchema = {
   ],
 };
 
+const serviceSchema = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  name: "Software de gestão para escolas de condução",
+  serviceType: "Driving school management software",
+  description: DESCRIPTION,
+  url: URL,
+  inLanguage: "pt-PT",
+  areaServed: { "@type": "Country", name: "Portugal" },
+  provider: { "@id": "https://convlyx.com#organization" },
+  offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+};
+
 export default function Page() {
   return (
     <>
@@ -45,6 +58,11 @@ export default function Page() {
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
       />
       <SeoLanding
         kicker="Software para escolas de condução"
