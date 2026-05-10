@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
 import { Sidebar } from "./_components/sidebar";
@@ -9,6 +10,7 @@ import { MobileLayout } from "./_components/mobile-layout";
 import { PageTitle } from "@/components/page-title";
 import { PushPrompt } from "@/components/push-prompt";
 import { AnalyticsIdentifier } from "@/components/analytics-identifier";
+import { PostHogInit, PostHogPageviews } from "@/components/posthog-provider";
 
 
 async function getAuthUser() {
@@ -103,6 +105,10 @@ export default async function DashboardLayout({
       >
         <PageTitle title={pageTitle} />
         <AnalyticsIdentifier {...analyticsProps} />
+        <PostHogInit />
+        <Suspense fallback={null}>
+          <PostHogPageviews />
+        </Suspense>
         <div className="mb-4"><PushPrompt userId={user.id} /></div>
         {children}
       </MobileLayout>
@@ -125,6 +131,10 @@ export default async function DashboardLayout({
         />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
           <AnalyticsIdentifier {...analyticsProps} />
+          <PostHogInit />
+          <Suspense fallback={null}>
+            <PostHogPageviews />
+          </Suspense>
           {children}
         </main>
       </div>

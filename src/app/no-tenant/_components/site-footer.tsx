@@ -107,6 +107,19 @@ export function SiteFooter({ onRequestDemo }: { onRequestDemo?: () => void } = {
           {/* Divider */}
           <div className="w-full max-w-xs h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
 
+          {/* Legal links */}
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+            <Link href="/politica-de-privacidade" className="hover:text-primary transition-colors">
+              Política de Privacidade
+            </Link>
+            <Link href="/termos-e-condicoes" className="hover:text-primary transition-colors">
+              Termos e Condições
+            </Link>
+            <Link href="/politica-de-cookies" className="hover:text-primary transition-colors">
+              Política de Cookies
+            </Link>
+          </div>
+
           {/* Copyright */}
           <p className="text-xs text-muted-foreground">
             {t("auth.copyright", { year: new Date().getFullYear().toString() })}

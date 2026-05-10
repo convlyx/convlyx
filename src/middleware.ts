@@ -56,8 +56,17 @@ export async function middleware(request: NextRequest) {
     if (SEO_PAGES.includes(pathname)) {
       return response;
     }
+    // Legal pages — required for GDPR and PT consumer law compliance.
+    const LEGAL_PAGES = [
+      "/politica-de-privacidade",
+      "/termos-e-condicoes",
+      "/politica-de-cookies",
+    ];
+    if (LEGAL_PAGES.includes(pathname)) {
+      return response;
+    }
     // Allow SEO/PWA files served from public/ and Next.js internals
-    const ALLOWED = ["/robots.txt", "/sitemap.xml", "/favicon", "/manifest.json", "/sw.js", "/og-image"];
+    const ALLOWED = ["/robots.txt", "/sitemap.xml", "/favicon", "/manifest.json", "/sw.js", "/og-image", "/llms.txt"];
     if (ALLOWED.some((p) => pathname.startsWith(p)) || pathname.startsWith("/_next/")) {
       return response;
     }

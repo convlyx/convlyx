@@ -6,8 +6,6 @@ import { TRPCProvider } from "@/lib/trpc-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { PostHogInit, PostHogPageviews } from "@/components/posthog-provider";
-import { Suspense } from "react";
 import "./globals.css";
 
 const inter = Inter({
@@ -49,12 +47,6 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider messages={messages}>
           <TRPCProvider>{children}</TRPCProvider>
-          <PostHogInit />
-          {/* Suspense around the only component that uses useSearchParams,
-              so the bailout doesn't propagate to `children`. */}
-          <Suspense fallback={null}>
-            <PostHogPageviews />
-          </Suspense>
           <Toaster position="bottom-right" richColors />
         </NextIntlClientProvider>
         <Analytics />

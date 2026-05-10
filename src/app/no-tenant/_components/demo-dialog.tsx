@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, ArrowRight } from "lucide-react";
+import { COMPANY } from "@/lib/company";
 
 const demoFormSchema = z.object({
   email: z.string().trim().email("invalidEmail").max(200),
@@ -69,7 +70,7 @@ export function DemoDialog({
       setSubmitted(true);
       toast.success(t("successToast"));
     } catch {
-      toast.error(t("errorToast"));
+      toast.error(t("errorToast", { email: COMPANY.contactEmail }));
     }
   }
 
