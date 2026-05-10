@@ -30,7 +30,7 @@ const SOCIAL_LINKS = [
  * Universal footer used on the main landing page and all SEO landing pages.
  * Anchor buttons rely on each page exposing the same ids: `#features` and `#demo`.
  */
-export function SiteFooter() {
+export function SiteFooter({ onRequestDemo }: { onRequestDemo?: () => void } = {}) {
   const t = useTranslations();
 
   function scrollTo(id: string) {
@@ -81,7 +81,7 @@ export function SiteFooter() {
               {t("landing.seeFeatures")}
             </button>
             <button
-              onClick={() => scrollTo("demo")}
+              onClick={onRequestDemo ?? (() => scrollTo("demo"))}
               className="text-muted-foreground hover:text-primary transition-colors"
             >
               {t("landing.requestDemo")}

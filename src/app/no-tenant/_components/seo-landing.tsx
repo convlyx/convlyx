@@ -1,10 +1,11 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { ArrowRight, Check, ChevronRight } from "lucide-react";
 import { SiteFooter } from "./site-footer";
+import { DemoDialog } from "./demo-dialog";
 
 export type SeoLandingRelated = {
   href: string;
@@ -53,6 +54,8 @@ export function SeoLanding({
   midCta?: { title: string; description: string };
   related?: SeoLandingRelated[];
 }) {
+  const [demoOpen, setDemoOpen] = useState(false);
+
   function scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   }
@@ -84,7 +87,7 @@ export function SeoLanding({
               Saber mais
             </button>
             <button
-              onClick={() => scrollTo("demo")}
+              onClick={() => setDemoOpen(true)}
               className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-1.5 text-sm font-medium hover:bg-primary/90 transition-colors gap-1.5"
             >
               <span className="hidden sm:inline">Pedir demonstração</span>
@@ -119,7 +122,7 @@ export function SeoLanding({
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                 <button
-                  onClick={() => scrollTo("demo")}
+                  onClick={() => setDemoOpen(true)}
                   className={buttonVariants({ size: "lg", className: "gap-2 w-full sm:w-auto shadow-lg shadow-primary/20" })}
                 >
                   Pedir demonstração
@@ -178,7 +181,7 @@ export function SeoLanding({
             </p>
             <div className="mt-6">
               <button
-                onClick={() => scrollTo("demo")}
+                onClick={() => setDemoOpen(true)}
                 className="inline-flex items-center justify-center rounded-lg bg-white text-primary px-7 py-3 text-sm font-semibold hover:bg-white/90 transition-all cursor-pointer gap-2 shadow-lg shadow-black/10 hover:scale-105"
               >
                 Pedir demonstração
@@ -262,13 +265,14 @@ export function SeoLanding({
             Peça uma demonstração gratuita e veja como o Convlyx pode simplificar a gestão da sua escola de condução.
           </p>
           <div className="mt-6">
-            <a
-              href="mailto:info@convlyx.com"
+            <button
+              type="button"
+              onClick={() => setDemoOpen(true)}
               className="inline-flex items-center justify-center rounded-lg bg-white text-primary px-8 py-3.5 text-sm font-semibold hover:bg-white/90 transition-all cursor-pointer gap-2 shadow-lg shadow-black/10 hover:scale-105"
             >
               Pedir demonstração
               <ArrowRight className="h-4 w-4" />
-            </a>
+            </button>
           </div>
           <div className="mt-8">
             <Link
@@ -282,7 +286,9 @@ export function SeoLanding({
         </div>
       </section>
 
-      <SiteFooter />
+      <SiteFooter onRequestDemo={() => setDemoOpen(true)} />
+
+      <DemoDialog open={demoOpen} onOpenChange={setDemoOpen} />
     </div>
   );
 }

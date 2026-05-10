@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { SiteFooter } from "./site-footer";
+import { DemoDialog } from "./demo-dialog";
 import {
   CalendarDays, Users, BookOpen, Bell, Shield, BarChart3,
   ChevronRight, ArrowRight, Smartphone, Globe, Check, HelpCircle,
@@ -12,6 +14,7 @@ import type { LucideIcon } from "lucide-react";
 
 export function LandingPage() {
   const t = useTranslations();
+  const [demoOpen, setDemoOpen] = useState(false);
 
   function scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -32,7 +35,7 @@ export function LandingPage() {
             <button onClick={() => scrollTo("features")} className="text-sm text-muted-foreground hover:text-primary transition-colors hidden sm:block px-3 py-1.5">
               {t("landing.seeFeatures")}
             </button>
-            <Button onClick={() => scrollTo("demo")} size="sm" className="gap-1.5 shadow-md shadow-primary/20">
+            <Button onClick={() => setDemoOpen(true)} size="sm" className="gap-1.5 shadow-md shadow-primary/20">
               <span className="hidden sm:inline">{t("landing.requestDemo")}</span>
               <span className="sm:hidden">{t("landing.demoCTA")}</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -65,7 +68,7 @@ export function LandingPage() {
                 {t("landing.heroDescription")}
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                <Button onClick={() => scrollTo("demo")} size="lg" className="gap-2 w-full sm:w-auto shadow-lg shadow-primary/20">
+                <Button onClick={() => setDemoOpen(true)} size="lg" className="gap-2 w-full sm:w-auto shadow-lg shadow-primary/20">
                   {t("landing.requestDemo")}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -357,13 +360,14 @@ export function LandingPage() {
           </p>
 
           <div className="mt-8">
-            <a
-              href="mailto:info@convlyx.com"
+            <button
+              type="button"
+              onClick={() => setDemoOpen(true)}
               className="inline-flex items-center justify-center rounded-lg bg-white text-primary px-8 py-3.5 text-sm font-semibold hover:bg-white/90 transition-all cursor-pointer gap-2 shadow-lg shadow-black/10 hover:scale-105"
             >
               {t("landing.requestDemo")}
               <ArrowRight className="h-4 w-4" />
-            </a>
+            </button>
           </div>
 
           {/* Already a user */}
@@ -379,7 +383,9 @@ export function LandingPage() {
         </div>
       </section>
 
-      <SiteFooter />
+      <SiteFooter onRequestDemo={() => setDemoOpen(true)} />
+
+      <DemoDialog open={demoOpen} onOpenChange={setDemoOpen} />
     </div>
   );
 }
