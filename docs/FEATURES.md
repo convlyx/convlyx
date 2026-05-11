@@ -40,6 +40,7 @@ Living document of everything the app can do, organized by area.
 - Edit user (name, phone, role, school)
 - Phone number field on user creation and editing (optional)
 - Deactivate / activate user (admin only) with confirmation dialog
+- Hard-delete student or instructor (admin only) from their detail page, gated to users with no `Enrollment` / `Exam` history (instructors also gated on `ClassSession` and audit FKs). Cascades `Notification`, `PushSubscription`, and (for students) `StudentCourse` rows; also removes the Supabase Auth account in the same transaction. Staff (admin/secretary) stay deactivate-only.
 - Role-colored avatars (purple=admin, blue=secretary, green=instructor, primary=student)
 - Create user directly from students page ("Adicionar aluno") and instructors page ("Adicionar instrutor") with pre-locked role
 - Filter students/instructors list by status (Ativo / Inativo / Todos) — defaults to active only

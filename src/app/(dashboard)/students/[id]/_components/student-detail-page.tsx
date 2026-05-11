@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +22,10 @@ import {
   Camera,
   FileDown,
   Pencil,
+  Trash2,
 } from "lucide-react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useTranslatedError } from "@/hooks/use-translated-error";
 import { EditUserDialog } from "@/app/(dashboard)/users/_components/edit-user-dialog";
 import { Loading } from "@/components/loading";
 import { StatCard } from "@/components/stat-card";
@@ -46,8 +51,22 @@ export function StudentDetailPage({
 
   const [historyPage, setHistoryPage] = useState(1);
   const [showEdit, setShowEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const router = useRouter();
+  const { onError } = useTranslatedError();
   const utils = trpc.useUtils();
   const { data: student, isLoading } = trpc.user.studentProfile.useQuery({ id });
+
+  const deleteMutation = trpc.user.delete.useMutation({
+    onSuccess: () => {
+      toast.success(t("toast.userDeleted"));
+      utils.user.list.invalidate();
+      router.push("/students");
+    },
+    onError,
+  });
+
+  const canDelete = userRole === "ADMIN";
 
   if (isLoading) {
     return <Loading />;
@@ -102,6 +121,17 @@ export function StudentDetailPage({
                 <FileDown className="h-3.5 w-3.5" />
                 {t("common.exportPDF")}
               </Button>
+              {canDelete && student.deletable && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setShowDelete(true)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {t("users.delete")}
+                </Button>
+              )}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -217,6 +247,16 @@ export function StudentDetailPage({
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={showDelete}
+        onClose={() => setShowDelete(false)}
+        onConfirm={() => deleteMutation.mutate({ id })}
+        title={t("users.deleteTitle")}
+        message={t("users.deleteMessage")}
+        confirmLabel={t("users.delete")}
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 }

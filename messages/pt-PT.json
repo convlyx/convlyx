@@ -244,7 +244,15 @@
     "createStudent": "Adicionar aluno",
     "createInstructor": "Adicionar instrutor",
     "deactivateTitle": "Desativar utilizador",
-    "deactivateMessage": "Tem a certeza que pretende desativar este utilizador?"
+    "deactivateMessage": "Tem a certeza que pretende desativar este utilizador?",
+    "delete": "Eliminar",
+    "deleteTitle": "Eliminar utilizador",
+    "deleteMessage": "Esta ação é permanente. O utilizador e todos os seus dados pessoais serão removidos. Tem a certeza?",
+    "cannotDelete": "Não é possível eliminar utilizadores com inscrições ou exames associados. Desative em alternativa.",
+    "cannotDeleteSelf": "Não pode eliminar a sua própria conta",
+    "cannotDeleteStaff": "Apenas alunos e instrutores podem ser eliminados",
+    "cannotDeleteHasData": "Este utilizador tem dados associados e não pode ser eliminado. Desative em alternativa.",
+    "deleteFailed": "Não foi possível eliminar o utilizador"
   },
   "classes": {
     "title": "Aulas",
@@ -644,6 +652,7 @@
     "inviteSent": "Convite enviado com sucesso",
     "userDeactivated": "Utilizador desativado",
     "userActivated": "Utilizador ativado",
+    "userDeleted": "Utilizador eliminado",
     "enrollmentSuccess": "Inscrito com sucesso",
     "enrollmentCancelled": "Inscrição cancelada",
     "enrollmentRemoved": "Inscrição removida",

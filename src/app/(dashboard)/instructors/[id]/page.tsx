@@ -31,5 +31,5 @@ export default async function InstructorPage({
   });
   if (!instructorExists) notFound();
 
-  return <InstructorDetailPage id={id} />;
+  return <InstructorDetailPage id={id} userRole={user.role} />;
 }

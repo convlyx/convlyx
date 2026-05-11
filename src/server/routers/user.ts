@@ -21,6 +21,44 @@ const supabaseAnon = createClient(
 );
 
 /**
+ * A STUDENT is deletable if they have no Enrollment and no Exam (via any of
+ * their StudentCourses). An INSTRUCTOR is deletable if no ClassSession or
+ * Exam references them — including audit FKs (createdBy/updatedBy).
+ *
+ * Cascade-only references (Notification, PushSubscription, StudentCourse for
+ * students with no exams) do not block.
+ */
+async function computeDeletability(
+  db: typeof import("../db").db,
+  tenantId: string,
+  userId: string,
+  role: "STUDENT" | "INSTRUCTOR",
+): Promise<{ deletable: boolean }> {
+  if (role === "STUDENT") {
+    const [enrollmentCount, examCount] = await Promise.all([
+      db.enrollment.count({ where: { tenantId, studentId: userId } }),
+      db.exam.count({ where: { tenantId, course: { studentId: userId } } }),
+    ]);
+    return { deletable: enrollmentCount === 0 && examCount === 0 };
+  }
+  const [classCount, examCount] = await Promise.all([
+    db.classSession.count({
+      where: {
+        tenantId,
+        OR: [{ instructorId: userId }, { createdById: userId }, { updatedById: userId }],
+      },
+    }),
+    db.exam.count({
+      where: {
+        tenantId,
+        OR: [{ instructorId: userId }, { createdById: userId }, { updatedById: userId }],
+      },
+    }),
+  ]);
+  return { deletable: classCount === 0 && examCount === 0 };
+}
+
+/**
  * Map a Supabase Auth error message (English, raw) to an i18n key the client
  * can translate via `useTranslatedError`. Falls back to a generic key for
  * unknown errors — the raw message is logged server-side for debugging.
@@ -310,6 +348,51 @@ export const userRouter = router({
       });
     }),
 
+  // Hard-delete a STUDENT or INSTRUCTOR that has no business-meaningful FK
+  // references. Used to clean up data-entry mistakes. Staff (ADMIN/SECRETARY)
+  // are deactivate-only — their audit-trail FKs accumulate too quickly.
+  //
+  // Cascade on the schema removes Notification, PushSubscription, and
+  // StudentCourse rows. Enrollments and Exams BLOCK deletion (the guard below)
+  // because they represent real history that shouldn't disappear silently.
+  delete: roleProtectedProcedure(["ADMIN"])
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.id === ctx.user.id) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "users.cannotDeleteSelf" });
+      }
+
+      const target = await ctx.db.user.findFirst({
+        where: { id: input.id, tenantId: ctx.tenantId },
+        select: { id: true, role: true },
+      });
+      if (!target) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
+      }
+      if (target.role !== "STUDENT" && target.role !== "INSTRUCTOR") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "users.cannotDeleteStaff" });
+      }
+
+      const { deletable } = await computeDeletability(ctx.db, ctx.tenantId, target.id, target.role);
+      if (!deletable) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "users.cannotDeleteHasData" });
+      }
+
+      // Delete Prisma row inside a transaction; if Supabase Auth delete fails,
+      // throw to roll back so we don't leave a Prisma-less but still-loggable
+      // auth row in an inconsistent state.
+      await ctx.db.$transaction(async (tx) => {
+        await tx.user.delete({ where: { id: target.id } });
+        const { error } = await supabaseAdmin.auth.admin.deleteUser(target.id);
+        if (error) {
+          console.error("[user.delete] Supabase auth delete failed", error);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "users.deleteFailed" });
+        }
+      });
+
+      return { success: true };
+    }),
+
   me: protectedProcedure.query(async ({ ctx }) => {
       const user = await ctx.db.user.findUnique({
         where: { id: ctx.user.id },
@@ -416,7 +499,9 @@ export const userRouter = router({
         emailConfirmed = !!data?.user?.email_confirmed_at;
       } catch {}
 
-      return { ...student, stats, emailConfirmed };
+      const { deletable } = await computeDeletability(ctx.db, ctx.tenantId, student.id, "STUDENT");
+
+      return { ...student, stats, emailConfirmed, deletable };
     }),
 
   /** Instructor profile with class stats and schedule */
@@ -474,6 +559,8 @@ export const userRouter = router({
         emailConfirmed = !!data?.user?.email_confirmed_at;
       } catch {}
 
-      return { ...instructor, stats, emailConfirmed };
+      const { deletable } = await computeDeletability(ctx.db, ctx.tenantId, instructor.id, "INSTRUCTOR");
+
+      return { ...instructor, stats, emailConfirmed, deletable };
     }),
 });

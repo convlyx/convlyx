@@ -240,7 +240,7 @@ model Notification {
   createdAt DateTime @default(now()) @map("created_at")
 
   school School @relation(fields: [schoolId], references: [id])
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([schoolId])
@@ -262,7 +262,7 @@ model StudentCourse {
   updatedAt   DateTime        @updatedAt @map("updated_at")
 
   school  School @relation(fields: [schoolId], references: [id])
-  student User   @relation(fields: [studentId], references: [id])
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   exams   Exam[]
 
   @@index([tenantId])
@@ -310,7 +310,7 @@ model PushSubscription {
   auth           String
   createdAt      DateTime @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, endpoint])
   @@index([userId])
