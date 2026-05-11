@@ -8,7 +8,6 @@ import { MobileNav } from "./_components/mobile-nav";
 import { Header } from "./_components/header";
 import { MobileLayout } from "./_components/mobile-layout";
 import { PageTitle } from "@/components/page-title";
-import { PushPrompt } from "@/components/push-prompt";
 import { AnalyticsIdentifier } from "@/components/analytics-identifier";
 import { PostHogInit, PostHogPageviews } from "@/components/posthog-provider";
 
@@ -109,7 +108,6 @@ export default async function DashboardLayout({
         <Suspense fallback={null}>
           <PostHogPageviews />
         </Suspense>
-        <div className="mb-4"><PushPrompt userId={user.id} /></div>
         {children}
       </MobileLayout>
     );

@@ -18,8 +18,10 @@ import {
   Coffee,
 } from "lucide-react";
 import { typeKeys, statusKeys, statusVariant, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
+import { PushPrompt } from "@/components/push-prompt";
+import { PendingAttendanceModal } from "./pending-attendance-modal";
 
-export function InstructorHome({ userName }: { userName: string }) {
+export function InstructorHome({ userName, userId }: { userName: string; userId: string }) {
   const t = useTranslations();
   const format = useFormatter();
 
@@ -74,6 +76,10 @@ export function InstructorHome({ userName }: { userName: string }) {
         <p className="text-sm text-muted-foreground">{getGreeting()}</p>
         <h1 className="text-2xl font-bold">{firstName} 👋</h1>
       </div>
+
+      <PushPrompt userId={userId} />
+
+      <PendingAttendanceModal />
 
       {/* Hero — current/next class */}
       {currentOrNextClass ? (

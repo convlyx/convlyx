@@ -568,7 +568,18 @@
     "students": "alunos",
     "enrolled": "Inscritos",
     "vacancies": "Vagas",
-    "inProgressBadge": "A decorrer"
+    "inProgressBadge": "A decorrer",
+    "pendingAttendanceTitle": "Marcar presenças",
+    "pendingAttendanceSubtitle": "Aulas terminadas com presenças por registar",
+    "pendingAttendanceBanner": "{count, plural, one {# aula por marcar presença} other {# aulas por marcar presença}}",
+    "pendingAttendanceAction": "Marcar agora",
+    "pendingAttendanceCount": "Aula {current} de {total}",
+    "markAllPresent": "Marcar todos como presentes",
+    "present": "Presente",
+    "absent": "Faltou",
+    "saveAndNext": "Guardar e seguinte",
+    "doLater": "Fazer mais tarde",
+    "noStudentsPending": "Sem alunos por marcar"
   },
   "install": {
     "title": "Instalar a aplicação",
@@ -653,6 +664,7 @@
     "userDeactivated": "Utilizador desativado",
     "userActivated": "Utilizador ativado",
     "userDeleted": "Utilizador eliminado",
+    "attendanceSaved": "Presenças registadas",
     "enrollmentSuccess": "Inscrito com sucesso",
     "enrollmentCancelled": "Inscrição cancelada",
     "enrollmentRemoved": "Inscrição removida",

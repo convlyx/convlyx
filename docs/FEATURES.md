@@ -141,6 +141,7 @@ Living document of everything the app can do, organized by area.
   - Available classes with one-tap enroll
 - **Instructor (mobile-first)**:
   - Time-of-day greeting
+  - Pending-attendance nudge: banner + modal listing classes the instructor taught in the last 14 days that still have unrecorded attendance. Modal auto-opens once per browser session (sessionStorage-gated); banner stays visible until the list is empty. Stacked cards (one per class) with per-student Presente / Faltou toggles, "Marcar todos como presentes" shortcut, and "Fazer mais tarde" to skip a card.
   - Current/next class hero card (pulsing indicator when in progress, gradient change)
   - "All done" state with coffee icon when today's classes are complete
   - Today's progress bar with percentage and mini stats

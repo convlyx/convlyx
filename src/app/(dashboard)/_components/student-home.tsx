@@ -23,8 +23,9 @@ import { typeKeys, classTypeColorMap, classTypeBadgeClass } from "@/lib/constant
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { track } from "@/lib/posthog";
+import { PushPrompt } from "@/components/push-prompt";
 
-export function StudentHome({ userName }: { userName: string }) {
+export function StudentHome({ userName, userId }: { userName: string; userId: string }) {
   const t = useTranslations();
   const { onError } = useTranslatedError();
   const format = useFormatter();
@@ -112,6 +113,8 @@ export function StudentHome({ userName }: { userName: string }) {
         <p className="text-sm text-muted-foreground">{getGreeting()}</p>
         <h1 className="text-2xl font-bold">{firstName} 👋</h1>
       </div>
+
+      <PushPrompt userId={userId} />
 
       {/* Hero — next class */}
       {nextClass ? (

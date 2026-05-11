@@ -19,11 +19,11 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
 
   if (user.role === "STUDENT") {
-    return <StudentHome userName={user.name} />;
+    return <StudentHome userName={user.name} userId={user.id} />;
   }
 
   if (user.role === "INSTRUCTOR") {
-    return <InstructorHome userName={user.name} />;
+    return <InstructorHome userName={user.name} userId={user.id} />;
   }
 
   return <DashboardView userName={user.name} userRole={user.role} />;

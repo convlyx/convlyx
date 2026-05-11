@@ -330,6 +330,114 @@ export const enrollmentRouter = router({
       return { success: true };
     }),
 
+  /**
+   * Classes the current instructor taught in the last 14 days that still have
+   * at least one enrollment in ENROLLED state (i.e. attendance never recorded).
+   * Used by the post-class attendance nudge modal on the dashboard.
+   */
+  pendingAttendance: roleProtectedProcedure(["INSTRUCTOR"])
+    .query(async ({ ctx }) => {
+      const now = new Date();
+      const lookbackStart = new Date(now.getTime() - 14 * 24 * 3600 * 1000);
+
+      const sessions = await ctx.db.classSession.findMany({
+        where: {
+          tenantId: ctx.tenantId,
+          instructorId: ctx.user.id,
+          status: { not: "CANCELLED" },
+          endsAt: { lt: now, gte: lookbackStart },
+          enrollments: { some: { status: "ENROLLED" } },
+        },
+        select: {
+          id: true,
+          title: true,
+          classType: true,
+          category: true,
+          startsAt: true,
+          endsAt: true,
+          enrollments: {
+            where: { status: "ENROLLED" },
+            select: {
+              id: true,
+              student: { select: { id: true, name: true } },
+            },
+            orderBy: { student: { name: "asc" } },
+          },
+        },
+        orderBy: { endsAt: "desc" },
+      });
+
+      return sessions;
+    }),
+
+  /**
+   * Save attendance for several enrollments at once. Used by the post-class
+   * nudge modal so the whole card saves in a single round-trip. All entries
+   * must belong to the same session, and that session must be in the caller's
+   * tenant (plus belong to the caller if they are an INSTRUCTOR).
+   */
+  bulkSetAttendance: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
+    .input(z.object({
+      sessionId: z.string().uuid(),
+      entries: z
+        .array(z.object({
+          enrollmentId: z.string().uuid(),
+          status: z.enum(["ATTENDED", "NO_SHOW"]),
+        }))
+        .min(1),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const session = await ctx.db.classSession.findFirst({
+        where: { id: input.sessionId, tenantId: ctx.tenantId },
+        select: { id: true, instructorId: true, status: true, title: true, startsAt: true },
+      });
+      if (!session) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "classes.notFound" });
+      }
+      if (ctx.user.role === "INSTRUCTOR" && session.instructorId !== ctx.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "auth.insufficientPermissions" });
+      }
+
+      const enrollmentIds = input.entries.map((e) => e.enrollmentId);
+      const enrollments = await ctx.db.enrollment.findMany({
+        where: { id: { in: enrollmentIds }, sessionId: input.sessionId, tenantId: ctx.tenantId },
+        select: { id: true, studentId: true },
+      });
+      if (enrollments.length !== enrollmentIds.length) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "enrollment.notFound" });
+      }
+
+      await ctx.db.$transaction(
+        input.entries.map((entry) =>
+          ctx.db.enrollment.update({
+            where: { id: entry.enrollmentId },
+            data: { status: entry.status },
+          })
+        )
+      );
+
+      // Notify students retroactively if the class is already COMPLETED.
+      if (session.status === "COMPLETED") {
+        const timeStr = formatClassTime(new Date(session.startsAt));
+        const byEnrollmentId = new Map(enrollments.map((e) => [e.id, e.studentId]));
+        for (const entry of input.entries) {
+          const studentId = byEnrollmentId.get(entry.enrollmentId);
+          if (!studentId) continue;
+          createNotification({
+            db: ctx.db,
+            tenantId: ctx.tenantId,
+            userId: studentId,
+            type: "enrollment.attendance",
+            titleKey: "notifications.attendanceWasUpdated",
+            messageKey: "notifications.attendanceUpdated",
+            params: { title: session.title, time: timeStr, status: entry.status },
+          }).catch(() => {});
+        }
+      }
+
+      return { count: input.entries.length };
+    }),
+
   /** Bulk mark attendance for all enrolled students in a session */
   bulkMarkAttendance: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
     .input(z.object({

@@ -299,7 +299,7 @@ export function ClassDetailView({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold">{t("nav.students")} ({classDetail.enrollments.length})</h2>
-          {canMarkAttendance && enrolledStudents.length > 0 && (
+          {canMarkAttendance && enrolledStudents.length > 1 && (
             <Button
               variant="outline"
               size="sm"
