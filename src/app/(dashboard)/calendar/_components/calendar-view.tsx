@@ -34,7 +34,20 @@ export function CalendarView({ userRole, userId }: { userRole: UserRole; userId:
               instructors={instructors ?? []}
             />
           )}
-          {canCreate && <CreateClassDialog userRole={userRole} userId={userId} />}
+          {canCreate && (
+            <CreateClassDialog
+              userRole={userRole}
+              userId={userId}
+              prefill={
+                instructorFilter !== "ALL" || typeFilter !== "ALL"
+                  ? {
+                      ...(instructorFilter !== "ALL" && { instructorId: instructorFilter }),
+                      ...(typeFilter !== "ALL" && { classType: typeFilter as "THEORY" | "PRACTICAL" }),
+                    }
+                  : undefined
+              }
+            />
+          )}
         </div>
       </div>
       <ClassCalendar

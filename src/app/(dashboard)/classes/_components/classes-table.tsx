@@ -267,7 +267,20 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
         </div>
         <div className="flex items-center gap-2">
           <ViewToggle view={view} onChange={handleViewChange} />
-          {(canManage || isInstructor) && <CreateClassDialog userRole={userRole} userId={userId} />}
+          {(canManage || isInstructor) && (
+            <CreateClassDialog
+              userRole={userRole}
+              userId={userId}
+              prefill={
+                instructorFilter !== "ALL" || typeFilter !== "ALL"
+                  ? {
+                      ...(instructorFilter !== "ALL" && { instructorId: instructorFilter }),
+                      ...(typeFilter !== "ALL" && { classType: typeFilter as "THEORY" | "PRACTICAL" }),
+                    }
+                  : undefined
+              }
+            />
+          )}
         </div>
       </div>
 

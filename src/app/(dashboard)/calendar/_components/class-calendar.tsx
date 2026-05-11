@@ -73,7 +73,7 @@ export function ClassCalendar({
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [recordResultFor, setRecordResultFor] = useState<{ examId: string; studentId: string } | null>(null);
-  const [createPrefill, setCreatePrefill] = useState<{ date: string; startTime: string; endTime: string } | null>(null);
+  const [createPrefill, setCreatePrefill] = useState<{ date: string; startTime: string; endTime: string; instructorId?: string; classType?: "THEORY" | "PRACTICAL" } | null>(null);
 
   // Staff and instructors can create classes by clicking/dragging on the calendar.
   const canCreate = userRole === "ADMIN" || userRole === "SECRETARY" || userRole === "INSTRUCTOR";
@@ -217,6 +217,8 @@ export function ClassCalendar({
         date: formatLocalDate(start),
         startTime: formatLocalTime(start),
         endTime: formatLocalTime(end),
+        instructorId: filter?.instructorId,
+        classType: filter?.classType,
       });
       return;
     }
@@ -233,6 +235,8 @@ export function ClassCalendar({
       date: formatLocalDate(startsAt),
       startTime: formatLocalTime(startsAt),
       endTime: formatLocalTime(endsAt),
+      instructorId: filter?.instructorId,
+      classType: filter?.classType,
     });
   }
 

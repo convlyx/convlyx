@@ -50,7 +50,13 @@ type CreateClassFormData = z.infer<typeof createClassFormSchema>;
 type ScheduleMode = "one-off" | "recurring";
 const DAYS_OF_WEEK = [0, 1, 2, 3, 4, 5, 6] as const;
 
-type Prefill = { date: string; startTime: string; endTime: string };
+type Prefill = {
+  date?: string;
+  startTime?: string;
+  endTime?: string;
+  instructorId?: string;
+  classType?: "THEORY" | "PRACTICAL";
+};
 
 export function CreateClassDialog({
   userRole,
@@ -117,16 +123,19 @@ export function CreateClassDialog({
     },
   });
 
-  // When the dialog is opened with a prefill (e.g. calendar click), populate
-  // the date / start / end time fields. Runs only when prefill changes (not on
-  // every form mutation) so user edits aren't clobbered.
+  // When the dialog is opened with a prefill (e.g. calendar click or active
+  // filter), populate the matching fields. Runs only when prefill changes
+  // (not on every form mutation) so user edits aren't clobbered.
   useEffect(() => {
-    if (open && prefill) {
+    if (!open || !prefill) return;
+    if (prefill.date !== undefined) {
       setScheduleMode("one-off");
       setValue("date", prefill.date);
-      setValue("startTime", prefill.startTime);
-      setValue("endTime", prefill.endTime);
     }
+    if (prefill.startTime !== undefined) setValue("startTime", prefill.startTime);
+    if (prefill.endTime !== undefined) setValue("endTime", prefill.endTime);
+    if (prefill.instructorId !== undefined) setValue("instructorId", prefill.instructorId);
+    if (prefill.classType !== undefined) setValue("classType", prefill.classType);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, prefill]);
 
