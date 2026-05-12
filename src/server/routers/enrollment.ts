@@ -266,11 +266,16 @@ export const enrollmentRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Instructors can only mark attendance on classes they teach. Staff
+      // can mark anything in the tenant.
       const enrollment = await ctx.db.enrollment.findFirst({
         where: {
           id: input.enrollmentId,
           tenantId: ctx.tenantId,
           status: { in: ["ENROLLED", "ATTENDED", "NO_SHOW"] },
+          ...(ctx.user.role === "INSTRUCTOR" && {
+            session: { instructorId: ctx.user.id },
+          }),
         },
         select: {
           id: true,
@@ -310,11 +315,16 @@ export const enrollmentRouter = router({
   addNote: roleProtectedProcedure(["INSTRUCTOR"])
     .input(z.object({
       enrollmentId: z.string().uuid(),
-      notes: z.string(),
+      notes: z.string().max(2000),
     }))
     .mutation(async ({ ctx, input }) => {
+      // Instructors can only annotate enrollments in classes they teach.
       const enrollment = await ctx.db.enrollment.findFirst({
-        where: { id: input.enrollmentId, tenantId: ctx.tenantId },
+        where: {
+          id: input.enrollmentId,
+          tenantId: ctx.tenantId,
+          session: { instructorId: ctx.user.id },
+        },
         select: { id: true },
       });
 
@@ -445,9 +455,14 @@ export const enrollmentRouter = router({
       status: z.enum(["ATTENDED", "NO_SHOW"]),
     }))
     .mutation(async ({ ctx, input }) => {
-      // Verify session belongs to tenant
+      // Instructors can only mark their own classes; staff can mark anything
+      // in the tenant.
       const session = await ctx.db.classSession.findFirst({
-        where: { id: input.sessionId, tenantId: ctx.tenantId },
+        where: {
+          id: input.sessionId,
+          tenantId: ctx.tenantId,
+          ...(ctx.user.role === "INSTRUCTOR" && { instructorId: ctx.user.id }),
+        },
         select: { id: true },
       });
 
