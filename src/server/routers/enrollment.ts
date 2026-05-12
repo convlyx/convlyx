@@ -277,38 +277,18 @@ export const enrollmentRouter = router({
             session: { instructorId: ctx.user.id },
           }),
         },
-        select: {
-          id: true,
-          studentId: true,
-          session: { select: { id: true, title: true, startsAt: true, status: true } },
-        },
+        select: { id: true },
       });
 
       if (!enrollment) {
         throw new TRPCError({ code: "NOT_FOUND", message: "enrollment.notFound" });
       }
 
-      const result = await ctx.db.enrollment.update({
+      return ctx.db.enrollment.update({
         where: { id: input.enrollmentId },
         data: { status: input.status },
         select: { id: true, status: true },
       });
-
-      // Only notify student for retroactive changes on completed classes
-      if (enrollment.session.status === "COMPLETED") {
-        const timeStr = formatClassTime(new Date(enrollment.session.startsAt));
-        createNotification({
-          db: ctx.db,
-          tenantId: ctx.tenantId,
-          userId: enrollment.studentId,
-          type: "enrollment.attendance",
-          titleKey: "notifications.attendanceWasUpdated",
-          messageKey: "notifications.attendanceUpdated",
-          params: { title: enrollment.session.title, time: timeStr, status: input.status },
-        }).catch((e) => console.warn("[notify]", e));
-      }
-
-      return result;
     }),
 
   /** Add or update instructor notes on an enrollment */
@@ -398,22 +378,22 @@ export const enrollmentRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       const session = await ctx.db.classSession.findFirst({
-        where: { id: input.sessionId, tenantId: ctx.tenantId },
-        select: { id: true, instructorId: true, status: true, title: true, startsAt: true },
+        where: {
+          id: input.sessionId,
+          tenantId: ctx.tenantId,
+          ...(ctx.user.role === "INSTRUCTOR" && { instructorId: ctx.user.id }),
+        },
+        select: { id: true },
       });
       if (!session) {
         throw new TRPCError({ code: "NOT_FOUND", message: "classes.notFound" });
       }
-      if (ctx.user.role === "INSTRUCTOR" && session.instructorId !== ctx.user.id) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "auth.insufficientPermissions" });
-      }
 
       const enrollmentIds = input.entries.map((e) => e.enrollmentId);
-      const enrollments = await ctx.db.enrollment.findMany({
+      const matchingCount = await ctx.db.enrollment.count({
         where: { id: { in: enrollmentIds }, sessionId: input.sessionId, tenantId: ctx.tenantId },
-        select: { id: true, studentId: true },
       });
-      if (enrollments.length !== enrollmentIds.length) {
+      if (matchingCount !== enrollmentIds.length) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "enrollment.notFound" });
       }
 
@@ -425,25 +405,6 @@ export const enrollmentRouter = router({
           })
         )
       );
-
-      // Notify students retroactively if the class is already COMPLETED.
-      if (session.status === "COMPLETED") {
-        const timeStr = formatClassTime(new Date(session.startsAt));
-        const byEnrollmentId = new Map(enrollments.map((e) => [e.id, e.studentId]));
-        for (const entry of input.entries) {
-          const studentId = byEnrollmentId.get(entry.enrollmentId);
-          if (!studentId) continue;
-          createNotification({
-            db: ctx.db,
-            tenantId: ctx.tenantId,
-            userId: studentId,
-            type: "enrollment.attendance",
-            titleKey: "notifications.attendanceWasUpdated",
-            messageKey: "notifications.attendanceUpdated",
-            params: { title: session.title, time: timeStr, status: entry.status },
-          }).catch((e) => console.warn("[notify]", e));
-        }
-      }
 
       return { count: input.entries.length };
     }),

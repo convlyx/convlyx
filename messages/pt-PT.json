@@ -488,8 +488,6 @@
     "enrollmentWasConfirmed": "Inscrição confirmada",
     "enrollmentWasCancelled": "Inscrição cancelada",
     "attendanceWasRecorded": "Presença registada",
-    "attendanceWasUpdated": "Presença atualizada",
-    "attendanceUpdated": "{title} ({time}) · presença alterada para {status}",
     "instructorWasUnavailable": "Instrutor indisponível",
     "accountWasDeactivated": "Conta desativada",
     "classReminder": "Lembrete de aula",

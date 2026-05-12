@@ -184,7 +184,6 @@ Living document of everything the app can do, organized by area.
   - Class created → notifies instructor
   - Student enrolled by secretary → notifies student
   - Enrollment cancelled by secretary → notifies student
-  - Attendance updated retroactively on completed class → notifies student (live attendance has no notification)
   - Class cancelled → notifies all enrolled students + instructor
   - Instructor marks unavailable → notifies enrolled students + admins/secretaries
   - Students assigned to practical class → notifies students
