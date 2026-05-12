@@ -15,18 +15,22 @@ if (VAPID_PUBLIC && VAPID_PRIVATE) {
 
 /**
  * Send push notification to a user.
- * Looks up all their push subscriptions and sends to each.
+ * Looks up their push subscriptions in the given tenant and sends to each.
  * Silently removes expired/invalid subscriptions.
+ *
+ * The `tenantId` filter guards against a user being moved across tenants and
+ * still receiving pushes from the old one (subscriptions are tenant-scoped).
  */
 export async function sendPushToUser(
   db: PrismaClient,
+  tenantId: string,
   userId: string,
   payload: { title: string; body: string; url?: string }
 ) {
   if (!VAPID_PUBLIC || !VAPID_PRIVATE) return;
 
   const subscriptions = await db.pushSubscription.findMany({
-    where: { userId },
+    where: { tenantId, userId },
     select: { id: true, endpoint: true, p256dh: true, auth: true },
   });
 
@@ -49,14 +53,15 @@ export async function sendPushToUser(
 }
 
 /**
- * Send push notification to multiple users.
+ * Send push notification to multiple users in the same tenant.
  */
 export async function sendPushToUsers(
   db: PrismaClient,
+  tenantId: string,
   userIds: string[],
   payload: { title: string; body: string; url?: string }
 ) {
   await Promise.allSettled(
-    userIds.map((userId) => sendPushToUser(db, userId, payload))
+    userIds.map((userId) => sendPushToUser(db, tenantId, userId, payload))
   );
 }

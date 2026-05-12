@@ -21,6 +21,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
     }
 
+    // Look up tenant so push sends can scope by tenant — guards against a
+    // user being moved across tenants and still receiving pushes from the
+    // old one.
+    const profile = await db.user.findUnique({
+      where: { id: user.id },
+      select: { tenantId: true },
+    });
+    if (!profile) {
+      return NextResponse.json({ error: "User profile not found" }, { status: 404 });
+    }
+
     // Upsert subscription (user might re-subscribe from same browser)
     await db.pushSubscription.upsert({
       where: {
@@ -30,10 +41,12 @@ export async function POST(request: NextRequest) {
         },
       },
       update: {
+        tenantId: profile.tenantId,
         p256dh: subscription.keys.p256dh,
         auth: subscription.keys.auth,
       },
       create: {
+        tenantId: profile.tenantId,
         userId: user.id,
         endpoint: subscription.endpoint,
         p256dh: subscription.keys.p256dh,

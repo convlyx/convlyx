@@ -304,6 +304,7 @@ model Exam {
 
 model PushSubscription {
   id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
   userId         String   @map("user_id") @db.Uuid
   endpoint       String
   p256dh         String
@@ -314,5 +315,6 @@ model PushSubscription {
 
   @@unique([userId, endpoint])
   @@index([userId])
+  @@index([tenantId])
   @@map("push_subscriptions")
 }

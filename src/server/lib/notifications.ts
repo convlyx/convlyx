@@ -96,7 +96,7 @@ export async function createNotification({
     });
 
     // Send push notification (resolve text from translation keys if not provided)
-    sendPushToUser(db, userId, {
+    sendPushToUser(db, tenantId, userId, {
       title: pushTitle ?? resolveTranslation(titleKey, params),
       body: pushBody ?? resolveTranslation(messageKey, params),
       url: "/",
@@ -143,7 +143,7 @@ export async function createNotifications({
     });
 
     // Send push notifications (resolve text from translation keys if not provided)
-    sendPushToUsers(db, userIds, {
+    sendPushToUsers(db, tenantId, userIds, {
       title: pushTitle ?? resolveTranslation(titleKey, params),
       body: pushBody ?? resolveTranslation(messageKey, params),
       url: "/",
