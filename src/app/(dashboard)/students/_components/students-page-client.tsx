@@ -21,7 +21,7 @@ import { Loading } from "@/components/loading";
 import { Pagination } from "@/components/pagination";
 import { CreateUserDialog } from "@/app/(dashboard)/users/_components/create-user-dialog";
 import { CategoryBadge } from "@/components/category-badge";
-const ITEMS_PER_PAGE = 10;
+import { ITEMS_PER_PAGE } from "@/lib/constants/pagination";
 
 import type { UserRole } from "@/generated/prisma/enums";
 

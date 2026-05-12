@@ -25,8 +25,8 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import type { UserRole } from "@/generated/prisma/enums";
+import { ITEMS_PER_PAGE } from "@/lib/constants/pagination";
 
-const ITEMS_PER_PAGE = 10;
 const ROLES = ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"] as const;
 
 export function UsersTable({ userRole }: { userRole: UserRole }) {

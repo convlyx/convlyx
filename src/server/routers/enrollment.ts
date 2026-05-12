@@ -167,7 +167,7 @@ export const enrollmentRouter = router({
           titleKey: "notifications.enrollmentWasConfirmed",
           messageKey: "notifications.classAssigned",
           params: { title: session.title, time: formatClassTime(new Date(session.startsAt)) },
-        }).catch(() => {});
+        }).catch((e) => console.warn("[notify]", e));
       }
 
       return result;
@@ -251,7 +251,7 @@ export const enrollmentRouter = router({
           titleKey: "notifications.enrollmentWasCancelled",
           messageKey: "notifications.enrollmentCancelled",
           params: { title: enrollment.session.title, time: formatClassTime(new Date(enrollment.session.startsAt)) },
-        }).catch(() => {});
+        }).catch((e) => console.warn("[notify]", e));
       }
 
       return { success: true };
@@ -305,7 +305,7 @@ export const enrollmentRouter = router({
           titleKey: "notifications.attendanceWasUpdated",
           messageKey: "notifications.attendanceUpdated",
           params: { title: enrollment.session.title, time: timeStr, status: input.status },
-        }).catch(() => {});
+        }).catch((e) => console.warn("[notify]", e));
       }
 
       return result;
@@ -441,7 +441,7 @@ export const enrollmentRouter = router({
             titleKey: "notifications.attendanceWasUpdated",
             messageKey: "notifications.attendanceUpdated",
             params: { title: session.title, time: timeStr, status: entry.status },
-          }).catch(() => {});
+          }).catch((e) => console.warn("[notify]", e));
         }
       }
 

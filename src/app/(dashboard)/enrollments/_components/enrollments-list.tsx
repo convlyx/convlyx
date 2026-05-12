@@ -18,8 +18,7 @@ import { Pagination } from "@/components/pagination";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import type { UserRole } from "@/generated/prisma/enums";
-
-const ITEMS_PER_PAGE = 10;
+import { ITEMS_PER_PAGE } from "@/lib/constants/pagination";
 
 export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
   const t = useTranslations();

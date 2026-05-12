@@ -46,7 +46,8 @@ export async function sendPushToUser(
     } catch (error: unknown) {
       const statusCode = (error as { statusCode?: number })?.statusCode;
       if (statusCode === 404 || statusCode === 410) {
-        await db.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+        await db.pushSubscription.delete({ where: { id: sub.id } })
+          .catch((e) => console.warn("[push] cleanup of stale subscription failed", e));
       }
     }
   }

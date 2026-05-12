@@ -227,7 +227,7 @@ export const examRouter = router({
             ? "notifications.theoryExamScheduledMessage"
             : "notifications.practicalExamScheduledMessage",
         params: { time: timeStr },
-      }).catch(() => {});
+      }).catch((e) => console.warn("[notify]", e));
 
       // Notify accompanying instructor if any
       if (input.instructorId) {
@@ -239,7 +239,7 @@ export const examRouter = router({
           titleKey: "notifications.examAccompanyTitle",
           messageKey: "notifications.examAccompanyMessage",
           params: { student: exam.course.student.name, time: timeStr },
-        }).catch(() => {});
+        }).catch((e) => console.warn("[notify]", e));
       }
 
       return exam;
@@ -375,7 +375,7 @@ export const examRouter = router({
               ? "teórico"
               : "prático",
         },
-      }).catch(() => {});
+      }).catch((e) => console.warn("[notify]", e));
 
       return updated;
     }),
@@ -422,7 +422,7 @@ export const examRouter = router({
         titleKey: "notifications.examCancelledTitle",
         messageKey: "notifications.examCancelledMessage",
         params: { time: timeStr },
-      }).catch(() => {});
+      }).catch((e) => console.warn("[notify]", e));
 
       if (exam.instructorId) {
         createNotification({
@@ -433,7 +433,7 @@ export const examRouter = router({
           titleKey: "notifications.examCancelledTitle",
           messageKey: "notifications.examCancelledInstructorMessage",
           params: { time: timeStr },
-        }).catch(() => {});
+        }).catch((e) => console.warn("[notify]", e));
       }
 
       return updated;

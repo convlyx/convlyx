@@ -100,7 +100,7 @@ export async function createNotification({
       title: pushTitle ?? resolveTranslation(titleKey, params),
       body: pushBody ?? resolveTranslation(messageKey, params),
       url: "/",
-    }).catch(() => {});
+    }).catch((e) => console.warn("[push] sendPushToUser failed", e));
 
     return result;
   } catch (error) {
@@ -147,7 +147,7 @@ export async function createNotifications({
       title: pushTitle ?? resolveTranslation(titleKey, params),
       body: pushBody ?? resolveTranslation(messageKey, params),
       url: "/",
-    }).catch(() => {});
+    }).catch((e) => console.warn("[push] sendPushToUsers failed", e));
 
     return result;
   } catch (error) {

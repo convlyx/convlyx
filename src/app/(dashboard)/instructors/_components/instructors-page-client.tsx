@@ -20,7 +20,7 @@ import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { Loading } from "@/components/loading";
 import { Pagination } from "@/components/pagination";
 import { CreateUserDialog } from "@/app/(dashboard)/users/_components/create-user-dialog";
-const ITEMS_PER_PAGE = 10;
+import { ITEMS_PER_PAGE } from "@/lib/constants/pagination";
 
 export function InstructorsPageClient() {
   const t = useTranslations();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { trpc } from "@/lib/trpc";
@@ -31,8 +31,7 @@ import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { track } from "@/lib/posthog";
 import type { UserRole } from "@/generated/prisma/enums";
-
-const ITEMS_PER_PAGE = 10;
+import { ITEMS_PER_PAGE } from "@/lib/constants/pagination";
 
 export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId: string }) {
   const t = useTranslations();
@@ -78,7 +77,10 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
     { enabled: canManageStaff },
   );
   const { data: myEnrollments } = trpc.enrollment.listByStudent.useQuery(undefined, { enabled: isStudent });
-  const enrolledSessionIds = new Set(myEnrollments?.map((e) => e.session.id) ?? []);
+  const enrolledSessionIds = useMemo(
+    () => new Set(myEnrollments?.map((e) => e.session.id) ?? []),
+    [myEnrollments],
+  );
 
   const utils = trpc.useUtils();
   const cancelMutation = trpc.class.cancel.useMutation({

@@ -32,7 +32,7 @@ Last reviewed: 2026-05-11.
 - [ ] **Tenant-isolation integration tests** — the single most important test suite that doesn't exist. Hits every `*.list` / `*.get` procedure across two tenants and asserts no cross-tenant leakage.
 - [ ] **E2E tests (Playwright)** — at minimum the golden paths: login, create class, enrol student, mark attendance.
 - [ ] **Audit logging for platform-admin actions** — tenant/school create/edit, user impersonation if added.
-- [ ] **16 silent `.catch(() => {})` on notification calls** — replace with at least `console.warn`. Long-term: move to event-driven pattern so notifications can't desync from the DB write.
+- [x] **16 silent `.catch(() => {})` on notification calls** — replace with at least `console.warn`. Long-term: move to event-driven pattern so notifications can't desync from the DB write.
 - [ ] **Notifications fired outside transactions** — DB write succeeds, notification call can fail silently. Consider wrapping in transaction (with care — long-running side effect) or moving to an outbox/event-driven pattern.
 
 ## 4. Tech debt with real consequences
@@ -40,14 +40,14 @@ Last reviewed: 2026-05-11.
 - [ ] **Zod schemas inline in routers** (`enrollment.ts`, `user.ts`, `class.ts`, `notification.ts`) should move to `src/lib/validations/`. Will bite during the React Native split.
 - [ ] **`as unknown as string` Date casts in 6 places** — `classes-table.tsx:102`, `enrollments-list.tsx:52,54`, `dashboard-view.tsx:58`, `class-calendar.tsx:92,93`. superjson types aren't being trusted; root-cause once.
 - [ ] **Extract `useUrlParam` hook** — URL-param sync (`useState` + `router.replace` + `useEffect(() => setPage(1), [...])`) is duplicated across 5 list components.
-- [ ] **`ITEMS_PER_PAGE = 10` duplicated in 7 components** — extract to `src/lib/constants/pagination.ts`.
+- [x] **`ITEMS_PER_PAGE = 10` duplicated in 7 components** — extract to `src/lib/constants/pagination.ts`.
 - [ ] **Inconsistent error key namespacing** — `users.notFound` / `enrollment.notFound` / `classes.notFound`. Pick one convention (recommend singular `user.notFound`).
 - [ ] **Calendar event hex colors** (`class-calendar.tsx:21-33`) have no dark mode variants — events look identical in dark mode. Move to CSS variables.
 - [ ] **`roleColorMap` defined but unused** — either apply it on user/instructor lists for visual consistency or delete it.
-- [ ] **`enrolledSessionIds` in `classes-table.tsx:68`** rebuilds a `Set` per render — wrap in `useMemo`.
+- [x] **`enrolledSessionIds` in `classes-table.tsx:68`** rebuilds a `Set` per render — wrap in `useMemo`.
 - [ ] **Platform-admin admin-creation rollback is best-effort** — wrap in Prisma transaction or add proper compensation.
 - [ ] **Hardcoded `themeColor: "#16a34a"` in `app/layout.tsx:23`** — doesn't match primary token. Replace with CSS-var lookup or define a single source.
-- [ ] **English "Close" `sr-only` label** in `dialog.tsx:77` — translation key.
+- [x] **English "Close" `sr-only` label** in `dialog.tsx:77` — translation key.
 - [ ] **Default Button size still below iOS HIG 44px** — bumped to h-9 (36px) but mobile primary actions should be `size="lg"` or the default should grow further.
 
 ## 5. Compliance follow-ups

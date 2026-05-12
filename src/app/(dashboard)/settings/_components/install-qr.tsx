@@ -25,7 +25,7 @@ export function InstallQR({ subdomain, schoolName }: { subdomain: string; school
       width: 240,
       margin: 1,
       color: { dark: "#000000", light: "#ffffff" },
-    }).catch(() => {});
+    }).catch((e) => console.warn("[install-qr] QR generation failed", e));
   }, [installUrl]);
 
   function downloadQR() {

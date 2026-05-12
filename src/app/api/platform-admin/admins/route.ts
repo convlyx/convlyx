@@ -85,7 +85,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(user);
   } catch (error) {
     // Roll back auth user on Prisma failure
-    await supabaseAdmin.auth.admin.deleteUser(authData.user.id).catch(() => {});
+    await supabaseAdmin.auth.admin
+      .deleteUser(authData.user.id)
+      .catch((e) => console.warn("[platform-admin] auth rollback failed — orphaned auth user", e));
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Erro ao criar utilizador" },
       { status: 500 },

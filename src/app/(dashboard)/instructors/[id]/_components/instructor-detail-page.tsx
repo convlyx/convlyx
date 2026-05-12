@@ -32,8 +32,7 @@ import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
 import { typeKeys, statusKeys, statusVariant, classTypeBadgeClass } from "@/lib/constants/class";
-
-const HISTORY_PER_PAGE = 10;
+import { ITEMS_PER_PAGE as HISTORY_PER_PAGE } from "@/lib/constants/pagination";
 
 export function InstructorDetailPage({
   id,

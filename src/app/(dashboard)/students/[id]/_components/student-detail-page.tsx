@@ -36,8 +36,7 @@ import { exportStudentProgressPDF } from "@/lib/pdf-export";
 import { CategoryBadge } from "@/components/category-badge";
 import { CoursesAndExamsSection } from "./courses-and-exams-section";
 import type { UserRole } from "@/generated/prisma/enums";
-
-const HISTORY_PER_PAGE = 10;
+import { ITEMS_PER_PAGE as HISTORY_PER_PAGE } from "@/lib/constants/pagination";
 
 export function StudentDetailPage({
   id,

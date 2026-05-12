@@ -334,7 +334,7 @@ export const userRouter = router({
         type: "user.deactivated",
         titleKey: "notifications.accountWasDeactivated",
         messageKey: "notifications.accountDeactivated",
-      }).catch(() => {});
+      }).catch((e) => console.warn("[notify]", e));
 
       return result;
     }),

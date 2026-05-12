@@ -271,7 +271,7 @@ export const classRouter = router({
         titleKey: "notifications.newClassAssigned",
         messageKey: "notifications.classCreatedInstructor",
         params: { title: session.title, time: timeStr },
-      }).catch(() => {});
+      }).catch((e) => console.warn("[notify]", e));
 
       // Auto-enroll assigned students (practical classes)
       if (input.studentIds && input.studentIds.length > 0) {
@@ -292,7 +292,7 @@ export const classRouter = router({
           titleKey: "notifications.newClass",
           messageKey: "notifications.classAssigned",
           params: { title: session.title, time: timeStr },
-        }).catch(() => {});
+        }).catch((e) => console.warn("[notify]", e));
       }
 
       return session;
@@ -395,7 +395,7 @@ export const classRouter = router({
           titleKey: "notifications.removedFromClass",
           messageKey: "notifications.removedFromClassMessage",
           params: { title: input.title, time: timeStr },
-        }).catch(() => {});
+        }).catch((e) => console.warn("[notify]", e));
 
         // Notify new instructor (assigned)
         createNotification({
@@ -406,7 +406,7 @@ export const classRouter = router({
           titleKey: "notifications.assignedToClass",
           messageKey: "notifications.assignedToClassMessage",
           params: { title: input.title, time: timeStr },
-        }).catch(() => {});
+        }).catch((e) => console.warn("[notify]", e));
 
         // Notify enrolled students
         const studentIds = session.enrollments.map((e) => e.studentId);
@@ -419,7 +419,7 @@ export const classRouter = router({
             titleKey: "notifications.instructorChanged",
             messageKey: "notifications.instructorChangedMessage",
             params: { title: input.title, time: timeStr, instructor: newInstructorName },
-          }).catch(() => {});
+          }).catch((e) => console.warn("[notify]", e));
         }
       }
 
@@ -436,7 +436,7 @@ export const classRouter = router({
             titleKey: "notifications.scheduleChanged",
             messageKey: "notifications.scheduleChangedMessage",
             params: { title: input.title, time: newTimeStr },
-          }).catch(() => {});
+          }).catch((e) => console.warn("[notify]", e));
         }
         // Notify instructor about schedule change
         createNotification({
@@ -447,7 +447,7 @@ export const classRouter = router({
           titleKey: "notifications.scheduleChanged",
           messageKey: "notifications.scheduleChangedMessage",
           params: { title: input.title, time: newTimeStr },
-        }).catch(() => {});
+        }).catch((e) => console.warn("[notify]", e));
       }
 
       return { id: input.id, title: input.title };
@@ -503,7 +503,7 @@ export const classRouter = router({
           titleKey: "notifications.classWasCancelled",
           messageKey: "notifications.classCancelled",
           params: { title: session.title, time: timeStr },
-        }).catch(() => {});
+        }).catch((e) => console.warn("[notify]", e));
       }
 
       createNotification({
@@ -514,7 +514,7 @@ export const classRouter = router({
         titleKey: "notifications.classWasCancelled",
         messageKey: "notifications.classCancelledInstructor",
         params: { title: session.title, time: timeStr },
-      }).catch(() => {});
+      }).catch((e) => console.warn("[notify]", e));
 
       return { success: true };
     }),
@@ -570,7 +570,7 @@ export const classRouter = router({
           titleKey: "notifications.classWasCancelled",
           messageKey: "notifications.classCancelledByInstructor",
           params: { title: session.title, time: timeStr },
-        }).catch(() => {});
+        }).catch((e) => console.warn("[notify]", e));
       }
 
       // Notify admins/secretaries
@@ -600,10 +600,10 @@ export const classRouter = router({
               titleKey: "notifications.instructorWasUnavailable",
               messageKey: "notifications.instructorUnavailable",
               params: { instructor: instructorName, title: session.title, time: timeStr },
-            }).catch(() => {});
+            }).catch((e) => console.warn("[notify]", e));
           }
         })
-        .catch(() => {});
+        .catch((e) => console.warn("[notify] class.instructorUnavailable", e));
 
       return { success: true };
     }),
