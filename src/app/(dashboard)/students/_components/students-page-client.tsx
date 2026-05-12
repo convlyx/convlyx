@@ -22,6 +22,7 @@ import { Pagination } from "@/components/pagination";
 import { CreateUserDialog } from "@/app/(dashboard)/users/_components/create-user-dialog";
 import { CategoryBadge } from "@/components/category-badge";
 import { ITEMS_PER_PAGE } from "@/lib/constants/pagination";
+import { roleColorMap } from "@/lib/constants/class";
 
 import type { UserRole } from "@/generated/prisma/enums";
 
@@ -120,7 +121,7 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
               className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all hover:border-primary/20 group block"
             >
               <div className="flex items-start gap-3">
-                <UserAvatar name={student.name} className="h-10 w-10 sm:h-11 sm:w-11 bg-primary/10 text-primary shrink-0" />
+                <UserAvatar name={student.name} className={`h-10 w-10 sm:h-11 sm:w-11 ${roleColorMap.STUDENT} shrink-0`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <p className="font-medium group-hover:text-primary transition-colors truncate min-w-0">{student.name}</p>

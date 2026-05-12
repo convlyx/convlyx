@@ -14,7 +14,10 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-const SEED_PASSWORD = "password123";
+const SEED_PASSWORD = process.env.SEED_PASSWORD;
+if (!SEED_PASSWORD) {
+  throw new Error("SEED_PASSWORD env var is required (set it in .env or the shell before seeding).");
+}
 
 const seedUsers = [
   {

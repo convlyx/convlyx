@@ -2,6 +2,7 @@
 
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
+import { BRAND_THEME_COLOR_HEX } from "@/lib/constants/brand";
 
 export default function GlobalError({
   error,
@@ -37,7 +38,7 @@ export default function GlobalError({
               onClick={() => window.location.reload()}
               style={{
                 padding: "0.5rem 1rem",
-                background: "#16a34a",
+                background: BRAND_THEME_COLOR_HEX,
                 color: "white",
                 border: 0,
                 borderRadius: "0.5rem",

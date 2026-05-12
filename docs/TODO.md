@@ -14,7 +14,7 @@ Last reviewed: 2026-05-11.
 - [x] **Cap `enrollment.addNote` length** — currently unbounded `z.string()`. Add `.max(2000)`.
 - [x] **`PushSubscription` lacks `tenantId`** — schema change so a tenant-moved user can't be pushed to from the wrong tenant. Backfill existing rows during migration.
 - [ ] **CSRF validation on POST API routes** — `src/app/api/webhooks/*` and any same-origin POST endpoints.
-- [ ] **Replace hardcoded seed password** with env var.
+- [x] **Replace hardcoded seed password** with env var.
 - [ ] **CAPTCHA on repeated failed logins** — basic abuse defence.
 - [ ] **MFA for platform admin accounts**.
 - [ ] **Content Security Policy (CSP) header** — at least a restrictive default.
@@ -43,10 +43,10 @@ Last reviewed: 2026-05-11.
 - [x] **`ITEMS_PER_PAGE = 10` duplicated in 7 components** — extract to `src/lib/constants/pagination.ts`.
 - [ ] **Inconsistent error key namespacing** — `users.notFound` / `enrollment.notFound` / `classes.notFound`. Pick one convention (recommend singular `user.notFound`).
 - [ ] **Calendar event hex colors** (`class-calendar.tsx:21-33`) have no dark mode variants — events look identical in dark mode. Move to CSS variables.
-- [ ] **`roleColorMap` defined but unused** — either apply it on user/instructor lists for visual consistency or delete it.
+- [x] **`roleColorMap` defined but unused** — either apply it on user/instructor lists for visual consistency or delete it.
 - [x] **`enrolledSessionIds` in `classes-table.tsx:68`** rebuilds a `Set` per render — wrap in `useMemo`.
 - [ ] **Platform-admin admin-creation rollback is best-effort** — wrap in Prisma transaction or add proper compensation.
-- [ ] **Hardcoded `themeColor: "#16a34a"` in `app/layout.tsx:23`** — doesn't match primary token. Replace with CSS-var lookup or define a single source.
+- [x] **Hardcoded `themeColor: "#16a34a"` in `app/layout.tsx:23`** — doesn't match primary token. Replace with CSS-var lookup or define a single source.
 - [x] **English "Close" `sr-only` label** in `dialog.tsx:77` — translation key.
 - [ ] **Default Button size still below iOS HIG 44px** — bumped to h-9 (36px) but mobile primary actions should be `size="lg"` or the default should grow further.
 

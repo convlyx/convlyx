@@ -6,6 +6,7 @@ import { TRPCProvider } from "@/lib/trpc-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { BRAND_THEME_COLOR_HEX } from "@/lib/constants/brand";
 import "./globals.css";
 
 const inter = Inter({
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#16a34a",
+  themeColor: BRAND_THEME_COLOR_HEX,
 };
 
 export default async function RootLayout({
