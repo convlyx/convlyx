@@ -33,8 +33,12 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Prisma client lives in src/generated/prisma (gitignored), so lint
-      # and type-check both need it generated before they run.
+      # and type-check both need it generated before they run. `prisma generate`
+      # never connects to the DB but prisma.config.ts requires DATABASE_URL
+      # to resolve at config-load time — feed it a dummy URL.
       - name: Generate Prisma client
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
         run: pnpm exec prisma generate
 
       - name: Lint
