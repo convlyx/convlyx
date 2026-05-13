@@ -52,7 +52,9 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
   const canCancel = (enrollment: { status: string; session: { status: string } }) =>
     userRole === "STUDENT" && enrollment.status === "ENROLLED" && enrollment.session.status === "SCHEDULED";
 
-  const nowMs = Date.now();
+  // Capture once on mount — the cancellation notice window is approximate
+  // and doesn't need to update millisecond-by-millisecond as the user views.
+  const [nowMs] = useState(() => Date.now());
 
   const isWithinNoticeWindow = (enrollment: {
     session: { startsAt: Date | string; school: { cancellationNoticeHours: number } };

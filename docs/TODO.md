@@ -28,7 +28,7 @@ Last reviewed: 2026-05-11.
 
 - [ ] **Sentry / error monitoring** — production errors are invisible right now.
 - [ ] **Structured logging** — pair with Sentry; replace ad-hoc `console.error`.
-- [ ] **CI pipeline** — GitHub Actions: lint + type-check + tests on every PR. Currently nothing runs automatically.
+- [x] **CI pipeline** — GitHub Actions workflow at `.github/workflows/ci.yml` runs lint + type-check on every push to main and every PR. Tests still TODO (no test suite yet).
 - [ ] **Tenant-isolation integration tests** — the single most important test suite that doesn't exist. Hits every `*.list` / `*.get` procedure across two tenants and asserts no cross-tenant leakage.
 - [ ] **E2E tests (Playwright)** — at minimum the golden paths: login, create class, enrol student, mark attendance.
 - [ ] **Audit logging for platform-admin actions** — tenant/school create/edit, user impersonation if added.
