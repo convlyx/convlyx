@@ -27,7 +27,18 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
   const [view, setView] = useViewMode("/enrollments");
   const utils = trpc.useUtils();
 
-  const { data: enrollments, isLoading } = trpc.enrollment.listByStudent.useQuery();
+  const [timeTab, setTimeTab] = useState<"current" | "past">("current");
+  const [page, setPage] = useState(1);
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+
+  const { data: enrollmentsData, isLoading } = trpc.enrollment.listByStudent.useQuery({
+    time: timeTab,
+    page,
+    pageSize: ITEMS_PER_PAGE,
+  });
+  const paginatedEnrollments = enrollmentsData?.items ?? [];
+  const total = enrollmentsData?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
   const cancelMutation = trpc.enrollment.cancel.useMutation({
     onSuccess: () => {
@@ -38,15 +49,10 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
     onError,
   });
 
-  const [timeTab, setTimeTab] = useState<"current" | "past">("current");
-  const [page, setPage] = useState(1);
-  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
-
   const canCancel = (enrollment: { status: string; session: { status: string } }) =>
     userRole === "STUDENT" && enrollment.status === "ENROLLED" && enrollment.session.status === "SCHEDULED";
 
-  const now = new Date();
-  const nowMs = now.getTime();
+  const nowMs = Date.now();
 
   const isWithinNoticeWindow = (enrollment: {
     session: { startsAt: Date | string; school: { cancellationNoticeHours: number } };
@@ -56,15 +62,6 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
     const startsAt = new Date(enrollment.session.startsAt as unknown as string);
     return startsAt.getTime() - nowMs < noticeHours * 3600_000;
   };
-  const filteredEnrollments = enrollments?.filter((e) => {
-    if (timeTab === "current") {
-      return e.status === "ENROLLED" && new Date(e.session.startsAt as unknown as string) >= now;
-    }
-    return e.status !== "ENROLLED" || new Date(e.session.startsAt as unknown as string) < now;
-  }) ?? [];
-
-  const totalPages = Math.ceil(filteredEnrollments.length / ITEMS_PER_PAGE);
-  const paginatedEnrollments = filteredEnrollments.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   useEffect(() => setPage(1), [timeTab]);
 
@@ -95,7 +92,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
 
       {isLoading ? (
         <Loading />
-      ) : filteredEnrollments.length === 0 ? (
+      ) : total === 0 ? (
         <EmptyState icon={ClipboardList} message={t("common.noResults")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
@@ -235,7 +232,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
       <Pagination
         page={page}
         totalPages={totalPages}
-        total={filteredEnrollments.length}
+        total={total}
         onPageChange={setPage}
       />
 

@@ -54,7 +54,8 @@ export function ClassDetailView({
     { retry: false }
   );
   const staffRole = userRole === "ADMIN" || userRole === "SECRETARY" || userRole === "INSTRUCTOR";
-  const { data: allStudents } = trpc.user.list.useQuery({ role: "STUDENT", status: "ACTIVE" }, { enabled: staffRole });
+  const { data: allStudentsData } = trpc.user.list.useQuery({ role: "STUDENT", status: "ACTIVE" }, { enabled: staffRole });
+  const allStudents = allStudentsData?.items;
 
   const enrollMutation = trpc.enrollment.enroll.useMutation({
     onSuccess: () => {

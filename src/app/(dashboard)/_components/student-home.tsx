@@ -58,8 +58,10 @@ export function StudentHome({ userName, userId }: { userName: string; userId: st
     return { from: now.toISOString(), to: weekFromNow.toISOString() };
   }, []);
 
-  const { data: classes, isLoading: classesLoading } = trpc.class.list.useQuery(dateRange);
-  const { data: enrollments, isLoading: enrollmentsLoading } = trpc.enrollment.listByStudent.useQuery();
+  const { data: classesData, isLoading: classesLoading } = trpc.class.list.useQuery(dateRange);
+  const classes = classesData?.items;
+  const { data: enrollmentsData, isLoading: enrollmentsLoading } = trpc.enrollment.listByStudent.useQuery();
+  const enrollments = enrollmentsData?.items;
 
   const utils = trpc.useUtils();
   const enrollMutation = trpc.enrollment.enroll.useMutation({

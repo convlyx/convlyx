@@ -48,11 +48,14 @@ export function InstructorHome({ userName, userId }: { userName: string; userId:
     return { from: now.toISOString(), to: weekFromNow.toISOString() };
   }, []);
 
-  const { data: todayClasses, isLoading: todayLoading } = trpc.class.list.useQuery(todayRange);
-  const { data: weekClasses, isLoading: weekLoading } = trpc.class.list.useQuery(weekRange);
+  const { data: todayData, isLoading: todayLoading } = trpc.class.list.useQuery(todayRange);
+  const { data: weekData, isLoading: weekLoading } = trpc.class.list.useQuery(weekRange);
 
   const isLoading = todayLoading || weekLoading;
   if (isLoading) return <Loading />;
+
+  const todayClasses = todayData?.items;
+  const weekClasses = weekData?.items;
 
   const firstName = userName.split(" ")[0];
   const now = new Date();

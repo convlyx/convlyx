@@ -445,35 +445,80 @@ export const enrollmentRouter = router({
 
   /** List enrollments for a student (own) or all (admin/secretary) */
   listByStudent: protectedProcedure
-    .input(z.object({ studentId: z.string().uuid().optional() }).optional())
+    .input(
+      z.object({
+        studentId: z.string().uuid().optional(),
+        // Pagination — when both passed, server pages. Otherwise all matching
+        // rows are returned (used by calendar/dashboards/classes-table).
+        page: z.number().int().min(1).optional(),
+        pageSize: z.number().int().min(1).max(100).optional(),
+        // Time slice: "current" → still ENROLLED and the class is in the
+        // future; "past" → anything else (cancelled, attended, no-show, or
+        // session already started).
+        time: z.enum(["current", "past"]).optional(),
+      }).optional()
+    )
     .query(async ({ ctx, input }) => {
       const studentId =
         ctx.user.role === "STUDENT" ? ctx.user.id : input?.studentId;
 
-      return ctx.db.enrollment.findMany({
-        where: {
-          tenantId: ctx.tenantId,
-          ...(studentId && { studentId }),
-        },
-        select: {
-          id: true,
-          status: true,
-          enrolledAt: true,
-          session: {
-            select: {
-              id: true,
-              title: true,
-              classType: true,
-              startsAt: true,
-              endsAt: true,
-              status: true,
-              instructor: { select: { name: true } },
-              school: { select: { cancellationNoticeHours: true } },
-            },
+      const now = new Date();
+      const timeFilter =
+        input?.time === "current"
+          ? { status: "ENROLLED" as const, session: { startsAt: { gte: now } } }
+          : input?.time === "past"
+            ? {
+                OR: [
+                  { status: { not: "ENROLLED" as const } },
+                  { session: { startsAt: { lt: now } } },
+                ],
+              }
+            : {};
+
+      const where = {
+        tenantId: ctx.tenantId,
+        ...(studentId && { studentId }),
+        ...timeFilter,
+      };
+
+      const select = {
+        id: true,
+        status: true,
+        enrolledAt: true,
+        session: {
+          select: {
+            id: true,
+            title: true,
+            classType: true,
+            startsAt: true,
+            endsAt: true,
+            status: true,
+            instructor: { select: { name: true } },
+            school: { select: { cancellationNoticeHours: true } },
           },
-          student: { select: { id: true, name: true } },
         },
+        student: { select: { id: true, name: true } },
+      } as const;
+
+      if (input?.page && input?.pageSize) {
+        const [items, total] = await ctx.db.$transaction([
+          ctx.db.enrollment.findMany({
+            where,
+            select,
+            orderBy: { enrolledAt: "desc" },
+            skip: (input.page - 1) * input.pageSize,
+            take: input.pageSize,
+          }),
+          ctx.db.enrollment.count({ where }),
+        ]);
+        return { items, total };
+      }
+
+      const items = await ctx.db.enrollment.findMany({
+        where,
+        select,
         orderBy: { enrolledAt: "desc" },
       });
+      return { items, total: items.length };
     }),
 });

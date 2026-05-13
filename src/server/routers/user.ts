@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { createClient } from "@supabase/supabase-js";
 import { router, protectedProcedure, roleProtectedProcedure } from "../trpc";
 import { createUserSchema, updateUserSchema } from "@/lib/validations/user";
+import { LICENSE_CATEGORIES } from "@/lib/license-categories";
 import { createNotification } from "../lib/notifications";
 import { syncClassStatuses } from "../lib/class-status";
 
@@ -83,38 +84,76 @@ export const userRouter = router({
         schoolId: z.string().uuid().optional(),
         role: z.enum(["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"]).optional(),
         status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
+        // Server-side pagination — when both are passed, server pages the
+        // result. Otherwise the full filtered set is returned (used by
+        // dropdowns, instructor pickers, etc. which need every match).
+        page: z.number().int().min(1).optional(),
+        pageSize: z.number().int().min(1).max(100).optional(),
+        // Filters used by the staff list pages — searched server-side so we
+        // can paginate without loading the whole tenant.
+        search: z.string().optional(),
+        // Only meaningful when `role: "STUDENT"`. Filters by the student's
+        // currently in-progress course category.
+        category: z.enum(LICENSE_CATEGORIES).optional(),
       }).optional()
     )
     .query(async ({ ctx, input }) => {
-      const users = await ctx.db.user.findMany({
-        where: {
-          tenantId: ctx.tenantId,
-          ...(input?.schoolId && { schoolId: input.schoolId }),
-          ...(input?.role && { role: input.role }),
-          ...(input?.status && { status: input.status }),
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          role: true,
-          status: true,
-          qualifiedCategories: true,
-          createdAt: true,
-          school: { select: { id: true, name: true } },
-          // Current course for students (used to display category badge in lists)
+      const where = {
+        tenantId: ctx.tenantId,
+        ...(input?.schoolId && { schoolId: input.schoolId }),
+        ...(input?.role && { role: input.role }),
+        ...(input?.status && { status: input.status }),
+        ...(input?.search && {
+          OR: [
+            { name: { contains: input.search, mode: "insensitive" as const } },
+            { email: { contains: input.search, mode: "insensitive" as const } },
+          ],
+        }),
+        ...(input?.category && {
           studentCourses: {
-            where: { status: "IN_PROGRESS" },
-            select: { id: true, category: true },
-            take: 1,
+            some: { status: "IN_PROGRESS" as const, category: input.category },
           },
+        }),
+      };
+
+      const select = {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        qualifiedCategories: true,
+        createdAt: true,
+        school: { select: { id: true, name: true } },
+        // Current course for students (used to display category badge in lists)
+        studentCourses: {
+          where: { status: "IN_PROGRESS" as const },
+          select: { id: true, category: true },
+          take: 1,
         },
-        orderBy: { name: "asc" },
-      });
+      } as const;
+
+      const paginated = !!(input?.page && input?.pageSize);
+      const [usersRaw, total] = paginated
+        ? await ctx.db.$transaction([
+            ctx.db.user.findMany({
+              where,
+              select,
+              orderBy: { name: "asc" },
+              skip: (input!.page! - 1) * input!.pageSize!,
+              take: input!.pageSize!,
+            }),
+            ctx.db.user.count({ where }),
+          ])
+        : await ctx.db.user.findMany({ where, select, orderBy: { name: "asc" } })
+            .then((u) => [u, u.length] as const);
 
       // Merge email-confirmation status from Supabase Auth so the UI can
       // hide the "resend invite" button for users who already set a password.
+      // NOTE: bounded at 1000 by Supabase Auth's `listUsers` — at scale this
+      // will under-report. Acceptable for now; revisit when a tenant has
+      // more than ~1000 auth users.
       const confirmedById = new Map<string, boolean>();
       try {
         const { data } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
@@ -125,11 +164,13 @@ export const userRouter = router({
         console.error("[user.list] failed to fetch auth users", e);
       }
 
-      return users.map(({ studentCourses, ...u }) => ({
+      const items = usersRaw.map(({ studentCourses, ...u }) => ({
         ...u,
         currentCategory: studentCourses[0]?.category ?? null,
         emailConfirmed: confirmedById.get(u.id) ?? false,
       }));
+
+      return { items, total };
     }),
 
   getById: roleProtectedProcedure(["ADMIN", "SECRETARY"])

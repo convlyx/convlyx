@@ -45,20 +45,27 @@ export function InstructorsPageClient() {
   const [statusFilter, setStatusFilter] = useState<"ACTIVE" | "INACTIVE" | "ALL">(
     (searchParams.get("status") as "ACTIVE" | "INACTIVE" | "ALL") ?? "ACTIVE"
   );
-  const [page, setPage] = useState(1);
-  const { data: users, isLoading } = trpc.user.list.useQuery({
+  const [page, setPage] = useState(Math.max(1, Number(searchParams.get("page") ?? 1)));
+  const { data: usersData, isLoading } = trpc.user.list.useQuery({
     role: "INSTRUCTOR",
     ...(statusFilter !== "ALL" && { status: statusFilter }),
+    ...(search.trim() && { search: search.trim() }),
+    page,
+    pageSize: ITEMS_PER_PAGE,
   });
 
-  const filteredUsers = users?.filter((user) =>
-    user.name.toLowerCase().includes(search.toLowerCase())
-  ) ?? [];
-
-  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
-  const paginatedUsers = filteredUsers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const paginatedUsers = usersData?.items ?? [];
+  const total = usersData?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
   useEffect(() => setPage(1), [search, statusFilter]);
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (page === 1) params.delete("page");
+    else params.set("page", String(page));
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   function handleSearchChange(value: string) {
     setSearch(value);
@@ -106,7 +113,7 @@ export function InstructorsPageClient() {
 
       {isLoading ? (
         <Loading />
-      ) : filteredUsers.length === 0 ? (
+      ) : total === 0 ? (
         <EmptyState icon={Users} message={t("common.noResults")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
@@ -168,7 +175,7 @@ export function InstructorsPageClient() {
       <Pagination
         page={page}
         totalPages={totalPages}
-        total={filteredUsers.length}
+        total={total}
         onPageChange={setPage}
       />
     </div>

@@ -15,10 +15,11 @@ export function CalendarView({ userRole, userId }: { userRole: UserRole; userId:
 
   const showFilters = userRole === "ADMIN" || userRole === "SECRETARY";
   const canCreate = userRole === "ADMIN" || userRole === "SECRETARY" || userRole === "INSTRUCTOR";
-  const { data: instructors } = trpc.user.list.useQuery(
+  const { data: instructorsData } = trpc.user.list.useQuery(
     { role: "INSTRUCTOR", status: "ACTIVE" },
     { enabled: showFilters },
   );
+  const instructors = instructorsData?.items;
 
   return (
     <div className="space-y-4">

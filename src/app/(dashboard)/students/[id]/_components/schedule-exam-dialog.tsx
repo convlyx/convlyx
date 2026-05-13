@@ -37,10 +37,11 @@ export function ScheduleExamDialog({ studentId, courseId, category, open, onClos
   const [location, setLocation] = useState("");
   const [instructorId, setInstructorId] = useState<string>("");
 
-  const { data: instructors } = trpc.user.list.useQuery({
+  const { data: instructorsData } = trpc.user.list.useQuery({
     role: "INSTRUCTOR",
     status: "ACTIVE",
   });
+  const instructors = instructorsData?.items;
 
   const filteredInstructors = instructors?.filter((i) =>
     !i.qualifiedCategories?.length || i.qualifiedCategories.includes(category)

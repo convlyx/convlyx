@@ -92,15 +92,17 @@ export function ClassCalendar({
     ...(dateRange?.to && { to: dateRange.to }),
   }), [filter, dateRange]);
 
-  const { data: classes, isFetching } = trpc.class.list.useQuery(queryInput);
+  const { data: classesData, isFetching } = trpc.class.list.useQuery(queryInput);
+  const classes = classesData?.items;
   const { data: exams } = trpc.exam.list.useQuery(examQueryInput);
 
   // For students: fetch enrollments to highlight enrolled classes
   const isStudent = userRole === "STUDENT";
-  const { data: enrollments } = trpc.enrollment.listByStudent.useQuery(
+  const { data: enrollmentsData } = trpc.enrollment.listByStudent.useQuery(
     undefined,
     { enabled: isStudent }
   );
+  const enrollments = enrollmentsData?.items;
 
   // Sessions the student has any enrollment row for (ENROLLED, ATTENDED, NO_SHOW)
   const studentSessionIds = useMemo(() => {

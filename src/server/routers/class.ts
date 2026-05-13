@@ -22,6 +22,17 @@ export const classRouter = router({
         status: z.enum(["ALL", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"]).optional(),
         from: z.string().datetime().optional(),
         to: z.string().datetime().optional(),
+        // Pagination — when both are passed, server pages the result;
+        // otherwise the full filtered set is returned (used by the calendar
+        // and dashboard which need every class in their date window).
+        page: z.number().int().min(1).optional(),
+        pageSize: z.number().int().min(1).max(100).optional(),
+        // Filters used by the classes table — searched server-side so we can
+        // paginate without loading the whole tenant.
+        search: z.string().optional(),
+        // "upcoming" → startsAt >= now; "past" → startsAt < now. Ignored if
+        // `from`/`to` are also passed (those are an explicit window).
+        time: z.enum(["upcoming", "past"]).optional(),
       }).optional()
     )
     .query(async ({ ctx, input }) => {
@@ -49,7 +60,7 @@ export const classRouter = router({
           ctx.user.id,
         );
         if (!activeCategory) {
-          return [];
+          return { items: [], total: 0 };
         }
         studentFilter = {
           OR: [
@@ -59,39 +70,72 @@ export const classRouter = router({
         };
       }
 
-      return ctx.db.classSession.findMany({
-        where: {
-          tenantId: ctx.tenantId,
-          ...instructorFilter,
-          ...studentFilter,
-          ...(input?.schoolId && { schoolId: input.schoolId }),
-          ...(input?.classType && { classType: input.classType }),
-          ...(input?.category && { category: input.category }),
-          ...(input?.from || input?.to
-            ? {
-                startsAt: {
-                  ...(input?.from && { gte: new Date(input.from) }),
-                  ...(input?.to && { lte: new Date(input.to) }),
-                },
-              }
+      // Build the startsAt filter from either explicit from/to OR the
+      // upcoming/past flag, with from/to winning if both are provided.
+      const startsAtFilter: { gte?: Date; lte?: Date; lt?: Date } = {};
+      if (input?.from) startsAtFilter.gte = new Date(input.from);
+      if (input?.to) startsAtFilter.lte = new Date(input.to);
+      if (!input?.from && !input?.to && input?.time) {
+        const now = new Date();
+        if (input.time === "upcoming") startsAtFilter.gte = now;
+        else startsAtFilter.lt = now;
+      }
+
+      const where = {
+        tenantId: ctx.tenantId,
+        ...instructorFilter,
+        ...studentFilter,
+        ...(input?.schoolId && { schoolId: input.schoolId }),
+        ...(input?.classType && { classType: input.classType }),
+        ...(input?.category && { category: input.category }),
+        ...(Object.keys(startsAtFilter).length > 0 && { startsAt: startsAtFilter }),
+        ...(input?.search && {
+          title: { contains: input.search, mode: "insensitive" as const },
+        }),
+        ...(input?.status && input.status !== "ALL"
+          ? { status: input.status }
+          : !input?.status
+            ? { status: { not: "CANCELLED" as const } }
             : {}),
-          ...(input?.status && input.status !== "ALL" ? { status: input.status } : !input?.status ? { status: { not: "CANCELLED" as const } } : {}),
-        },
-        select: {
-          id: true,
-          classType: true,
-          category: true,
-          title: true,
-          startsAt: true,
-          endsAt: true,
-          capacity: true,
-          status: true,
-          instructor: { select: { id: true, name: true } },
-          school: { select: { id: true, name: true } },
-          _count: { select: { enrollments: true } },
-        },
+      };
+
+      const select = {
+        id: true,
+        classType: true,
+        category: true,
+        title: true,
+        startsAt: true,
+        endsAt: true,
+        capacity: true,
+        status: true,
+        instructor: { select: { id: true, name: true } },
+        school: { select: { id: true, name: true } },
+        _count: { select: { enrollments: true } },
+      } as const;
+
+      // When paginating, use a transaction to fetch the page + total in a
+      // single round-trip. Otherwise return the full set (calendar/dashboards
+      // need every row in their date window).
+      if (input?.page && input?.pageSize) {
+        const [items, total] = await ctx.db.$transaction([
+          ctx.db.classSession.findMany({
+            where,
+            select,
+            orderBy: { startsAt: "asc" },
+            skip: (input.page - 1) * input.pageSize,
+            take: input.pageSize,
+          }),
+          ctx.db.classSession.count({ where }),
+        ]);
+        return { items, total };
+      }
+
+      const items = await ctx.db.classSession.findMany({
+        where,
+        select,
         orderBy: { startsAt: "asc" },
       });
+      return { items, total: items.length };
     }),
 
   getById: protectedProcedure

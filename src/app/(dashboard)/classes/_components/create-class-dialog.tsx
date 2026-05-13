@@ -95,13 +95,15 @@ export function CreateClassDialog({
   const isStaff = !userRole || userRole === "ADMIN" || userRole === "SECRETARY";
 
   const { data: schools, isLoading: schoolsLoading } = trpc.school.list.useQuery();
-  const { data: instructors, isLoading: instructorsLoading } = trpc.user.list.useQuery(
+  const { data: instructorsData, isLoading: instructorsLoading } = trpc.user.list.useQuery(
     { role: "INSTRUCTOR", status: "ACTIVE" },
     { enabled: isStaff },
   );
-  const { data: students, isLoading: studentsLoading } = trpc.user.list.useQuery(
+  const instructors = instructorsData?.items;
+  const { data: studentsData, isLoading: studentsLoading } = trpc.user.list.useQuery(
     { role: "STUDENT", status: "ACTIVE" },
   );
+  const students = studentsData?.items;
   const dataLoading = schoolsLoading
     || studentsLoading
     || (isStaff && instructorsLoading);

@@ -21,7 +21,7 @@ Last reviewed: 2026-05-11.
 
 ## 2. Scale walls
 
-- [ ] **Cursor-based pagination** — all list pages fetch everything then `.slice()` client-side. Falls over past a few hundred records per tenant. Touches: `classes-table.tsx`, `users-table.tsx`, `students` list, `enrollments-list.tsx`, etc. Will need a shared `useCursorList` hook.
+- [x] **Server-side pagination** — `class.list`, `user.list`, and `enrollment.listByStudent` all migrated to optional `page`/`pageSize`/`search` params returning `{ items, total }`. All UI consumers updated. Student-profile and instructor-profile history sections still paginate client-side (single-user data, bounded volume).
 - [ ] **Distributed rate limiting** — current in-memory limiter is per-instance. Move to Upstash Redis (or similar) so it actually limits across multi-instance Vercel deploys.
 
 ## 3. Operational holes (you'll regret skipping after first real users)

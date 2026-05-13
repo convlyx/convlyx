@@ -36,18 +36,20 @@ export function DashboardView({
     return { from: now.toISOString(), to: weekFromNow.toISOString() };
   }, []);
 
-  const { data: upcomingClasses, isLoading } = trpc.class.list.useQuery(dateRange);
+  const { data: upcomingData, isLoading } = trpc.class.list.useQuery(dateRange);
+  const upcomingClasses = upcomingData?.items;
 
-  const { data: students } = trpc.user.list.useQuery(
+  const { data: studentsData } = trpc.user.list.useQuery(
     { role: "STUDENT", status: "ACTIVE" },
     { enabled: userRole === "ADMIN" || userRole === "SECRETARY" }
   );
-  const activeStudentCount = students?.length ?? 0;
+  const activeStudentCount = studentsData?.total ?? 0;
 
-  const { data: enrollments } = trpc.enrollment.listByStudent.useQuery(
+  const { data: enrollmentsData } = trpc.enrollment.listByStudent.useQuery(
     undefined,
     { enabled: userRole === "STUDENT" }
   );
+  const enrollments = enrollmentsData?.items;
 
   const today = new Date();
   today.setHours(23, 59, 59, 999);

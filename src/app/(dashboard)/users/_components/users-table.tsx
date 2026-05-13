@@ -50,13 +50,20 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
   const [view, setView] = useViewMode("/users", initialView);
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [roleFilter, setRoleFilter] = useState<string>(searchParams.get("role") ?? "ALL");
-  const [page, setPage] = useState(1);
-  const [editUser, setEditUser] = useState<typeof filteredUsers[number] | null>(null);
+  const [page, setPage] = useState(Math.max(1, Number(searchParams.get("page") ?? 1)));
   const [deactivateUserId, setDeactivateUserId] = useState<string | null>(null);
 
-  const { data: users, isLoading } = trpc.user.list.useQuery({
+  const { data: usersData, isLoading } = trpc.user.list.useQuery({
     ...(roleFilter !== "ALL" && { role: roleFilter as typeof ROLES[number] }),
+    ...(search.trim() && { search: search.trim() }),
+    page,
+    pageSize: ITEMS_PER_PAGE,
   });
+  const users = usersData?.items ?? [];
+  const total = usersData?.total ?? 0;
+
+  type UserRow = NonNullable<typeof usersData>["items"][number];
+  const [editUser, setEditUser] = useState<UserRow | null>(null);
 
   const utils = trpc.useUtils();
   const deactivateMutation = trpc.user.deactivate.useMutation({
@@ -76,14 +83,18 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
 
   const canDeactivate = userRole === "ADMIN";
 
-  const filteredUsers = users?.filter((user) =>
-    user.name.toLowerCase().includes(search.toLowerCase())
-  ) ?? [];
-
-  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
-  const paginatedUsers = filteredUsers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  // Server already paginated + filtered — render the page as-is.
+  const paginatedUsers = users;
+  const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
   useEffect(() => setPage(1), [search, roleFilter]);
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (page === 1) params.delete("page");
+    else params.set("page", String(page));
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   function handleSearchChange(value: string) {
     setSearch(value);
@@ -130,7 +141,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
 
       {isLoading ? (
         <Loading />
-      ) : filteredUsers.length === 0 ? (
+      ) : total === 0 ? (
         <EmptyState icon={Users} message={t("users.noUsers")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
@@ -249,7 +260,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
       <Pagination
         page={page}
         totalPages={totalPages}
-        total={filteredUsers.length}
+        total={total}
         onPageChange={setPage}
       />
 

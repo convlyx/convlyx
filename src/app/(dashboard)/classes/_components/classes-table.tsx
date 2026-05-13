@@ -59,24 +59,34 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   const [instructorFilter, setInstructorFilter] = useState<string>(searchParams.get("instructor") ?? "ALL");
   const defaultStatus = (searchParams.get("time") ?? "upcoming") === "upcoming" ? "SCHEDULED" : "COMPLETED";
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") ?? defaultStatus);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(Math.max(1, Number(searchParams.get("page") ?? 1)));
+  const [timeTab, setTimeTab] = useState<string>(searchParams.get("time") ?? "upcoming");
   const [cancelId, setCancelId] = useState<string | null>(null);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
-  const [editClass, setEditClass] = useState<typeof filteredClasses[number] | null>(null);
 
   const isStudent = userRole === "STUDENT";
   const canManageStaff = userRole === "ADMIN" || userRole === "SECRETARY";
-  const { data: classes, isLoading } = trpc.class.list.useQuery({
+
+  // Staff queries hit the paginated/filtered server endpoint; students keep
+  // the legacy "fetch all then filter client-side" path because their list
+  // has a niche "not full / not enrolled" filter that isn't worth pushing
+  // server-side at current volumes.
+  const { data: classesData, isLoading } = trpc.class.list.useQuery({
     ...(typeFilter !== "ALL" && { classType: typeFilter as "THEORY" | "PRACTICAL" }),
     ...(categoryFilter !== "ALL" && { category: categoryFilter as LicenseCategory }),
     ...(instructorFilter !== "ALL" && { instructorId: instructorFilter }),
     status: statusFilter as "ALL" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED",
+    ...(!isStudent && search.trim() && { search: search.trim() }),
+    ...(!isStudent && { time: timeTab as "upcoming" | "past" }),
+    ...(!isStudent && { page, pageSize: ITEMS_PER_PAGE }),
   });
-  const { data: instructors } = trpc.user.list.useQuery(
+  const { data: instructorsData } = trpc.user.list.useQuery(
     { role: "INSTRUCTOR", status: "ACTIVE" },
     { enabled: canManageStaff },
   );
-  const { data: myEnrollments } = trpc.enrollment.listByStudent.useQuery(undefined, { enabled: isStudent });
+  const instructors = instructorsData?.items;
+  const { data: myEnrollmentsData } = trpc.enrollment.listByStudent.useQuery(undefined, { enabled: isStudent });
+  const myEnrollments = myEnrollmentsData?.items;
   const enrolledSessionIds = useMemo(
     () => new Set(myEnrollments?.map((e) => e.session.id) ?? []),
     [myEnrollments],
@@ -110,26 +120,44 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   const isInstructor = userRole === "INSTRUCTOR";
   const canViewDetail = (cls: { instructor: { id: string } }) =>
     canManage || (isInstructor && cls.instructor.id === userId);
-  const [timeTab, setTimeTab] = useState<string>(searchParams.get("time") ?? "upcoming");
+
+  type ClassRow = NonNullable<typeof classesData>["items"][number];
+  const [editClass, setEditClass] = useState<ClassRow | null>(null);
+
+  // Staff path: server already paginated + filtered. Student path: take the
+  // full filtered set the server returned and apply the in-list-only filters
+  // (title search, time tab, "not full / not enrolled") client-side, then slice.
+  const serverItems = classesData?.items ?? [];
+  const serverTotal = classesData?.total ?? 0;
 
   const now = new Date();
-  const filteredClasses = classes?.filter((cls) => {
-    if (!cls.title.toLowerCase().includes(search.toLowerCase())) return false;
-    const isFuture = new Date(cls.startsAt as unknown as string) >= now;
-    if (isStudent) {
-      // Students only see future scheduled classes they can enroll in
-      return isFuture
-        && cls.status === "SCHEDULED"
-        && !enrolledSessionIds.has(cls.id)
-        && cls._count.enrollments < cls.capacity;
-    }
-    return timeTab === "upcoming" ? isFuture : !isFuture;
-  }) ?? [];
+  const studentVisibleClasses = isStudent
+    ? serverItems.filter((cls) => {
+        if (search.trim() && !cls.title.toLowerCase().includes(search.toLowerCase())) return false;
+        const isFuture = new Date(cls.startsAt) >= now;
+        return isFuture
+          && cls.status === "SCHEDULED"
+          && !enrolledSessionIds.has(cls.id)
+          && cls._count.enrollments < cls.capacity;
+      })
+    : serverItems;
 
-  const totalPages = Math.ceil(filteredClasses.length / ITEMS_PER_PAGE);
-  const paginatedClasses = filteredClasses.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const totalCount = isStudent ? studentVisibleClasses.length : serverTotal;
+  const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
+  const paginatedClasses = isStudent
+    ? studentVisibleClasses.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
+    : serverItems;
 
+  // Reset to page 1 whenever a filter changes, and sync the page number to
+  // the URL so refresh/share preserves where you were.
   useEffect(() => setPage(1), [search, typeFilter, categoryFilter, instructorFilter, statusFilter, timeTab]);
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (page === 1) params.delete("page");
+    else params.set("page", String(page));
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   function handleSearchChange(value: string) {
     setSearch(value);
@@ -288,7 +316,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
 
       {isLoading ? (
         <Loading />
-      ) : filteredClasses.length === 0 ? (
+      ) : totalCount === 0 ? (
         <EmptyState icon={BookOpen} message={t("classes.noClasses")} />
       ) : view === "cards" ? (
         <div className="grid gap-3">
@@ -435,7 +463,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
       <Pagination
         page={page}
         totalPages={totalPages}
-        total={filteredClasses.length}
+        total={totalCount}
         onPageChange={setPage}
       />
 
