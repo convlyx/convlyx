@@ -57,12 +57,11 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
   const [nowMs] = useState(() => Date.now());
 
   const isWithinNoticeWindow = (enrollment: {
-    session: { startsAt: Date | string; school: { cancellationNoticeHours: number } };
+    session: { startsAt: Date; school: { cancellationNoticeHours: number } };
   }) => {
     const noticeHours = enrollment.session.school.cancellationNoticeHours;
     if (noticeHours <= 0) return false;
-    const startsAt = new Date(enrollment.session.startsAt as unknown as string);
-    return startsAt.getTime() - nowMs < noticeHours * 3600_000;
+    return enrollment.session.startsAt.getTime() - nowMs < noticeHours * 3600_000;
   };
 
   useEffect(() => setPage(1), [timeTab]);

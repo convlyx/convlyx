@@ -99,7 +99,7 @@ export function ClassDetailDialog({
   const nowMs = new Date().getTime();
   const isWithinNoticeWindow =
     noticeHours > 0 &&
-    new Date(classDetail.startsAt as unknown as string).getTime() - nowMs <
+    classDetail.startsAt.getTime() - nowMs <
       noticeHours * 3600_000;
 
   return (

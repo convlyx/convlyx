@@ -4,11 +4,39 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const withNextIntl = createNextIntlPlugin("./src/lib/i18n.ts");
 
+// Content Security Policy — first-pass baseline. Locks down what the browser
+// will fetch, post forms to, and frame us inside.
+//
+// Caveat: `'unsafe-inline'` and `'unsafe-eval'` stay in script-src because
+// Next.js (app router + RSC hydration) injects inline `<script>` tags and
+// some tooling evals. Tightening this further requires per-request nonces
+// in middleware — separate refactor.
+//
+// The valuable wins from this v1 are:
+//   - frame-ancestors 'none'  → no clickjacking, replaces X-Frame-Options
+//   - connect-src allowlist   → blocks data exfiltration to unknown hosts
+//   - form-action 'self'      → no posting forms to attacker domains
+//   - object-src 'none'       → no Flash/Java/PDF plugin embeds
+const cspDirectives = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.vercel-insights.com https://*.i.posthog.com https://*.sentry.io",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  // Supabase REST + Realtime + auth, Vercel analytics, Sentry ingest, PostHog.
+  "connect-src 'self' https://*.supabase.co https://*.supabase.com wss://*.supabase.co https://*.vercel-insights.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io https://*.i.posthog.com",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+].join("; ");
+
 const nextConfig: NextConfig = {
   headers: async () => [
     {
       source: "/(.*)",
       headers: [
+        { key: "Content-Security-Policy", value: cspDirectives },
         { key: "X-Frame-Options", value: "DENY" },
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

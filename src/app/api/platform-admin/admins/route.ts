@@ -54,6 +54,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Escola não encontrada" }, { status: 400 });
   }
 
+  // Pre-flight: reject duplicates before touching Supabase Auth. Avoids the
+  // most common cause of an orphaned auth row — Prisma's unique constraint
+  // tripping after the auth user is already created.
+  const existing = await db.user.findFirst({
+    where: { tenantId: school.tenantId, email },
+    select: { id: true },
+  });
+  if (existing) {
+    return NextResponse.json(
+      { error: "Já existe um utilizador com este email nesta escola" },
+      { status: 400 },
+    );
+  }
+
   // Create auth user with email confirmed and password set immediately
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email,
@@ -84,10 +98,19 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(user);
   } catch (error) {
-    // Roll back auth user on Prisma failure
-    await supabaseAdmin.auth.admin
-      .deleteUser(authData.user.id)
-      .catch((e) => console.warn("[platform-admin] auth rollback failed — orphaned auth user", e));
+    // Compensation: Prisma failed despite the pre-flight check (rare —
+    // race condition, FK violation, DB outage). Roll back the auth user.
+    // If the rollback itself fails, we log the orphan ID so an operator
+    // can clean it up via the Supabase dashboard.
+    const orphanId = authData.user.id;
+    try {
+      await supabaseAdmin.auth.admin.deleteUser(orphanId);
+    } catch (e) {
+      console.error(
+        `[platform-admin] auth rollback FAILED — orphaned auth user id=${orphanId} email=${email}`,
+        e,
+      );
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Erro ao criar utilizador" },
       { status: 500 },

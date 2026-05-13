@@ -120,7 +120,7 @@ export function ClassCalendar({
         if (studentSessionIds.has(cls.id)) return true;
         // For others: only show future scheduled classes with capacity
         if (cls.status !== "SCHEDULED") return false;
-        if (new Date(cls.startsAt as unknown as string) < now) return false;
+        if (cls.startsAt < now) return false;
         if (cls._count.enrollments >= cls.capacity) return false;
         return true;
       })
@@ -142,8 +142,8 @@ export function ClassCalendar({
       return {
         id: cls.id,
         title: `${cls.title} (${cls._count.enrollments}/${cls.capacity})`,
-        start: cls.startsAt as unknown as string,
-        end: cls.endsAt as unknown as string,
+        start: cls.startsAt,
+        end: cls.endsAt,
         backgroundColor: colors.bg,
         borderColor: colors.border,
         extendedProps: {
@@ -164,7 +164,7 @@ export function ClassCalendar({
     return exams.map((exam) => {
       const colors = examColors[exam.result] ?? examColors.SCHEDULED;
       // Default 60-min slot for exams (no end stored in DB)
-      const start = new Date(exam.scheduledAt as unknown as string);
+      const start = new Date(exam.scheduledAt);
       const end = new Date(start.getTime() + 60 * 60 * 1000);
       const examTypeLabel =
         exam.type === "THEORY" ? t("exams.theory") : t("exams.practical");

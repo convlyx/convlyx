@@ -17,7 +17,7 @@ Last reviewed: 2026-05-11.
 - [x] **Replace hardcoded seed password** with env var.
 - [ ] **CAPTCHA on repeated failed logins** — basic abuse defence.
 - [ ] **MFA for platform admin accounts**.
-- [ ] **Content Security Policy (CSP) header** — at least a restrictive default.
+- [x] **Content Security Policy (CSP) header** — v1 baseline shipped in `next.config.ts`. `script-src` still needs `'unsafe-inline'`/`'unsafe-eval'` (Next.js hydration requirement); follow-up: per-request nonces via middleware to tighten script-src.
 
 ## 2. Scale walls
 
@@ -38,14 +38,14 @@ Last reviewed: 2026-05-11.
 ## 4. Tech debt with real consequences
 
 - [ ] **Zod schemas inline in routers** (`enrollment.ts`, `user.ts`, `class.ts`, `notification.ts`) should move to `src/lib/validations/`. Will bite during the React Native split.
-- [ ] **`as unknown as string` Date casts in 6 places** — `classes-table.tsx:102`, `enrollments-list.tsx:52,54`, `dashboard-view.tsx:58`, `class-calendar.tsx:92,93`. superjson types aren't being trusted; root-cause once.
+- [x] **`as unknown as string` Date casts in 6 places** — root cause confirmed: superjson IS correctly propagating Dates client-side. Removed all casts; types now flow through as `Date` as expected.
 - [ ] **Extract `useUrlParam` hook** — URL-param sync (`useState` + `router.replace` + `useEffect(() => setPage(1), [...])`) is duplicated across 5 list components.
 - [x] **`ITEMS_PER_PAGE = 10` duplicated in 7 components** — extract to `src/lib/constants/pagination.ts`.
 - [ ] **Inconsistent error key namespacing** — `users.notFound` / `enrollment.notFound` / `classes.notFound`. Pick one convention (recommend singular `user.notFound`).
 - [ ] **Calendar event hex colors** (`class-calendar.tsx:21-33`) have no dark mode variants — events look identical in dark mode. Move to CSS variables.
 - [x] **`roleColorMap` defined but unused** — either apply it on user/instructor lists for visual consistency or delete it.
 - [x] **`enrolledSessionIds` in `classes-table.tsx:68`** rebuilds a `Set` per render — wrap in `useMemo`.
-- [ ] **Platform-admin admin-creation rollback is best-effort** — wrap in Prisma transaction or add proper compensation.
+- [x] **Platform-admin admin-creation rollback is best-effort** — added pre-flight duplicate-email check so the rollback only fires on rare race/FK failures; orphan auth user id is now logged with `console.error` (not warn) so an operator can clean up via dashboard.
 - [x] **Hardcoded `themeColor: "#16a34a"` in `app/layout.tsx:23`** — doesn't match primary token. Replace with CSS-var lookup or define a single source.
 - [x] **English "Close" `sr-only` label** in `dialog.tsx:77` — translation key.
 - [ ] **Default Button size still below iOS HIG 44px** — bumped to h-9 (36px) but mobile primary actions should be `size="lg"` or the default should grow further.

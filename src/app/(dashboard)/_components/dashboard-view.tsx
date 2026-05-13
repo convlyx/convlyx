@@ -57,8 +57,7 @@ export function DashboardView({
   startOfToday.setHours(0, 0, 0, 0);
 
   const todayClasses = upcomingClasses?.filter((c) => {
-    const classDate = new Date(c.startsAt as unknown as string);
-    return classDate >= startOfToday && classDate <= today;
+    return c.startsAt >= startOfToday && c.startsAt <= today;
   }) ?? [];
 
   const scheduledToday = todayClasses.filter((c) => c.status === "SCHEDULED").length;
