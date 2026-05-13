@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { Smartphone, Share, PlusSquare, Check, Download } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 
@@ -54,7 +55,7 @@ export function InstallView({ schoolName }: { schoolName: string | null }) {
           </div>
           <h1 className="text-2xl font-bold">{t("alreadyInstalled")}</h1>
           <p className="text-sm text-muted-foreground">{t("alreadyInstalledDescription")}</p>
-          <a href="/" className={buttonVariants({ variant: "default" })}>{t("openApp")}</a>
+          <Link href="/" className={buttonVariants({ variant: "default" })}>{t("openApp")}</Link>
         </div>
       </div>
     );

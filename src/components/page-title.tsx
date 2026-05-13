@@ -3,8 +3,13 @@
 import { useEffect, useRef } from "react";
 
 export function PageTitle({ title }: { title: string }) {
+  // The observer (set up once below) needs to read the latest title each
+  // time it fires; refs let it bypass the captured closure. Sync the ref
+  // inside an effect so we don't write to a ref during render.
   const titleRef = useRef(title);
-  titleRef.current = title;
+  useEffect(() => {
+    titleRef.current = title;
+  });
 
   useEffect(() => {
     document.title = titleRef.current;
