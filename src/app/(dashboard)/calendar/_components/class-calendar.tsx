@@ -21,30 +21,29 @@ type CalendarFilter = {
   instructorId?: string;
 };
 
-// Enrolled classes — vivid solid colors
+// Calendar event palette — values resolve to CSS variables declared in
+// globals.css so dark mode (and future per-tenant theming) just works.
 const enrolledColors: Record<string, { bg: string; border: string }> = {
-  THEORY: { bg: "#3b82f6", border: "#2563eb" },
-  PRACTICAL: { bg: "#10b981", border: "#059669" },
+  THEORY: { bg: "var(--cal-theory)", border: "var(--cal-theory-border)" },
+  PRACTICAL: { bg: "var(--cal-practical)", border: "var(--cal-practical-border)" },
 };
 
-// Available classes — lighter, more muted
 const availableColors: Record<string, { bg: string; border: string }> = {
-  THEORY: { bg: "#93c5fd", border: "#60a5fa" },
-  PRACTICAL: { bg: "#6ee7b7", border: "#34d399" },
+  THEORY: { bg: "var(--cal-theory-muted)", border: "var(--cal-theory-muted-border)" },
+  PRACTICAL: { bg: "var(--cal-practical-muted)", border: "var(--cal-practical-muted-border)" },
 };
 
-// Exams — red/amber palette to stand out
 const examColors: Record<string, { bg: string; border: string }> = {
-  SCHEDULED: { bg: "#dc2626", border: "#b91c1c" },
-  PASSED: { bg: "#16a34a", border: "#15803d" },
-  FAILED: { bg: "#7f1d1d", border: "#991b1b" },
-  NO_SHOW: { bg: "#7f1d1d", border: "#991b1b" },
-  CANCELLED: { bg: "#9ca3af", border: "#6b7280" },
+  SCHEDULED: { bg: "var(--cal-exam-scheduled)", border: "var(--cal-exam-scheduled-border)" },
+  PASSED: { bg: "var(--cal-exam-passed)", border: "var(--cal-exam-passed-border)" },
+  FAILED: { bg: "var(--cal-exam-failed)", border: "var(--cal-exam-failed-border)" },
+  NO_SHOW: { bg: "var(--cal-exam-failed)", border: "var(--cal-exam-failed-border)" },
+  CANCELLED: { bg: "var(--cal-completed)", border: "var(--cal-completed-border)" },
 };
 
 const statusColors: Record<string, { bg: string; border: string }> = {
-  CANCELLED: { bg: "#ef4444", border: "#dc2626" },
-  COMPLETED: { bg: "#9ca3af", border: "#6b7280" },
+  CANCELLED: { bg: "var(--cal-cancelled)", border: "var(--cal-cancelled-border)" },
+  COMPLETED: { bg: "var(--cal-completed)", border: "var(--cal-completed-border)" },
 };
 
 const EXAM_PREFIX = "exam:";
@@ -304,23 +303,24 @@ export function ClassCalendar({
           />
         </div>
 
-      {/* Legend for students */}
+      {/* Legend for students — swatches use the same CSS vars as the events
+          themselves so the legend stays in sync across light/dark modes. */}
       {isStudent && (
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded bg-blue-500" />
+            <span className="h-3 w-3 rounded" style={{ backgroundColor: "var(--cal-theory)" }} />
             {t("calendar.enrolled.theory")}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded bg-emerald-500" />
+            <span className="h-3 w-3 rounded" style={{ backgroundColor: "var(--cal-practical)" }} />
             {t("calendar.enrolled.practical")}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded bg-blue-300" />
+            <span className="h-3 w-3 rounded" style={{ backgroundColor: "var(--cal-theory-muted)" }} />
             {t("calendar.availableLabel")}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded bg-red-600" />
+            <span className="h-3 w-3 rounded" style={{ backgroundColor: "var(--cal-exam-scheduled)" }} />
             {t("calendar.examLabel")}
           </span>
         </div>

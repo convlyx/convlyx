@@ -26,7 +26,7 @@ Last reviewed: 2026-05-11.
 
 ## 3. Operational holes (you'll regret skipping after first real users)
 
-- [ ] **Sentry / error monitoring** — production errors are invisible right now.
+- [x] **Sentry / error monitoring** — wired up; production errors trigger email alerts via Sentry.
 - [ ] **Structured logging** — pair with Sentry; replace ad-hoc `console.error`.
 - [x] **CI pipeline** — GitHub Actions workflow at `.github/workflows/ci.yml` runs lint + type-check on every push to main and every PR. Tests still TODO (no test suite yet).
 - [ ] **Tenant-isolation integration tests** — the single most important test suite that doesn't exist. Hits every `*.list` / `*.get` procedure across two tenants and asserts no cross-tenant leakage.
@@ -42,13 +42,13 @@ Last reviewed: 2026-05-11.
 - [ ] **Extract `useUrlParam` hook** — URL-param sync (`useState` + `router.replace` + `useEffect(() => setPage(1), [...])`) is duplicated across 5 list components.
 - [x] **`ITEMS_PER_PAGE = 10` duplicated in 7 components** — extract to `src/lib/constants/pagination.ts`.
 - [ ] **Inconsistent error key namespacing** — `users.notFound` / `enrollment.notFound` / `classes.notFound`. Pick one convention (recommend singular `user.notFound`).
-- [ ] **Calendar event hex colors** (`class-calendar.tsx:21-33`) have no dark mode variants — events look identical in dark mode. Move to CSS variables.
+- [x] **Calendar event hex colors** (`class-calendar.tsx:21-33`) have no dark mode variants — events look identical in dark mode. Move to CSS variables.
 - [x] **`roleColorMap` defined but unused** — either apply it on user/instructor lists for visual consistency or delete it.
 - [x] **`enrolledSessionIds` in `classes-table.tsx:68`** rebuilds a `Set` per render — wrap in `useMemo`.
 - [ ] **Platform-admin admin-creation rollback is best-effort** — wrap in Prisma transaction or add proper compensation.
 - [x] **Hardcoded `themeColor: "#16a34a"` in `app/layout.tsx:23`** — doesn't match primary token. Replace with CSS-var lookup or define a single source.
 - [x] **English "Close" `sr-only` label** in `dialog.tsx:77` — translation key.
-- [ ] **Default Button size still below iOS HIG 44px** — bumped to h-9 (36px) but mobile primary actions should be `size="lg"` or the default should grow further.
+- [x] **Default Button size still below iOS HIG 44px** — default now h-10 (40px), `lg` now h-11 (44px) for explicit mobile primary actions.
 
 ## 5. Compliance follow-ups
 

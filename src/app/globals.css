@@ -84,6 +84,27 @@
   --sidebar-accent-foreground: oklch(0.95 0.01 155);
   --sidebar-border: oklch(0.30 0.025 155);
   --sidebar-ring: oklch(0.52 0.14 155);
+
+  /* Calendar event colors — referenced by class-calendar.tsx. Bg/border pairs
+     per event category. Dark-mode variants are defined in the .dark block. */
+  --cal-theory: #3b82f6;
+  --cal-theory-border: #2563eb;
+  --cal-theory-muted: #93c5fd;
+  --cal-theory-muted-border: #60a5fa;
+  --cal-practical: #10b981;
+  --cal-practical-border: #059669;
+  --cal-practical-muted: #6ee7b7;
+  --cal-practical-muted-border: #34d399;
+  --cal-exam-scheduled: #dc2626;
+  --cal-exam-scheduled-border: #b91c1c;
+  --cal-exam-passed: #16a34a;
+  --cal-exam-passed-border: #15803d;
+  --cal-exam-failed: #7f1d1d;
+  --cal-exam-failed-border: #991b1b;
+  --cal-cancelled: #ef4444;
+  --cal-cancelled-border: #dc2626;
+  --cal-completed: #9ca3af;
+  --cal-completed-border: #6b7280;
 }
 
 .dark {
@@ -118,6 +139,28 @@
   --sidebar-accent-foreground: oklch(0.95 0.01 155);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.60 0.15 155);
+
+  /* Calendar event dark-mode palette. Solid categories shift lighter so they
+     keep contrast on a dark canvas; muted variants get a saturated-but-dark
+     fill so they read as the same role without disappearing into the bg. */
+  --cal-theory: #60a5fa;
+  --cal-theory-border: #3b82f6;
+  --cal-theory-muted: #1e3a8a;
+  --cal-theory-muted-border: #1d4ed8;
+  --cal-practical: #34d399;
+  --cal-practical-border: #10b981;
+  --cal-practical-muted: #064e3b;
+  --cal-practical-muted-border: #047857;
+  --cal-exam-scheduled: #f87171;
+  --cal-exam-scheduled-border: #ef4444;
+  --cal-exam-passed: #22c55e;
+  --cal-exam-passed-border: #16a34a;
+  --cal-exam-failed: #b91c1c;
+  --cal-exam-failed-border: #ef4444;
+  --cal-cancelled: #f87171;
+  --cal-cancelled-border: #ef4444;
+  --cal-completed: #4b5563;
+  --cal-completed-border: #6b7280;
 }
 
 @layer base {
