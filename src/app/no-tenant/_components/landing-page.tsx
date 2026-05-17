@@ -27,7 +27,7 @@ export function LandingPage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-emerald-500 shadow-md shadow-primary/20">
-              <img src="/favicon.png" alt="" width={22} height={22} className="brightness-0 invert" />
+              <img src="/favicon.png" alt="Convlyx" width={22} height={22} className="brightness-0 invert" />
             </div>
             <span className="text-lg font-bold bg-gradient-to-r from-primary to-emerald-500 bg-clip-text text-transparent">{t("common.appName")}</span>
           </div>
