@@ -14,6 +14,7 @@ import {
   Building2,
   UserCog,
   Settings,
+  BarChart3,
 } from "lucide-react";
 import type { UserRole } from "@/generated/prisma/enums";
 import type { LucideIcon } from "lucide-react";
@@ -34,6 +35,7 @@ export const navItems: NavItem[] = [
   { key: "students", href: "/students", roles: ["ADMIN", "SECRETARY", "INSTRUCTOR"], icon: GraduationCap, section: "main" },
   { key: "instructors", href: "/instructors", roles: ["ADMIN", "SECRETARY"], icon: Users, section: "main" },
   { key: "staff", href: "/staff", roles: ["ADMIN"], icon: UserCog, section: "admin" },
+  { key: "analytics", href: "/analytics", roles: ["ADMIN"], icon: BarChart3, section: "admin" },
   { key: "settings", href: "/settings", roles: ["ADMIN", "SECRETARY"], icon: Settings, section: "admin" },
 ];
 

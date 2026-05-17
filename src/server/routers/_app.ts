@@ -6,6 +6,7 @@ import { userRouter } from "./user";
 import { notificationRouter } from "./notification";
 import { courseRouter } from "./course";
 import { examRouter } from "./exam";
+import { analyticsRouter } from "./analytics";
 
 export const appRouter = router({
   school: schoolRouter,
@@ -15,6 +16,7 @@ export const appRouter = router({
   notification: notificationRouter,
   course: courseRouter,
   exam: examRouter,
+  analytics: analyticsRouter,
 });
 
 export type AppRouter = typeof appRouter;

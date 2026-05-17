@@ -34,15 +34,17 @@ Living document of everything the app can do, organized by area.
 - School count badges (users, classes)
 
 ## Users
-- List users with filters (role, school) and search
+- `/students`, `/instructors`, and `/staff` are the three role-specific lists; `/staff` (admin only) lists ADMIN + SECRETARY together. A single shared `/users` tab was removed in favour of per-role tabs so each role has one canonical place to be managed.
+- List filters (role, school) and search
 - Card + table view toggle
 - Invite user via email — Supabase sends password setup link (admin, secretary)
 - Edit user (name, phone, role, school)
 - Phone number field on user creation and editing (optional)
-- Deactivate / activate user (admin only) with confirmation dialog
-- Hard-delete student or instructor (admin only) from their detail page, gated to users with no `Enrollment` / `Exam` history (instructors also gated on `ClassSession` and audit FKs). Cascades `Notification`, `PushSubscription`, and (for students) `StudentCourse` rows; also removes the Supabase Auth account in the same transaction. Staff (admin/secretary) stay deactivate-only.
+- Deactivate / activate user (admin + secretary; secretary can't touch ADMIN or SECRETARY targets) with confirmation dialog
+- Row actions (Edit + Deactivate/Activate) exposed on every role-specific list; same actions on the detail-page header so the list and detail expose an identical primary action set
+- Hard-delete student or instructor (admin only) lives in a slim "Danger zone" row at the bottom of the detail page — surfaces only when the user has no `Enrollment` / `Exam` history (instructors also gated on `ClassSession` and audit FKs). Cascades `Notification`, `PushSubscription`, and (for students) `StudentCourse` rows; also removes the Supabase Auth account in the same transaction. Staff (admin/secretary) stay deactivate-only.
 - Role-colored avatars (purple=admin, blue=secretary, green=instructor, primary=student)
-- Create user directly from students page ("Adicionar aluno") and instructors page ("Adicionar instrutor") with pre-locked role
+- Create user directly from each list ("Adicionar aluno" / "Adicionar instrutor" / "Adicionar membro") with the role pre-locked or limited to the relevant subset
 - Filter students/instructors list by status (Ativo / Inativo / Todos) — defaults to active only
 
 ## License Categories (IMT)
@@ -131,9 +133,20 @@ Living document of everything the app can do, organized by area.
 - Filters by type and school (admin, secretary)
 - Responsive toolbar for mobile
 
+## Analytics (`/analytics`)
+- Admin-only "Análises" tab — the strategic counterpart to the operational Painel; lives in the admin section of the sidebar
+- Optional school selector at the top (only shown when the tenant has more than one school); all sections re-query with the chosen filter
+- **Snapshot row** — four KPI cards over the last 30 days, each with a delta vs. the previous 30-day period: new students, enrolments, attendance rate (in percentage-points), exam pass rate (in percentage-points). Up/down arrows + colour reinforce the sign.
+- **Inscrições por mês** — Recharts bar chart, last 6 calendar months including the current (partial) month so "this month vs last" is one glance.
+- **Aulas e presença** — Recharts dual-line chart over the last 8 weeks: classes ran (left axis) and attendance rate as a percentage (right axis). Weeks are Monday-start (UTC).
+- **Aprovação por categoria** — horizontal bars (recharts vertical-layout `BarChart`) showing pass rate per license category over the last 90 days; bars colour-coded green / amber / destructive by threshold; categories sorted by exam volume so the school's actual mix leads.
+- **Carga horária dos instrutores** — table over the last 7 days: instructor name, classes, hours, attendance rate. Instructors with zero classes in the period are excluded.
+- Each section streams independently — its own tRPC procedure, skeleton, and fade-in, so a slow query never blocks the rest of the page.
+- All data is scoped server-side to `ctx.tenantId`; aggregation is done in JS after a small Prisma read (`findMany` / `count` / `groupBy`) — at tenant scale this is faster to write and just as fast to run as raw SQL.
+
 ## Dashboard
 - Role-specific home pages
-- **Admin/Secretary**: stat cards (scheduled, in progress, students), upcoming classes list with class cards
+- **Admin/Secretary**: stat cards (scheduled, in progress, students), upcoming classes list with class cards. Each stat card and the list independently load — the active-students card streams in on its own query, the others on the upcoming-classes query.
 - **Student (mobile-first)**:
   - Time-of-day greeting (Bom dia / Boa tarde / Boa noite)
   - Next class hero card with countdown ("em 2h 30min")

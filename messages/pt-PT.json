@@ -193,6 +193,7 @@
     "settings": "Definições",
     "schools": "Escolas",
     "staff": "Staff",
+    "analytics": "Estatísticas",
     "enrollments": "As minhas inscrições"
   },
   "roles": {
@@ -213,6 +214,27 @@
   "staff": {
     "create": "Adicionar membro",
     "noStaff": "Nenhum membro da equipa registado"
+  },
+  "analytics": {
+    "allSchools": "Todas as escolas",
+    "vsPrevious": "vs. período anterior",
+    "noData": "Sem dados suficientes para este período",
+    "range": {
+      "7": "Últimos 7 dias",
+      "30": "Últimos 30 dias",
+      "90": "Últimos 90 dias",
+      "365": "Últimos 12 meses"
+    },
+    "newStudents": "Novos alunos",
+    "enrolments": "Inscrições",
+    "attendanceRate": "Taxa de presença",
+    "passRate": "Taxa de aprovação",
+    "enrolmentsOverTime": "Inscrições",
+    "attendanceTrend": "Aulas e presença",
+    "passRateByCategory": "Aprovação por categoria",
+    "instructorWorkload": "Carga horária dos instrutores",
+    "classes": "Aulas",
+    "hours": "Horas"
   },
   "users": {
     "title": "Utilizadores",

@@ -6,7 +6,9 @@ export function StatRowSkeleton({ count = 3 }: { count?: number } = {}) {
   const gridClass =
     count === 2
       ? "grid grid-cols-1 gap-4 sm:grid-cols-2"
-      : "grid grid-cols-1 gap-4 sm:grid-cols-3";
+      : count >= 4
+        ? "grid grid-cols-2 gap-4 lg:grid-cols-4"
+        : "grid grid-cols-1 gap-4 sm:grid-cols-3";
   return (
     <div className={`${gridClass} animate-in fade-in duration-300`}>
       {Array.from({ length: count }).map((_, i) => (
