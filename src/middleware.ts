@@ -4,7 +4,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 const publicPaths = ["/login", "/register", "/reset-password", "/update-password", "/install"];
 
 // Root domains that should not serve the app (no subdomain)
-const ROOT_DOMAINS = ["convlyx.com", "www.convlyx.com"];
+const ROOT_DOMAINS = ["convlyx.com"];
 
 // Reserved subdomains that are not real schools
 const RESERVED_SUBDOMAINS = ["admin", "www", "api"];
@@ -30,6 +30,15 @@ export async function middleware(request: NextRequest) {
   // Block obvious bot scan paths immediately (before any auth/db work)
   if (BOT_PATH_PATTERNS.some((p) => p.test(pathname))) {
     return new NextResponse(null, { status: 404 });
+  }
+
+  // Defence in depth: Cloudflare already 301s www → apex at the edge, but if
+  // traffic ever bypasses the proxy (DNS-only toggle, direct-to-origin hit)
+  // we still avoid serving duplicate content under www. 308 preserves method.
+  if (hostname.startsWith("www.")) {
+    const apexHost = hostname.slice(4);
+    const target = `https://${apexHost}${pathname}${request.nextUrl.search}`;
+    return NextResponse.redirect(target, 308);
   }
 
   const response = NextResponse.next();
