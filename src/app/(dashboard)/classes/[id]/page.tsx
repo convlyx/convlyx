@@ -1,9 +1,8 @@
-import { redirect, notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { notFound, redirect } from "next/navigation";
+import { requireDashboardUser } from "@/server/dashboard-user";
 import { db } from "@/server/db";
 import { ClassDetailView } from "./_components/class-detail-view";
 
-// UUID regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function ClassDetailPage({
@@ -12,18 +11,10 @@ export default async function ClassDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-
   if (!UUID_REGEX.test(id)) notFound();
 
-  const supabase = await createClient();
-  const { data: { user: authUser } } = await supabase.auth.getUser();
-  if (!authUser) redirect("/login");
-
-  const user = await db.user.findUnique({
-    where: { id: authUser.id },
-    select: { role: true, tenantId: true },
-  });
-  if (!user) redirect("/login");
+  // Wrong-role users land on /classes (not /) so they see something useful.
+  const user = await requireDashboardUser();
   if (!["ADMIN", "SECRETARY", "INSTRUCTOR"].includes(user.role)) redirect("/classes");
 
   // Verify the class exists in this tenant (instructors can only see their own)
@@ -31,7 +22,7 @@ export default async function ClassDetailPage({
     where: {
       id,
       tenantId: user.tenantId,
-      ...(user.role === "INSTRUCTOR" && { instructorId: authUser.id }),
+      ...(user.role === "INSTRUCTOR" && { instructorId: user.id }),
     },
     select: { id: true },
   });

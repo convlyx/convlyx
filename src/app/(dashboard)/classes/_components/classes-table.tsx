@@ -20,7 +20,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
-import { Loading } from "@/components/loading";
+import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { typeKeys, statusKeys, statusVariant, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
 import { Pagination } from "@/components/pagination";
@@ -278,11 +278,11 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
       </div>
 
       {isLoading ? (
-        <Loading />
+        <CardListSkeleton />
       ) : totalCount === 0 ? (
         <EmptyState icon={BookOpen} message={t("classes.noClasses")} />
       ) : view === "cards" ? (
-        <div className="grid gap-3">
+        <div className="grid gap-3 animate-in fade-in duration-300">
           {paginatedClasses.map((cls) => {
             const isClickable = canViewDetail(cls);
             const cardClass = `rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all block ${isClickable ? "hover:border-primary/20 group" : ""}`;
@@ -360,7 +360,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
           })}
         </div>
       ) : (
-        <div className="rounded-xl border card-shadow overflow-hidden">
+        <div className="rounded-xl border card-shadow overflow-hidden animate-in fade-in duration-300">
           <Table>
             <TableHeader>
               <TableRow>

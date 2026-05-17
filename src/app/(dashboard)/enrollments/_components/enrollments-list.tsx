@@ -11,7 +11,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
-import { Loading } from "@/components/loading";
+import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap, classTypeBadgeClass, resolveEnrollmentDisplay } from "@/lib/constants/class";
 import { Pagination } from "@/components/pagination";
@@ -92,11 +92,11 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
       </div>
 
       {isLoading ? (
-        <Loading />
+        <CardListSkeleton />
       ) : total === 0 ? (
         <EmptyState icon={ClipboardList} message={t("common.noResults")} />
       ) : view === "cards" ? (
-        <div className="grid gap-3">
+        <div className="grid gap-3 animate-in fade-in duration-300">
           {paginatedEnrollments.map((enrollment) => (
             <div
               key={enrollment.id}
@@ -169,7 +169,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border card-shadow overflow-hidden">
+        <div className="rounded-xl border card-shadow overflow-hidden animate-in fade-in duration-300">
           <Table>
             <TableHeader>
               <TableRow>

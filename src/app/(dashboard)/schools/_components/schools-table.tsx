@@ -7,7 +7,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
-import { Loading } from "@/components/loading";
+import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
 import { EmptyState } from "@/components/empty-state";
 
 export function SchoolsTable() {
@@ -22,11 +22,11 @@ export function SchoolsTable() {
       </div>
 
       {isLoading ? (
-        <Loading />
+        <CardListSkeleton />
       ) : !schools || schools.length === 0 ? (
         <EmptyState icon={Building2} message={t("schools.noSchools")} />
       ) : view === "cards" ? (
-        <div className="grid gap-3">
+        <div className="grid gap-3 animate-in fade-in duration-300">
           {schools.map((school) => (
             <div key={school.id} className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all">
               <div className="flex items-start gap-3">
@@ -61,7 +61,7 @@ export function SchoolsTable() {
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border card-shadow overflow-hidden">
+        <div className="rounded-xl border card-shadow overflow-hidden animate-in fade-in duration-300">
           <Table>
             <TableHeader>
               <TableRow>

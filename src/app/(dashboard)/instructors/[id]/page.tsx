@@ -1,5 +1,5 @@
-import { redirect, notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { notFound } from "next/navigation";
+import { requireDashboardUser } from "@/server/dashboard-user";
 import { db } from "@/server/db";
 import { InstructorDetailPage } from "./_components/instructor-detail-page";
 
@@ -11,19 +11,9 @@ export default async function InstructorPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-
   if (!UUID_REGEX.test(id)) notFound();
 
-  const supabase = await createClient();
-  const { data: { user: authUser } } = await supabase.auth.getUser();
-  if (!authUser) redirect("/login");
-
-  const user = await db.user.findUnique({
-    where: { id: authUser.id },
-    select: { role: true, tenantId: true },
-  });
-  if (!user) redirect("/login");
-  if (!["ADMIN", "SECRETARY"].includes(user.role)) redirect("/");
+  const user = await requireDashboardUser(["ADMIN", "SECRETARY"]);
 
   const instructorExists = await db.user.findFirst({
     where: { id, tenantId: user.tenantId, role: "INSTRUCTOR" },

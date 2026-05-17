@@ -4,7 +4,9 @@ import { useMemo } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
-import { Loading } from "@/components/loading";
+import { HeroCardSkeleton } from "@/components/skeletons/hero-card-skeleton";
+import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -51,9 +53,6 @@ export function InstructorHome({ userName, userId }: { userName: string; userId:
   const { data: todayData, isLoading: todayLoading } = trpc.class.list.useQuery(todayRange);
   const { data: weekData, isLoading: weekLoading } = trpc.class.list.useQuery(weekRange);
 
-  const isLoading = todayLoading || weekLoading;
-  if (isLoading) return <Loading />;
-
   const todayClasses = todayData?.items;
   const weekClasses = weekData?.items;
 
@@ -73,7 +72,7 @@ export function InstructorHome({ userName, userId }: { userName: string; userId:
   const progressPercent = totalToday > 0 ? Math.round((completedToday / totalToday) * 100) : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
       {/* Greeting */}
       <div>
         <p className="text-sm text-muted-foreground">{getGreeting()}</p>
@@ -84,8 +83,10 @@ export function InstructorHome({ userName, userId }: { userName: string; userId:
 
       <PendingAttendanceModal />
 
-      {/* Hero — current/next class */}
-      {currentOrNextClass ? (
+      {/* Hero — current/next class (driven by today query) */}
+      {todayLoading ? (
+        <HeroCardSkeleton />
+      ) : currentOrNextClass ? (
         <div className={`relative overflow-hidden rounded-2xl p-5 text-white ${
           currentOrNextClass.status === "IN_PROGRESS"
             ? "bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700"
@@ -143,8 +144,24 @@ export function InstructorHome({ userName, userId }: { userName: string; userId:
         </div>
       )}
 
-      {/* Today's progress */}
-      {totalToday > 0 && (
+      {/* Today's progress (driven by today query) */}
+      {todayLoading ? (
+        <div className="rounded-xl border bg-card p-4 card-shadow animate-in fade-in duration-300 space-y-3">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-10" />
+          </div>
+          <Skeleton className="h-2.5 w-full rounded-full" />
+          <div className="grid grid-cols-3 gap-2 pt-1">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <Skeleton className="h-5 w-8" />
+                <Skeleton className="h-2.5 w-12" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : totalToday > 0 && (
         <div className="rounded-xl border bg-card p-4 card-shadow">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-semibold">{t("dashboard.todaysProgress")}</p>
@@ -184,8 +201,13 @@ export function InstructorHome({ userName, userId }: { userName: string; userId:
         </div>
       )}
 
-      {/* Today's schedule — timeline */}
-      {todayClasses && todayClasses.length > 0 && (
+      {/* Today's schedule — timeline (driven by today query) */}
+      {todayLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-5 w-32" />
+          <CardListSkeleton rows={3} />
+        </div>
+      ) : todayClasses && todayClasses.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-base font-semibold">{t("dashboard.todaySchedule")}</h2>
           <div className="space-y-2">
@@ -254,8 +276,13 @@ export function InstructorHome({ userName, userId }: { userName: string; userId:
         </div>
       )}
 
-      {/* This week preview */}
-      {weekClasses && weekClasses.filter((c) => c.status === "SCHEDULED").length > 0 && (
+      {/* This week preview (driven by week query) */}
+      {weekLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-5 w-40" />
+          <CardListSkeleton rows={3} />
+        </div>
+      ) : weekClasses && weekClasses.filter((c) => c.status === "SCHEDULED").length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold">{t("dashboard.upcomingClasses")}</h2>
@@ -293,7 +320,7 @@ export function InstructorHome({ userName, userId }: { userName: string; userId:
         </div>
       )}
 
-      {!todayClasses?.length && !weekClasses?.length && (
+      {!todayLoading && !weekLoading && !todayClasses?.length && !weekClasses?.length && (
         <EmptyState icon={CalendarDays} message={t("dashboard.noClassesScheduled")} />
       )}
     </div>

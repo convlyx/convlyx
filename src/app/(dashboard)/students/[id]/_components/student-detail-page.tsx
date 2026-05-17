@@ -27,7 +27,7 @@ import {
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { EditUserDialog } from "@/app/(dashboard)/users/_components/edit-user-dialog";
-import { Loading } from "@/components/loading";
+import { DetailPageSkeleton } from "@/components/skeletons/detail-page-skeleton";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
@@ -68,7 +68,7 @@ export function StudentDetailPage({
   const canDelete = userRole === "ADMIN";
 
   if (isLoading) {
-    return <Loading />;
+    return <DetailPageSkeleton stats={3} sections={2} />;
   }
 
   if (!student) {
@@ -76,7 +76,7 @@ export function StudentDetailPage({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
       <Link href="/students" className="inline-flex">
         <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />

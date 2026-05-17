@@ -22,7 +22,7 @@ export function CalendarView({ userRole, userId }: { userRole: UserRole; userId:
   const instructors = instructorsData?.items;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-in fade-in duration-300">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">{t("calendar")}</h1>
         <div className="flex flex-wrap items-center gap-2">

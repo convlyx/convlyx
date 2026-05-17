@@ -1,22 +1,16 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireDashboardUser } from "@/server/dashboard-user";
 import { db } from "@/server/db";
 import { SettingsForm } from "./_components/settings-form";
 
 export default async function SettingsPage() {
-  const supabase = await createClient();
-  const { data: { user: authUser } } = await supabase.auth.getUser();
+  const dashUser = await requireDashboardUser();
 
-  if (!authUser) redirect("/login");
-
-  const user = await db.user.findUnique({
-    where: { id: authUser.id },
+  // requireDashboardUser already returned the cached user; we re-query here
+  // because settings needs the heavier school + tenant detail that the cached
+  // payload omits.
+  const detail = await db.user.findUnique({
+    where: { id: dashUser.id },
     select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      schoolId: true,
       school: {
         select: {
           id: true,
@@ -33,30 +27,30 @@ export default async function SettingsPage() {
     },
   });
 
-  if (!user) redirect("/login");
+  if (!detail) return null;
 
   return (
     <SettingsForm
       user={{
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+        id: dashUser.id,
+        name: dashUser.name,
+        email: dashUser.email,
+        role: dashUser.role,
       }}
       school={{
-        id: user.school.id,
-        name: user.school.name,
-        subdomain: user.school.subdomain,
-        address: user.school.address ?? "",
-        phone: user.school.phone ?? "",
-        cancellationNoticeHours: user.school.cancellationNoticeHours,
-        practicalSelfEnrollEnabled: user.school.practicalSelfEnrollEnabled,
-        userCount: user.school._count.users,
-        classCount: user.school._count.sessions,
+        id: detail.school.id,
+        name: detail.school.name,
+        subdomain: detail.school.subdomain,
+        address: detail.school.address ?? "",
+        phone: detail.school.phone ?? "",
+        cancellationNoticeHours: detail.school.cancellationNoticeHours,
+        practicalSelfEnrollEnabled: detail.school.practicalSelfEnrollEnabled,
+        userCount: detail.school._count.users,
+        classCount: detail.school._count.sessions,
       }}
       tenant={{
-        id: user.tenant.id,
-        name: user.tenant.name,
+        id: detail.tenant.id,
+        name: detail.tenant.name,
       }}
     />
   );

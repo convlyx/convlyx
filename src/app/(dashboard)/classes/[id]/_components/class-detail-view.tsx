@@ -3,7 +3,7 @@
 import { useTranslations, useFormatter } from "next-intl";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
-import { Loading } from "@/components/loading";
+import { DetailPageSkeleton } from "@/components/skeletons/detail-page-skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { StatCard } from "@/components/stat-card";
 import { Badge } from "@/components/ui/badge";
@@ -118,7 +118,7 @@ export function ClassDetailView({
     onError,
   });
 
-  if (isLoading) return <Loading />;
+  if (isLoading) return <DetailPageSkeleton stats={0} sections={2} />;
   if (isError || !classDetail) {
     return (
       <div className="space-y-4">
@@ -156,7 +156,7 @@ export function ClassDetailView({
   const canAddStudent = (isStaff || isInstructor) && classDetail.status !== "CANCELLED";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
       {/* Back */}
       <Link href="/classes" className="inline-flex">
         <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">

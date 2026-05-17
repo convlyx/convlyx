@@ -18,7 +18,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
-import { Loading } from "@/components/loading";
+import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
 import { Pagination } from "@/components/pagination";
 import { CreateUserDialog } from "@/app/(dashboard)/users/_components/create-user-dialog";
 import { ITEMS_PER_PAGE } from "@/lib/constants/pagination";
@@ -85,11 +85,11 @@ export function InstructorsPageClient() {
       </div>
 
       {isLoading ? (
-        <Loading />
+        <CardListSkeleton />
       ) : total === 0 ? (
         <EmptyState icon={Users} message={t("common.noResults")} />
       ) : view === "cards" ? (
-        <div className="grid gap-3">
+        <div className="grid gap-3 animate-in fade-in duration-300">
           {paginatedUsers.map((instructor) => (
             <Link
               key={instructor.id}
@@ -113,7 +113,7 @@ export function InstructorsPageClient() {
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border card-shadow overflow-hidden">
+        <div className="rounded-xl border card-shadow overflow-hidden animate-in fade-in duration-300">
           <Table>
             <TableHeader>
               <TableRow>

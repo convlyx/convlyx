@@ -306,7 +306,7 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
       <h1 className="text-2xl font-bold">{t("title")}</h1>
 
       {useTabs ? (

@@ -4,7 +4,8 @@ import { useMemo } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
-import { Loading } from "@/components/loading";
+import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
+import { StatCardSkeleton } from "@/components/skeletons/stat-row-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state";
 import { StatCard } from "@/components/stat-card";
@@ -39,13 +40,13 @@ export function DashboardView({
   const { data: upcomingData, isLoading } = trpc.class.list.useQuery(dateRange);
   const upcomingClasses = upcomingData?.items;
 
-  const { data: studentsData } = trpc.user.list.useQuery(
+  const { data: studentsData, isLoading: studentsLoading } = trpc.user.list.useQuery(
     { role: "STUDENT", status: "ACTIVE" },
     { enabled: userRole === "ADMIN" || userRole === "SECRETARY" }
   );
   const activeStudentCount = studentsData?.total ?? 0;
 
-  const { data: enrollmentsData } = trpc.enrollment.listByStudent.useQuery(
+  const { data: enrollmentsData, isLoading: enrollmentsLoading } = trpc.enrollment.listByStudent.useQuery(
     undefined,
     { enabled: userRole === "STUDENT" }
   );
@@ -70,59 +71,73 @@ export function DashboardView({
         {t("dashboard.welcome")}, {userName}
       </h1>
 
-      {/* Stats cards */}
+      {/* Stats cards — each appears as soon as its source query resolves */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {(userRole === "ADMIN" || userRole === "SECRETARY") && (
           <>
-            <StatCard
-              icon={CalendarDays}
-              label={t("classes.scheduled")}
-              value={scheduledToday}
-              description={t("dashboard.today")}
-            />
-            <StatCard
-              icon={Clock}
-              label={t("classes.inProgress")}
-              value={inProgressCount}
-              description={t("dashboard.today")}
-            />
-            <StatCard
-              icon={Users}
-              label={t("dashboard.activeStudents")}
-              value={activeStudentCount}
-            />
+            {isLoading ? <StatCardSkeleton /> : (
+              <StatCard
+                icon={CalendarDays}
+                label={t("classes.scheduled")}
+                value={scheduledToday}
+                description={t("dashboard.today")}
+              />
+            )}
+            {isLoading ? <StatCardSkeleton /> : (
+              <StatCard
+                icon={Clock}
+                label={t("classes.inProgress")}
+                value={inProgressCount}
+                description={t("dashboard.today")}
+              />
+            )}
+            {studentsLoading ? <StatCardSkeleton /> : (
+              <StatCard
+                icon={Users}
+                label={t("dashboard.activeStudents")}
+                value={activeStudentCount}
+              />
+            )}
           </>
         )}
         {userRole === "INSTRUCTOR" && (
           <>
-            <StatCard
-              icon={CalendarDays}
-              label={t("classes.scheduled")}
-              value={scheduledToday}
-              description={t("dashboard.today")}
-            />
-            <StatCard
-              icon={Clock}
-              label={t("classes.inProgress")}
-              value={inProgressCount}
-              description={t("dashboard.today")}
-            />
+            {isLoading ? <StatCardSkeleton /> : (
+              <StatCard
+                icon={CalendarDays}
+                label={t("classes.scheduled")}
+                value={scheduledToday}
+                description={t("dashboard.today")}
+              />
+            )}
+            {isLoading ? <StatCardSkeleton /> : (
+              <StatCard
+                icon={Clock}
+                label={t("classes.inProgress")}
+                value={inProgressCount}
+                description={t("dashboard.today")}
+              />
+            )}
           </>
         )}
         {userRole === "STUDENT" && (
           <>
-            <StatCard
-              icon={BookCheck}
-              label={t("enrollments.enrolled")}
-              value={activeEnrollments}
-              description={t("dashboard.activeEnrollments")}
-            />
-            <StatCard
-              icon={CalendarDays}
-              label={t("classes.scheduled")}
-              value={scheduledToday}
-              description={t("dashboard.availableThisWeek")}
-            />
+            {enrollmentsLoading ? <StatCardSkeleton /> : (
+              <StatCard
+                icon={BookCheck}
+                label={t("enrollments.enrolled")}
+                value={activeEnrollments}
+                description={t("dashboard.activeEnrollments")}
+              />
+            )}
+            {isLoading ? <StatCardSkeleton /> : (
+              <StatCard
+                icon={CalendarDays}
+                label={t("classes.scheduled")}
+                value={scheduledToday}
+                description={t("dashboard.availableThisWeek")}
+              />
+            )}
           </>
         )}
       </div>
@@ -131,11 +146,11 @@ export function DashboardView({
       <div className="space-y-3">
         <h2 className="text-lg font-semibold">{t("dashboard.upcomingClasses")}</h2>
         {isLoading ? (
-          <Loading />
+          <CardListSkeleton rows={5} />
         ) : !upcomingClasses || upcomingClasses.length === 0 ? (
           <EmptyState icon={BookOpen} message={t("common.noResults")} />
         ) : (
-          <div className="grid gap-3">
+          <div className="grid gap-3 animate-in fade-in duration-300">
             {upcomingClasses.slice(0, 10).map((cls) => (
               <Link
                 key={cls.id}

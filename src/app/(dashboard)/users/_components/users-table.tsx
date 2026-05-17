@@ -16,7 +16,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
-import { Loading } from "@/components/loading";
+import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { UserAvatar } from "@/components/user-avatar";
 import { roleColorMap } from "@/lib/constants/class";
@@ -114,11 +114,11 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
       </div>
 
       {isLoading ? (
-        <Loading />
+        <CardListSkeleton />
       ) : total === 0 ? (
         <EmptyState icon={Users} message={t("users.noUsers")} />
       ) : view === "cards" ? (
-        <div className="grid gap-3">
+        <div className="grid gap-3 animate-in fade-in duration-300">
           {paginatedUsers.map((user) => (
             <div key={user.id} className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all">
               <div className="flex items-center gap-3">
@@ -175,7 +175,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border card-shadow overflow-hidden">
+        <div className="rounded-xl border card-shadow overflow-hidden animate-in fade-in duration-300">
           <Table>
             <TableHeader>
               <TableRow>

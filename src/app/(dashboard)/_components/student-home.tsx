@@ -4,7 +4,9 @@ import { useMemo } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
-import { Loading } from "@/components/loading";
+import { HeroCardSkeleton } from "@/components/skeletons/hero-card-skeleton";
+import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -102,14 +104,11 @@ export function StudentHome({ userName, userId }: { userName: string; userId: st
     (cls) => cls.status === "SCHEDULED" && !enrolledSessionIds.has(cls.id) && cls._count.enrollments < cls.capacity
   ) ?? [];
 
-  const isLoading = classesLoading || enrollmentsLoading;
-  if (isLoading) return <Loading />;
-
   const firstName = userName.split(" ")[0];
   const totalClasses = attendedCount + noShowCount;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
       {/* Greeting */}
       <div>
         <p className="text-sm text-muted-foreground">{getGreeting()}</p>
@@ -118,8 +117,10 @@ export function StudentHome({ userName, userId }: { userName: string; userId: st
 
       <PushPrompt userId={userId} />
 
-      {/* Hero — next class */}
-      {nextClass ? (
+      {/* Hero — next class (driven by enrollments query) */}
+      {enrollmentsLoading ? (
+        <HeroCardSkeleton />
+      ) : nextClass ? (
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 p-5 text-primary-foreground">
           <div className="absolute -top-6 -right-6 h-24 w-24 rounded-full bg-white/10" />
           <div className="absolute -bottom-8 -left-4 h-20 w-20 rounded-full bg-white/5" />
@@ -166,52 +167,72 @@ export function StudentHome({ userName, userId }: { userName: string; userId: st
         </div>
       )}
 
-      {/* Stats — progress card */}
-      <div className="rounded-xl border bg-card p-4 card-shadow">
-        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-3">{t("dashboard.myProgress")}</p>
-        <div className="flex items-center justify-around">
-          <div className="flex flex-col items-center gap-1">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-              <CalendarDays className="h-4 w-4 text-primary" />
-            </div>
-            <span className="text-lg font-bold">{upcomingEnrollments.length}</span>
-            <span className="text-[10px] text-muted-foreground">{t("dashboard.scheduled")}</span>
-          </div>
-          <div className="w-px h-10 bg-border" />
-          <div className="flex flex-col items-center gap-1">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10">
-              <BookCheck className="h-4 w-4 text-emerald-500" />
-            </div>
-            <span className="text-lg font-bold">{attendedCount}</span>
-            <span className="text-[10px] text-muted-foreground">{t("dashboard.attendances")}</span>
-          </div>
-          <div className="w-px h-10 bg-border" />
-          <div className="flex flex-col items-center gap-1">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
-              <XCircle className="h-4 w-4 text-destructive" />
-            </div>
-            <span className="text-lg font-bold">{noShowCount}</span>
-            <span className="text-[10px] text-muted-foreground">{t("dashboard.absences")}</span>
+      {/* Stats — progress card (driven by enrollments query) */}
+      {enrollmentsLoading ? (
+        <div className="rounded-xl border bg-card p-4 card-shadow animate-in fade-in duration-300 space-y-3">
+          <Skeleton className="h-3 w-24" />
+          <div className="flex items-center justify-around py-1">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-1.5">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <Skeleton className="h-5 w-6" />
+                <Skeleton className="h-2.5 w-12" />
+              </div>
+            ))}
           </div>
         </div>
-        {totalClasses > 0 && (
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-              <span>{t("dashboard.attendanceRate")}</span>
-              <span className="font-medium text-foreground">{Math.round((attendedCount / totalClasses) * 100)}%</span>
+      ) : (
+        <div className="rounded-xl border bg-card p-4 card-shadow">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-3">{t("dashboard.myProgress")}</p>
+          <div className="flex items-center justify-around">
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                <CalendarDays className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-lg font-bold">{upcomingEnrollments.length}</span>
+              <span className="text-[10px] text-muted-foreground">{t("dashboard.scheduled")}</span>
             </div>
-            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full rounded-full bg-emerald-500 transition-all duration-500"
-                style={{ width: `${totalClasses > 0 ? (attendedCount / totalClasses) * 100 : 0}%` }}
-              />
+            <div className="w-px h-10 bg-border" />
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10">
+                <BookCheck className="h-4 w-4 text-emerald-500" />
+              </div>
+              <span className="text-lg font-bold">{attendedCount}</span>
+              <span className="text-[10px] text-muted-foreground">{t("dashboard.attendances")}</span>
+            </div>
+            <div className="w-px h-10 bg-border" />
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+                <XCircle className="h-4 w-4 text-destructive" />
+              </div>
+              <span className="text-lg font-bold">{noShowCount}</span>
+              <span className="text-[10px] text-muted-foreground">{t("dashboard.absences")}</span>
             </div>
           </div>
-        )}
-      </div>
+          {totalClasses > 0 && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
+                <span>{t("dashboard.attendanceRate")}</span>
+                <span className="font-medium text-foreground">{Math.round((attendedCount / totalClasses) * 100)}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  style={{ width: `${totalClasses > 0 ? (attendedCount / totalClasses) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* My upcoming enrollments */}
-      {upcomingEnrollments.length > 0 && (
+      {/* My upcoming enrollments (driven by enrollments query) */}
+      {enrollmentsLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-5 w-32" />
+          <CardListSkeleton rows={3} />
+        </div>
+      ) : upcomingEnrollments.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold">{t("dashboard.myClasses")}</h2>
@@ -259,8 +280,13 @@ export function StudentHome({ userName, userId }: { userName: string; userId: st
         </div>
       )}
 
-      {/* Available classes */}
-      {availableClasses.length > 0 && (
+      {/* Available classes (driven by classes query) */}
+      {classesLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-5 w-32" />
+          <CardListSkeleton rows={3} />
+        </div>
+      ) : availableClasses.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold">{t("dashboard.available")}</h2>
@@ -315,7 +341,7 @@ export function StudentHome({ userName, userId }: { userName: string; userId: st
         </div>
       )}
 
-      {upcomingEnrollments.length === 0 && availableClasses.length === 0 && !nextClass && (
+      {!enrollmentsLoading && !classesLoading && upcomingEnrollments.length === 0 && availableClasses.length === 0 && !nextClass && (
         <EmptyState icon={BookOpen} message={t("dashboard.noClassesThisWeek")} />
       )}
     </div>
