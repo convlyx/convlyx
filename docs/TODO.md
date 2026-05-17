@@ -39,7 +39,7 @@ Last reviewed: 2026-05-11.
 
 - [ ] **Zod schemas inline in routers** (`enrollment.ts`, `user.ts`, `class.ts`, `notification.ts`) should move to `src/lib/validations/`. Will bite during the React Native split.
 - [x] **`as unknown as string` Date casts in 6 places** — root cause confirmed: superjson IS correctly propagating Dates client-side. Removed all casts; types now flow through as `Date` as expected.
-- [ ] **Extract `useUrlParam` hook** — URL-param sync (`useState` + `router.replace` + `useEffect(() => setPage(1), [...])`) is duplicated across 5 list components.
+- [x] **Extract `useUrlParam` hook** — `useUrlParam` + `useUrlParamInt` in `src/hooks/use-url-param.ts`. URL is the source of truth (reads derive on every render); writes use `router.replace` with default-value elision (URL stays clean when value matches default). Applied across `students-page-client`, `instructors-page-client`, `users-table`, `classes-table`. `classes-table` keeps a custom `setTimeTab` that orchestrates the three URL updates for the tab+status+page reset.
 - [x] **`ITEMS_PER_PAGE = 10` duplicated in 7 components** — extract to `src/lib/constants/pagination.ts`.
 - [ ] **Inconsistent error key namespacing** — `users.notFound` / `enrollment.notFound` / `classes.notFound`. Pick one convention (recommend singular `user.notFound`).
 - [ ] **Calendar event hex colors** (`class-calendar.tsx:21-33`) have no dark mode variants — events look identical in dark mode. Move to CSS variables.

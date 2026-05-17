@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useUrlParam, useUrlParamInt } from "@/hooks/use-url-param";
 import { trpc } from "@/lib/trpc";
 import { Users, Search, Pencil, Phone, BadgeCheck, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -33,24 +34,12 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
   const t = useTranslations();
   const { onError } = useTranslatedError();
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  function updateParams(key: string, value: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value === "ALL" || value === "" || value === "cards") {
-      params.delete(key);
-    } else {
-      params.set(key, value);
-    }
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }
 
   const initialView = (searchParams.get("view") as "cards" | "table") ?? undefined;
   const [view, setView] = useViewMode("/users", initialView);
-  const [search, setSearch] = useState(searchParams.get("search") ?? "");
-  const [roleFilter, setRoleFilter] = useState<string>(searchParams.get("role") ?? "ALL");
-  const [page, setPage] = useState(Math.max(1, Number(searchParams.get("page") ?? 1)));
+  const [search, setSearch] = useUrlParam<string>("search", "");
+  const [roleFilter, setRoleFilter] = useUrlParam<string>("role", "ALL");
+  const [page, setPage] = useUrlParamInt("page", 1);
   const [deactivateUserId, setDeactivateUserId] = useState<string | null>(null);
 
   const { data: usersData, isLoading } = trpc.user.list.useQuery({
@@ -87,28 +76,13 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
   const paginatedUsers = users;
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
-  useEffect(() => setPage(1), [search, roleFilter]);
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (page === 1) params.delete("page");
-    else params.set("page", String(page));
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    if (page !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
-
-  function handleSearchChange(value: string) {
-    setSearch(value);
-    updateParams("search", value);
-  }
-
-  function handleRoleChange(value: string) {
-    setRoleFilter(value);
-    updateParams("role", value);
-  }
+  }, [search, roleFilter]);
 
   function handleViewChange(mode: "cards" | "table") {
     setView(mode);
-    updateParams("view", mode);
   }
 
   return (
@@ -120,11 +94,11 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
             <Input
               placeholder={t("common.search") + "..."}
               value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-9 w-full sm:w-[200px]"
             />
           </div>
-          <Select value={roleFilter} onValueChange={handleRoleChange}>
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
             <SelectTrigger className="w-auto min-w-[140px]">
               <SelectValue />
             </SelectTrigger>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useUrlParam, useUrlParamInt } from "@/hooks/use-url-param";
 import { trpc } from "@/lib/trpc";
 import Link from "next/link";
 import { BookOpen, Clock, Users, CalendarDays, Search, Pencil, ChevronRight } from "lucide-react";
@@ -41,28 +42,36 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   const router = useRouter();
   const pathname = usePathname();
 
-  function updateParams(key: string, value: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value === "ALL" || value === "" || value === "cards") {
-      params.delete(key);
-    } else {
-      params.set(key, value);
-    }
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }
-
   const initialView = (searchParams.get("view") as "cards" | "table") ?? undefined;
   const [view, setView] = useViewMode("/classes", initialView);
-  const [search, setSearch] = useState(searchParams.get("search") ?? "");
-  const [typeFilter, setTypeFilter] = useState<string>(searchParams.get("type") ?? "ALL");
-  const [categoryFilter, setCategoryFilter] = useState<string>(searchParams.get("category") ?? "ALL");
-  const [instructorFilter, setInstructorFilter] = useState<string>(searchParams.get("instructor") ?? "ALL");
-  const defaultStatus = (searchParams.get("time") ?? "upcoming") === "upcoming" ? "SCHEDULED" : "COMPLETED";
-  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") ?? defaultStatus);
-  const [page, setPage] = useState(Math.max(1, Number(searchParams.get("page") ?? 1)));
-  const [timeTab, setTimeTab] = useState<string>(searchParams.get("time") ?? "upcoming");
+  const [search, setSearch] = useUrlParam<string>("search", "");
+  const [typeFilter, setTypeFilter] = useUrlParam<string>("type", "ALL");
+  const [categoryFilter, setCategoryFilter] = useUrlParam<string>("category", "ALL");
+  const [instructorFilter, setInstructorFilter] = useUrlParam<string>("instructor", "ALL");
+  const [timeTab] = useUrlParam<string>("time", "upcoming");
+  // statusFilter has a dynamic default that depends on the active time tab.
+  // Empty string in the URL means "fall back to whatever the tab implies."
+  const [statusFilterRaw, setStatusFilter] = useUrlParam<string>("status", "");
+  const effectiveStatusDefault = timeTab === "upcoming" ? "SCHEDULED" : "COMPLETED";
+  const statusFilter = statusFilterRaw || effectiveStatusDefault;
+  const [page, setPage] = useUrlParamInt("page", 1);
   const [cancelId, setCancelId] = useState<string | null>(null);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
+
+  // Switching tabs also clears status (so the new tab's default applies) and
+  // resets to page 1. Three router.replace calls in a row don't actually
+  // batch — Next defers the URL commit, so back-to-back calls would each
+  // read the same stale search string and clobber each other. Build the
+  // full URL update locally and fire one router.replace.
+  function setTimeTab(tab: string) {
+    const params = new URLSearchParams(window.location.search);
+    if (tab === "upcoming") params.delete("time");
+    else params.set("time", tab);
+    params.delete("status");
+    params.delete("page");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
 
   const isStudent = userRole === "STUDENT";
   const canManageStaff = userRole === "ADMIN" || userRole === "SECRETARY";
@@ -148,60 +157,14 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
     ? studentVisibleClasses.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
     : serverItems;
 
-  // Reset to page 1 whenever a filter changes, and sync the page number to
-  // the URL so refresh/share preserves where you were.
-  useEffect(() => setPage(1), [search, typeFilter, categoryFilter, instructorFilter, statusFilter, timeTab]);
+  // Reset to page 1 whenever a filter narrows the result set.
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (page === 1) params.delete("page");
-    else params.set("page", String(page));
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    if (page !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
-
-  function handleSearchChange(value: string) {
-    setSearch(value);
-    updateParams("search", value);
-  }
-
-  function handleTypeChange(value: string) {
-    setTypeFilter(value);
-    updateParams("type", value);
-  }
-
-  function handleCategoryChange(value: string) {
-    setCategoryFilter(value);
-    updateParams("category", value);
-  }
-
-  function handleInstructorChange(value: string) {
-    setInstructorFilter(value);
-    updateParams("instructor", value);
-  }
-
-  function handleStatusChange(value: string) {
-    setStatusFilter(value);
-    updateParams("status", value === "ALL" ? "" : value);
-  }
+  }, [search, typeFilter, categoryFilter, instructorFilter, statusFilterRaw, timeTab]);
 
   function handleViewChange(mode: "cards" | "table") {
     setView(mode);
-    updateParams("view", mode);
-  }
-
-  function handleTimeTab(tab: string) {
-    setTimeTab(tab);
-    const newStatus = tab === "upcoming" ? "SCHEDULED" : "COMPLETED";
-    setStatusFilter(newStatus);
-    setPage(1);
-    const params = new URLSearchParams(searchParams.toString());
-    if (tab === "upcoming") {
-      params.delete("time");
-    } else {
-      params.set("time", tab);
-    }
-    params.delete("status");
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   return (
@@ -212,14 +175,14 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
           <Button
             variant={timeTab === "upcoming" ? "default" : "ghost"}
             size="sm"
-            onClick={() => handleTimeTab("upcoming")}
+            onClick={() => setTimeTab("upcoming")}
           >
             {t("classes.upcoming")}
           </Button>
           <Button
             variant={timeTab === "past" ? "default" : "ghost"}
             size="sm"
-            onClick={() => handleTimeTab("past")}
+            onClick={() => setTimeTab("past")}
           >
             {t("classes.past")}
           </Button>
@@ -233,11 +196,11 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
             <Input
               placeholder={t("common.search") + "..."}
               value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-9 w-full sm:w-[200px]"
             />
           </div>
-          <Select value={typeFilter} onValueChange={handleTypeChange}>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-auto min-w-[140px]">
               <SelectValue />
             </SelectTrigger>
@@ -247,7 +210,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
               <SelectItem value="PRACTICAL">{t("classes.practical")}</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={categoryFilter} onValueChange={handleCategoryChange}>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-auto min-w-[140px]">
               <SelectValue />
             </SelectTrigger>
@@ -259,7 +222,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
             </SelectContent>
           </Select>
           {canManageStaff && (
-            <Select value={instructorFilter} onValueChange={handleInstructorChange}>
+            <Select value={instructorFilter} onValueChange={setInstructorFilter}>
               <SelectTrigger className="w-auto min-w-[140px]">
                 <SelectValue />
               </SelectTrigger>
@@ -272,7 +235,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
             </Select>
           )}
           {!isStudent && (
-            <Select value={statusFilter} onValueChange={handleStatusChange}>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-auto min-w-[140px]">
                 <SelectValue />
               </SelectTrigger>

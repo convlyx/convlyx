@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useUrlParam, useUrlParamInt } from "@/hooks/use-url-param";
 import { trpc } from "@/lib/trpc";
 import Link from "next/link";
 import { Users, ChevronRight, Search } from "lucide-react";
@@ -26,26 +27,13 @@ import { roleColorMap } from "@/lib/constants/class";
 export function InstructorsPageClient() {
   const t = useTranslations();
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  function updateParams(key: string, value: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value === "" || value === "cards") {
-      params.delete(key);
-    } else {
-      params.set(key, value);
-    }
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }
 
   const initialView = (searchParams.get("view") as "cards" | "table") ?? undefined;
   const [view, setView] = useViewMode("/instructors", initialView);
-  const [search, setSearch] = useState(searchParams.get("search") ?? "");
-  const [statusFilter, setStatusFilter] = useState<"ACTIVE" | "INACTIVE" | "ALL">(
-    (searchParams.get("status") as "ACTIVE" | "INACTIVE" | "ALL") ?? "ACTIVE"
-  );
-  const [page, setPage] = useState(Math.max(1, Number(searchParams.get("page") ?? 1)));
+  const [search, setSearch] = useUrlParam<string>("search", "");
+  const [statusFilter, setStatusFilter] = useUrlParam<"ACTIVE" | "INACTIVE" | "ALL">("status", "ACTIVE");
+  const [page, setPage] = useUrlParamInt("page", 1);
+
   const { data: usersData, isLoading } = trpc.user.list.useQuery({
     role: "INSTRUCTOR",
     ...(statusFilter !== "ALL" && { status: statusFilter }),
@@ -58,28 +46,13 @@ export function InstructorsPageClient() {
   const total = usersData?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
-  useEffect(() => setPage(1), [search, statusFilter]);
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (page === 1) params.delete("page");
-    else params.set("page", String(page));
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    if (page !== 1) setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
-
-  function handleSearchChange(value: string) {
-    setSearch(value);
-    updateParams("search", value);
-  }
-
-  function handleStatusChange(value: "ACTIVE" | "INACTIVE" | "ALL") {
-    setStatusFilter(value);
-    updateParams("status", value === "ACTIVE" ? "" : value);
-  }
+  }, [search, statusFilter]);
 
   function handleViewChange(mode: "cards" | "table") {
     setView(mode);
-    updateParams("view", mode);
   }
 
   return (
@@ -92,11 +65,11 @@ export function InstructorsPageClient() {
             <Input
               placeholder={t("common.search") + "..."}
               value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-9 w-full sm:w-[200px]"
             />
           </div>
-          <Select value={statusFilter} onValueChange={handleStatusChange}>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "ACTIVE" | "INACTIVE" | "ALL")}>
             <SelectTrigger className="w-[130px]">
               <SelectValue />
             </SelectTrigger>
