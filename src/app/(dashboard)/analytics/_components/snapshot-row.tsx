@@ -11,11 +11,9 @@ type CardData = {
   label: string;
   value: string;
   delta: number | null;
-  /** For attendance/pass-rate, deltas are percentage points, not relative %. */
-  deltaIsPoints?: boolean;
 };
 
-function DeltaBadge({ delta, deltaIsPoints }: { delta: number | null; deltaIsPoints?: boolean }) {
+function DeltaBadge({ delta }: { delta: number | null }) {
   if (delta === null) {
     return (
       <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
@@ -32,7 +30,11 @@ function DeltaBadge({ delta, deltaIsPoints }: { delta: number | null; deltaIsPoi
     : up
       ? "text-emerald-600 dark:text-emerald-400"
       : "text-destructive";
-  const formatted = `${up ? "+" : ""}${delta.toFixed(1)}${deltaIsPoints ? "pp" : "%"}`;
+  // Always display deltas as %. For rates (attendance / pass) the underlying
+  // number is already in percentage points — the % label is read by users
+  // as "went up by 4 next to the 85%", which is the right mental model.
+  // Industry consensus (Stripe, Linear, Plausible) does the same.
+  const formatted = `${up ? "+" : ""}${delta.toFixed(1)}%`;
   return (
     <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${colour}`}>
       <Icon className="h-3 w-3" />
@@ -76,14 +78,12 @@ export function SnapshotRow({
       label: t("analytics.attendanceRate"),
       value: `${Math.round(data.attendanceRate.value * 100)}%`,
       delta: data.attendanceRate.delta,
-      deltaIsPoints: true,
     },
     {
       icon: Users,
       label: t("analytics.passRate"),
       value: `${Math.round(data.passRate.value * 100)}%`,
       delta: data.passRate.delta,
-      deltaIsPoints: true,
     },
   ];
 
@@ -99,7 +99,7 @@ export function SnapshotRow({
             </div>
             <p className="text-3xl font-bold">{c.value}</p>
             <div className="mt-1 flex items-center gap-1.5">
-              <DeltaBadge delta={c.delta} deltaIsPoints={c.deltaIsPoints} />
+              <DeltaBadge delta={c.delta} />
               <span className="text-xs text-muted-foreground">{t("analytics.vsPrevious")}</span>
             </div>
           </div>
