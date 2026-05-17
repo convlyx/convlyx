@@ -192,7 +192,7 @@
     "instructors": "Instrutores",
     "settings": "Definições",
     "schools": "Escolas",
-    "users": "Utilizadores",
+    "staff": "Staff",
     "enrollments": "As minhas inscrições"
   },
   "roles": {
@@ -209,6 +209,10 @@
     "noSchools": "Nenhuma escola registada",
     "studentsCount": "{count, plural, =0 {Sem alunos} one {# aluno} other {# alunos}}",
     "classesCount": "{count, plural, =0 {Sem aulas} one {# aula} other {# aulas}}"
+  },
+  "staff": {
+    "create": "Adicionar membro",
+    "noStaff": "Nenhum membro da equipa registado"
   },
   "users": {
     "title": "Utilizadores",
@@ -247,6 +251,8 @@
     "deactivateTitle": "Desativar utilizador",
     "deactivateMessage": "Tem a certeza que pretende desativar este utilizador?",
     "delete": "Eliminar",
+    "dangerZone": "Zona de perigo",
+    "dangerZoneDescription": "Eliminar permanentemente este utilizador e todos os seus dados pessoais.",
     "deleteTitle": "Eliminar utilizador",
     "deleteMessage": "Esta ação é permanente. O utilizador e todos os seus dados pessoais serão removidos. Tem a certeza?",
     "cannotDelete": "Não é possível eliminar utilizadores com inscrições ou exames associados. Desative em alternativa.",

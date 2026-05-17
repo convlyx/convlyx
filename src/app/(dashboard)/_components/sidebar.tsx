@@ -33,7 +33,7 @@ export const navItems: NavItem[] = [
   { key: "enrollments", href: "/enrollments", roles: ["STUDENT"], icon: ClipboardList, section: "main" },
   { key: "students", href: "/students", roles: ["ADMIN", "SECRETARY", "INSTRUCTOR"], icon: GraduationCap, section: "main" },
   { key: "instructors", href: "/instructors", roles: ["ADMIN", "SECRETARY"], icon: Users, section: "main" },
-  { key: "users", href: "/users", roles: ["ADMIN"], icon: UserCog, section: "admin" },
+  { key: "staff", href: "/staff", roles: ["ADMIN"], icon: UserCog, section: "admin" },
   { key: "settings", href: "/settings", roles: ["ADMIN", "SECRETARY"], icon: Settings, section: "admin" },
 ];
 

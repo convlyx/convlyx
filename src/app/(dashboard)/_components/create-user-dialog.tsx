@@ -26,11 +26,13 @@ const ROLES = ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"] as const;
 type CreateUserDialogProps = {
   /** Pre-select and lock the role (hides the role selector) */
   fixedRole?: UserRole;
+  /** Restrict the role selector to a subset (ignored if fixedRole is set) */
+  allowedRoles?: ReadonlyArray<UserRole>;
   /** Custom button label */
   buttonLabel?: string;
 };
 
-export function CreateUserDialog({ fixedRole, buttonLabel }: CreateUserDialogProps = {}) {
+export function CreateUserDialog({ fixedRole, allowedRoles, buttonLabel }: CreateUserDialogProps = {}) {
   const t = useTranslations();
   const { onError } = useTranslatedError();
   const [open, setOpen] = useState(false);
@@ -38,7 +40,8 @@ export function CreateUserDialog({ fixedRole, buttonLabel }: CreateUserDialogPro
 
   const { data: schools, isLoading: schoolsLoading } = trpc.school.list.useQuery();
 
-  const defaultRole = fixedRole ?? "STUDENT";
+  const visibleRoles = allowedRoles && allowedRoles.length > 0 ? allowedRoles : ROLES;
+  const defaultRole = fixedRole ?? visibleRoles[0];
 
   const buildDefaults = (): CreateUserInput => ({
     name: "",
@@ -131,7 +134,7 @@ export function CreateUserDialog({ fixedRole, buttonLabel }: CreateUserDialogPro
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {ROLES.map((role) => (
+                            {visibleRoles.map((role) => (
                               <SelectItem key={role} value={role}>
                                 {t(`roles.${role}`)}
                               </SelectItem>

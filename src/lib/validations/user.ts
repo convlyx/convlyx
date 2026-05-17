@@ -31,6 +31,9 @@ export const listUsersSchema = z
   .object({
     schoolId: z.string().uuid().optional(),
     role: z.enum(["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"]).optional(),
+    // Multi-role filter — used by the /staff list to fetch ADMIN + SECRETARY
+    // in a single query. If both `role` and `roles` are supplied, `role` wins.
+    roles: z.array(z.enum(["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"])).optional(),
     status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
     // Server-side pagination — when both are passed, server pages the
     // result. Otherwise the full filtered set is returned (used by

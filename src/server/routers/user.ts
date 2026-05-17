@@ -83,7 +83,11 @@ export const userRouter = router({
       const where = {
         tenantId: ctx.tenantId,
         ...(input?.schoolId && { schoolId: input.schoolId }),
-        ...(input?.role && { role: input.role }),
+        ...(input?.role
+          ? { role: input.role }
+          : input?.roles && input.roles.length > 0
+            ? { role: { in: input.roles } }
+            : {}),
         ...(input?.status && { status: input.status }),
         ...(input?.search && {
           OR: [
@@ -334,7 +338,7 @@ export const userRouter = router({
       });
     }),
 
-  deactivate: roleProtectedProcedure(["ADMIN"])
+  deactivate: roleProtectedProcedure(["ADMIN", "SECRETARY"])
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       if (input.id === ctx.user.id) {
@@ -342,6 +346,21 @@ export const userRouter = router({
           code: "BAD_REQUEST",
           message: "users.cannotDeactivateSelf",
         });
+      }
+
+      // Secretaries can deactivate students/instructors only — never other
+      // ADMINs or SECRETARIES. Same rule as user.update.
+      if (ctx.user.role !== "ADMIN") {
+        const target = await ctx.db.user.findFirst({
+          where: { id: input.id, tenantId: ctx.tenantId },
+          select: { role: true },
+        });
+        if (target && (target.role === "ADMIN" || target.role === "SECRETARY")) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "auth.insufficientPermissions",
+          });
+        }
       }
 
       const result = await ctx.db.user.updateMany({
@@ -362,9 +381,23 @@ export const userRouter = router({
       return result;
     }),
 
-  activate: roleProtectedProcedure(["ADMIN"])
+  activate: roleProtectedProcedure(["ADMIN", "SECRETARY"])
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
+      // Same SECRETARY guard as deactivate.
+      if (ctx.user.role !== "ADMIN") {
+        const target = await ctx.db.user.findFirst({
+          where: { id: input.id, tenantId: ctx.tenantId },
+          select: { role: true },
+        });
+        if (target && (target.role === "ADMIN" || target.role === "SECRETARY")) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "auth.insufficientPermissions",
+          });
+        }
+      }
+
       return ctx.db.user.updateMany({
         where: { id: input.id, tenantId: ctx.tenantId },
         data: { status: "ACTIVE" },

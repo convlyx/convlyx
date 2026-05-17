@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useUrlParam, useUrlParamInt } from "@/hooks/use-url-param";
 import { trpc } from "@/lib/trpc";
 import Link from "next/link";
-import { GraduationCap, ChevronRight, Search } from "lucide-react";
+import { GraduationCap, ChevronRight, Search, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
@@ -20,23 +21,30 @@ import {
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
 import { Pagination } from "@/components/pagination";
-import { CreateUserDialog } from "@/app/(dashboard)/users/_components/create-user-dialog";
+import { CreateUserDialog } from "@/app/(dashboard)/_components/create-user-dialog";
+import { EditUserDialog } from "@/app/(dashboard)/_components/edit-user-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CategoryBadge } from "@/components/category-badge";
 import { ITEMS_PER_PAGE } from "@/lib/constants/pagination";
 import { roleColorMap } from "@/lib/constants/class";
+import { toast } from "sonner";
+import { useTranslatedError } from "@/hooks/use-translated-error";
 
 import type { UserRole } from "@/generated/prisma/enums";
 
 export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
-  const canCreate = userRole === "ADMIN" || userRole === "SECRETARY";
+  const canManage = userRole === "ADMIN" || userRole === "SECRETARY";
   const t = useTranslations();
+  const { onError } = useTranslatedError();
   const searchParams = useSearchParams();
+  const utils = trpc.useUtils();
 
   const initialView = (searchParams.get("view") as "cards" | "table") ?? undefined;
   const [view, setView] = useViewMode("/students", initialView);
   const [search, setSearch] = useUrlParam<string>("search", "");
   const [statusFilter, setStatusFilter] = useUrlParam<"ACTIVE" | "INACTIVE" | "ALL">("status", "ACTIVE");
   const [page, setPage] = useUrlParamInt("page", 1);
+  const [deactivateUserId, setDeactivateUserId] = useState<string | null>(null);
 
   const { data: usersData, isLoading } = trpc.user.list.useQuery({
     role: "STUDENT",
@@ -49,6 +57,24 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
   const paginatedUsers = usersData?.items ?? [];
   const total = usersData?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+
+  type StudentRow = NonNullable<typeof usersData>["items"][number];
+  const [editStudent, setEditStudent] = useState<StudentRow | null>(null);
+
+  const deactivateMutation = trpc.user.deactivate.useMutation({
+    onSuccess: () => {
+      toast.success(t("toast.userDeactivated"));
+      utils.user.list.invalidate();
+    },
+    onError,
+  });
+  const activateMutation = trpc.user.activate.useMutation({
+    onSuccess: () => {
+      toast.success(t("toast.userActivated"));
+      utils.user.list.invalidate();
+    },
+    onError,
+  });
 
   // Reset to page 1 whenever a filter narrows the result set, so the user
   // doesn't get stuck on an empty page N.
@@ -86,7 +112,7 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
             </SelectContent>
           </Select>
           <ViewToggle view={view} onChange={handleViewChange} />
-          {canCreate && <CreateUserDialog fixedRole="STUDENT" buttonLabel={t("users.createStudent")} />}
+          {canManage && <CreateUserDialog fixedRole="STUDENT" buttonLabel={t("users.createStudent")} />}
         </div>
       </div>
 
@@ -113,8 +139,42 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground truncate mt-0.5">{student.email}</p>
+                  {canManage && (
+                    <div className="mt-2 flex gap-2 sm:hidden">
+                      <Button variant="outline" size="sm" onClick={(e) => { e.preventDefault(); setEditStudent(student); }}>
+                        <Pencil className="h-3.5 w-3.5 mr-1" />{t("common.edit")}
+                      </Button>
+                      {student.status === "ACTIVE" ? (
+                        <Button variant="destructive" size="sm" className="flex-1" disabled={deactivateMutation.isPending} onClick={(e) => { e.preventDefault(); setDeactivateUserId(student.id); }}>
+                          {t("users.deactivate")}
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" className="flex-1" disabled={activateMutation.isPending} onClick={(e) => { e.preventDefault(); activateMutation.mutate({ id: student.id }); }}>
+                          {t("users.activate")}
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
+                {canManage ? (
+                  <div className="hidden sm:flex shrink-0 gap-1 items-center">
+                    <Button variant="outline" size="icon-sm" onClick={(e) => { e.preventDefault(); setEditStudent(student); }} title={t("common.edit")}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    {student.status === "ACTIVE" ? (
+                      <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={(e) => { e.preventDefault(); setDeactivateUserId(student.id); }}>
+                        {t("users.deactivate")}
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={(e) => { e.preventDefault(); activateMutation.mutate({ id: student.id }); }}>
+                        {t("users.activate")}
+                      </Button>
+                    )}
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors ml-1" />
+                  </div>
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
+                )}
               </div>
             </Link>
           ))}
@@ -129,6 +189,7 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
                 <TableHead>{t("common.school")}</TableHead>
                 <TableHead>{t("classes.category")}</TableHead>
                 <TableHead>{t("common.status")}</TableHead>
+                {canManage && <TableHead>{t("common.actions")}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -147,6 +208,24 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
                       {student.status === "ACTIVE" ? t("common.active") : t("common.inactive")}
                     </Badge>
                   </TableCell>
+                  {canManage && (
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="outline" size="icon-sm" onClick={() => setEditStudent(student)} title={t("common.edit")}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        {student.status === "ACTIVE" ? (
+                          <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => setDeactivateUserId(student.id)}>
+                            {t("users.deactivate")}
+                          </Button>
+                        ) : (
+                          <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: student.id })}>
+                            {t("users.activate")}
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
@@ -159,6 +238,26 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
         totalPages={totalPages}
         total={total}
         onPageChange={setPage}
+      />
+
+      {editStudent && (
+        <EditUserDialog
+          userData={editStudent}
+          open={editStudent !== null}
+          onClose={() => setEditStudent(null)}
+        />
+      )}
+
+      <ConfirmDialog
+        open={deactivateUserId !== null}
+        onClose={() => setDeactivateUserId(null)}
+        onConfirm={() => {
+          if (deactivateUserId) deactivateMutation.mutate({ id: deactivateUserId });
+          setDeactivateUserId(null);
+        }}
+        title={t("users.deactivateTitle")}
+        message={t("users.deactivateMessage")}
+        loading={deactivateMutation.isPending}
       />
     </div>
   );

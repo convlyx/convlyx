@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useTranslatedError } from "@/hooks/use-translated-error";
-import { EditUserDialog } from "@/app/(dashboard)/users/_components/edit-user-dialog";
+import { EditUserDialog } from "@/app/(dashboard)/_components/edit-user-dialog";
 import { DetailPageSkeleton } from "@/components/skeletons/detail-page-skeleton";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
@@ -51,6 +51,7 @@ export function StudentDetailPage({
   const [historyPage, setHistoryPage] = useState(1);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [showDeactivate, setShowDeactivate] = useState(false);
   const router = useRouter();
   const { onError } = useTranslatedError();
   const utils = trpc.useUtils();
@@ -65,7 +66,26 @@ export function StudentDetailPage({
     onError,
   });
 
+  const deactivateMutation = trpc.user.deactivate.useMutation({
+    onSuccess: () => {
+      toast.success(t("toast.userDeactivated"));
+      utils.user.list.invalidate();
+      utils.user.studentProfile.invalidate({ id });
+    },
+    onError,
+  });
+
+  const activateMutation = trpc.user.activate.useMutation({
+    onSuccess: () => {
+      toast.success(t("toast.userActivated"));
+      utils.user.list.invalidate();
+      utils.user.studentProfile.invalidate({ id });
+    },
+    onError,
+  });
+
   const canDelete = userRole === "ADMIN";
+  const canManage = userRole === "ADMIN" || userRole === "SECRETARY";
 
   if (isLoading) {
     return <DetailPageSkeleton stats={3} sections={2} />;
@@ -102,15 +122,17 @@ export function StudentDetailPage({
               </Badge>
             </div>
             <div className="flex flex-wrap gap-2 sm:shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => setShowEdit(true)}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                {t("common.edit")}
-              </Button>
+              {canManage && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setShowEdit(true)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  {t("common.edit")}
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -120,17 +142,27 @@ export function StudentDetailPage({
                 <FileDown className="h-3.5 w-3.5" />
                 {t("common.exportPDF")}
               </Button>
-              {canDelete && student.deletable && (
+              {canManage && (student.status === "ACTIVE" ? (
                 <Button
                   variant="destructive"
                   size="sm"
                   className="gap-1.5"
-                  onClick={() => setShowDelete(true)}
+                  disabled={deactivateMutation.isPending}
+                  onClick={() => setShowDeactivate(true)}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  {t("users.delete")}
+                  {t("users.deactivate")}
                 </Button>
-              )}
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={activateMutation.isPending}
+                  onClick={() => activateMutation.mutate({ id })}
+                >
+                  {t("users.activate")}
+                </Button>
+              ))}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -236,6 +268,22 @@ export function StudentDetailPage({
         )}
       </div>
 
+      {/* Danger zone — ADMIN-only, hard delete (gated by user.deletable) */}
+      {canDelete && student.deletable && (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pt-4 border-t">
+          <p className="text-sm text-muted-foreground">{t("users.dangerZoneDescription")}</p>
+          <Button
+            variant="destructive"
+            size="sm"
+            className="gap-1.5 sm:shrink-0"
+            onClick={() => setShowDelete(true)}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            {t("users.delete")}
+          </Button>
+        </div>
+      )}
+
       {showEdit && (
         <EditUserDialog
           userData={{ ...student, role: "STUDENT" }}
@@ -246,6 +294,18 @@ export function StudentDetailPage({
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={showDeactivate}
+        onClose={() => setShowDeactivate(false)}
+        onConfirm={() => {
+          deactivateMutation.mutate({ id });
+          setShowDeactivate(false);
+        }}
+        title={t("users.deactivateTitle")}
+        message={t("users.deactivateMessage")}
+        loading={deactivateMutation.isPending}
+      />
 
       <ConfirmDialog
         open={showDelete}

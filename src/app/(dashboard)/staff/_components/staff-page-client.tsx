@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useUrlParam, useUrlParamInt } from "@/hooks/use-url-param";
 import { trpc } from "@/lib/trpc";
-import { Users, Search, Pencil, Phone, BadgeCheck, Clock } from "lucide-react";
+import { UserCog, Search, Pencil, Phone, BadgeCheck, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,29 +21,31 @@ import { EmptyState } from "@/components/empty-state";
 import { UserAvatar } from "@/components/user-avatar";
 import { roleColorMap } from "@/lib/constants/class";
 import { Pagination } from "@/components/pagination";
-import { EditUserDialog } from "./edit-user-dialog";
+import { CreateUserDialog } from "@/app/(dashboard)/_components/create-user-dialog";
+import { EditUserDialog } from "@/app/(dashboard)/_components/edit-user-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
-import type { UserRole } from "@/generated/prisma/enums";
 import { ITEMS_PER_PAGE } from "@/lib/constants/pagination";
 
-const ROLES = ["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"] as const;
+const STAFF_ROLES = ["ADMIN", "SECRETARY"] as const;
 
-export function UsersTable({ userRole }: { userRole: UserRole }) {
+export function StaffPageClient() {
   const t = useTranslations();
   const { onError } = useTranslatedError();
   const searchParams = useSearchParams();
 
   const initialView = (searchParams.get("view") as "cards" | "table") ?? undefined;
-  const [view, setView] = useViewMode("/users", initialView);
+  const [view, setView] = useViewMode("/staff", initialView);
   const [search, setSearch] = useUrlParam<string>("search", "");
   const [roleFilter, setRoleFilter] = useUrlParam<string>("role", "ALL");
   const [page, setPage] = useUrlParamInt("page", 1);
   const [deactivateUserId, setDeactivateUserId] = useState<string | null>(null);
 
   const { data: usersData, isLoading } = trpc.user.list.useQuery({
-    ...(roleFilter !== "ALL" && { role: roleFilter as typeof ROLES[number] }),
+    ...(roleFilter !== "ALL"
+      ? { role: roleFilter as typeof STAFF_ROLES[number] }
+      : { roles: [...STAFF_ROLES] }),
     ...(search.trim() && { search: search.trim() }),
     page,
     pageSize: ITEMS_PER_PAGE,
@@ -70,10 +72,6 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
     onError,
   });
 
-  const canDeactivate = userRole === "ADMIN";
-
-  // Server already paginated + filtered — render the page as-is.
-  const paginatedUsers = users;
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
   useEffect(() => {
@@ -88,8 +86,9 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold">{t("nav.staff")}</h1>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 sm:flex-none">
+          <div className="relative flex-1 min-w-[140px] sm:flex-none">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t("common.search") + "..."}
@@ -104,22 +103,26 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">{t("users.allRoles")}</SelectItem>
-              {ROLES.map((role) => (
+              {STAFF_ROLES.map((role) => (
                 <SelectItem key={role} value={role}>{t(`roles.${role}`)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <ViewToggle view={view} onChange={handleViewChange} />
+          <CreateUserDialog
+            allowedRoles={STAFF_ROLES}
+            buttonLabel={t("staff.create")}
+          />
         </div>
-        <ViewToggle view={view} onChange={handleViewChange} />
       </div>
 
       {isLoading ? (
         <CardListSkeleton />
       ) : total === 0 ? (
-        <EmptyState icon={Users} message={t("users.noUsers")} />
+        <EmptyState icon={UserCog} message={t("staff.noStaff")} />
       ) : view === "cards" ? (
         <div className="grid gap-3 animate-in fade-in duration-300">
-          {paginatedUsers.map((user) => (
+          {users.map((user) => (
             <div key={user.id} className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all">
               <div className="flex items-center gap-3">
                 <UserAvatar name={user.name} className={`h-10 w-10 sm:h-11 sm:w-11 shrink-0 ${roleColorMap[user.role] ?? "bg-muted text-foreground"}`} />
@@ -144,7 +147,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
                     <Button variant="outline" size="sm" onClick={() => setEditUser(user)}>
                       <Pencil className="h-3.5 w-3.5 mr-1" />{t("common.edit")}
                     </Button>
-                    {canDeactivate && (user.status === "ACTIVE" ? (
+                    {user.status === "ACTIVE" ? (
                       <Button variant="destructive" size="sm" className="flex-1" disabled={deactivateMutation.isPending} onClick={() => setDeactivateUserId(user.id)}>
                         {t("users.deactivate")}
                       </Button>
@@ -152,15 +155,14 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
                       <Button variant="outline" size="sm" className="flex-1" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: user.id })}>
                         {t("users.activate")}
                       </Button>
-                    ))}
+                    )}
                   </div>
                 </div>
-                {/* Desktop action buttons */}
                 <div className="hidden sm:flex shrink-0 gap-1">
                   <Button variant="outline" size="icon-sm" onClick={() => setEditUser(user)} title={t("common.edit")}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  {canDeactivate && (user.status === "ACTIVE" ? (
+                  {user.status === "ACTIVE" ? (
                     <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => setDeactivateUserId(user.id)}>
                       {t("users.deactivate")}
                     </Button>
@@ -168,7 +170,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
                     <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: user.id })}>
                       {t("users.activate")}
                     </Button>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
@@ -188,7 +190,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedUsers.map((user) => (
+              {users.map((user) => (
                 <TableRow key={user.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>
@@ -213,7 +215,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
                       <Button variant="outline" size="icon-sm" onClick={() => setEditUser(user)} title={t("common.edit")}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      {canDeactivate && (user.status === "ACTIVE" ? (
+                      {user.status === "ACTIVE" ? (
                         <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => setDeactivateUserId(user.id)}>
                           {t("users.deactivate")}
                         </Button>
@@ -221,7 +223,7 @@ export function UsersTable({ userRole }: { userRole: UserRole }) {
                         <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: user.id })}>
                           {t("users.activate")}
                         </Button>
-                      ))}
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

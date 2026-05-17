@@ -1,5 +1,5 @@
 import { ListPageSkeleton } from "@/components/skeletons/list-page-skeleton";
 
-export default function UsersLoading() {
+export default function StaffLoading() {
   return <ListPageSkeleton filters={2} />;
 }
