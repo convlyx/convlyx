@@ -37,11 +37,11 @@ Last reviewed: 2026-05-11.
 
 ## 4. Tech debt with real consequences
 
-- [ ] **Zod schemas inline in routers** (`enrollment.ts`, `user.ts`, `class.ts`, `notification.ts`) should move to `src/lib/validations/`. Will bite during the React Native split.
+- [x] **Zod schemas inline in routers** (`enrollment.ts`, `user.ts`, `class.ts`, `notification.ts`) should move to `src/lib/validations/`. Extracted the meaningful multi-field schemas: `listClassesSchema`, `listUsersSchema`, `enrollSchema`, `markAttendanceSchema`, `addNoteSchema`, `bulkSetAttendanceSchema`, `bulkMarkAttendanceSchema`, `listByStudentSchema`, `listNotificationsSchema`. Single-field id schemas (`z.object({ id: z.string().uuid() })`) intentionally left inline — extracting them creates noise without value.
 - [x] **`as unknown as string` Date casts in 6 places** — root cause confirmed: superjson IS correctly propagating Dates client-side. Removed all casts; types now flow through as `Date` as expected.
 - [x] **Extract `useUrlParam` hook** — `useUrlParam` + `useUrlParamInt` in `src/hooks/use-url-param.ts`. URL is the source of truth (reads derive on every render); writes use `router.replace` with default-value elision (URL stays clean when value matches default). Applied across `students-page-client`, `instructors-page-client`, `users-table`, `classes-table`. `classes-table` keeps a custom `setTimeTab` that orchestrates the three URL updates for the tab+status+page reset.
 - [x] **`ITEMS_PER_PAGE = 10` duplicated in 7 components** — extract to `src/lib/constants/pagination.ts`.
-- [ ] **Inconsistent error key namespacing** — `users.notFound` / `enrollment.notFound` / `classes.notFound`. Pick one convention (recommend singular `user.notFound`).
+- [x] **Inconsistent error key namespacing** — all i18n keys now use the plural route-name convention. `enrollment.X` → `enrollments.X` across server messages, the `enrollment` block in pt-PT.json, and all UI callers. Notification `type:` values (e.g. `"enrollment.created"`) intentionally kept — they're data, not translations.
 - [ ] **Calendar event hex colors** (`class-calendar.tsx:21-33`) have no dark mode variants — events look identical in dark mode. Move to CSS variables.
 - [x] **`roleColorMap` defined but unused** — either apply it on user/instructor lists for visual consistency or delete it.
 - [x] **`enrolledSessionIds` in `classes-table.tsx:68`** rebuilds a `Set` per render — wrap in `useMemo`.
@@ -55,11 +55,11 @@ Last reviewed: 2026-05-11.
 - [ ] **GDPR data export** — full export of a user's data as JSON/CSV. Required for Art. 15 / 20 requests.
 - [ ] **GDPR hard-delete for users with history** — partially done: students/instructors with no `Enrollment`/`Exam` (and no `ClassSession` for instructors) can already be hard-deleted. The remaining case is users *with* history → anonymize-in-place (replace name/email/phone with `[deleted]`, keep FK rows intact). ADMIN-only flow, separate from the existing delete button.
 - [ ] **Data processing agreement template** for schools to sign on signup.
-- [ ] **Backfill `category` for legacy `class_sessions`** rows (currently nullable, required at validation layer for new rows). One-time admin tool or seed script.
+- [x] **Backfill `category` for legacy `class_sessions`** rows — intentionally skipped on prod. Legacy NULL rows are kept as-is for historical accuracy; new rows are required at the validation layer. Column stays nullable until we have a confident inference strategy (or accept lossy default).
 
 ## 6. License / exam follow-ups (from existing FUTURE.md)
 
-- [ ] Defence-in-depth: partial unique index in Postgres enforcing one `IN_PROGRESS` `StudentCourse` per student (currently only validated at the tRPC layer).
+- [x] Defence-in-depth: partial unique index in Postgres enforcing one `IN_PROGRESS` `StudentCourse` per student per category (currently only validated at the tRPC layer). Migration `20260517102730_add_unique_in_progress_course_per_category` — partial index on `(student_id, category) WHERE status = 'IN_PROGRESS'`.
 - [ ] Conflict detection between class schedule and accompanying exam schedule for the same instructor.
 - [ ] Cross-category stats on student profile (per-category attendance & exam pass rate).
 - [ ] PDF export of full course report (course + exams + classes attended) per category.

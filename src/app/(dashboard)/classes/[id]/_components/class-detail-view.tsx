@@ -101,7 +101,7 @@ export function ClassDetailView({
 
   const bulkAttendanceMutation = trpc.enrollment.bulkMarkAttendance.useMutation({
     onSuccess: (_data, vars) => {
-      toast.success(t("enrollment.allMarkedPresent"));
+      toast.success(t("enrollments.allMarkedPresent"));
       utils.class.getById.invalidate({ id: classId });
       track("attendance_bulk_marked", { status: vars.status, class_id: classId });
     },
@@ -110,7 +110,7 @@ export function ClassDetailView({
 
   const addNoteMutation = trpc.enrollment.addNote.useMutation({
     onSuccess: () => {
-      toast.success(t("enrollment.noteSaved"));
+      toast.success(t("enrollments.noteSaved"));
       utils.class.getById.invalidate({ id: classId });
       setEditingNoteId(null);
       setNoteText("");
@@ -309,7 +309,7 @@ export function ClassDetailView({
               onClick={() => bulkAttendanceMutation.mutate({ sessionId: classDetail.id, status: "ATTENDED" })}
             >
               <CheckCheck className="h-4 w-4" />
-              {t("enrollment.markAllPresent")}
+              {t("enrollments.markAllPresent")}
             </Button>
           )}
         </div>
@@ -356,7 +356,7 @@ export function ClassDetailView({
                       <Textarea
                         value={noteText}
                         onChange={(e) => setNoteText(e.target.value)}
-                        placeholder={t("enrollment.notePlaceholder")}
+                        placeholder={t("enrollments.notePlaceholder")}
                         className="text-xs min-h-[60px]"
                       />
                       <div className="flex gap-1">
@@ -383,7 +383,7 @@ export function ClassDetailView({
                           type="button"
                           className="text-muted-foreground hover:text-foreground transition-colors p-0.5 shrink-0"
                           onClick={() => { setEditingNoteId(enrollment.id); setNoteText(enrollment.notes ?? ""); }}
-                          title={enrollment.notes ? t("enrollment.editNote") : t("enrollment.addNote")}
+                          title={enrollment.notes ? t("enrollments.editNote") : t("enrollments.addNote")}
                         >
                           <Pencil className="h-3 w-3" />
                         </button>
@@ -406,7 +406,7 @@ export function ClassDetailView({
                         })}
                       >
                         <CheckCircle className="h-3.5 w-3.5 sm:mr-1" />
-                        <span className="hidden sm:inline">{t("enrollment.attended")}</span>
+                        <span className="hidden sm:inline">{t("enrollments.attended")}</span>
                       </Button>
                       <Button
                         size="sm"
@@ -418,7 +418,7 @@ export function ClassDetailView({
                         })}
                       >
                         <XCircle className="h-3.5 w-3.5 sm:mr-1" />
-                        <span className="hidden sm:inline">{t("enrollment.noShow")}</span>
+                        <span className="hidden sm:inline">{t("enrollments.noShow")}</span>
                       </Button>
                     </>
                   )}
@@ -429,7 +429,7 @@ export function ClassDetailView({
                       disabled={cancelEnrollmentMutation.isPending}
                       onClick={() => setRemoveEnrollmentId(enrollment.id)}
                     >
-                      <span className="hidden sm:inline">{t("enrollment.remove")}</span>
+                      <span className="hidden sm:inline">{t("enrollments.remove")}</span>
                       <span className="sm:hidden">×</span>
                     </Button>
                   )}
@@ -444,7 +444,7 @@ export function ClassDetailView({
                         onClick={() => setPendingAttendanceChange({ enrollmentId: enrollment.id, status: "ATTENDED" })}
                       >
                         <CheckCircle className="h-3.5 w-3.5 sm:mr-1" />
-                        <span className="hidden sm:inline">{t("enrollment.attended")}</span>
+                        <span className="hidden sm:inline">{t("enrollments.attended")}</span>
                       </Button>
                     )}
                     {enrollment.status === "ATTENDED" && (
@@ -455,7 +455,7 @@ export function ClassDetailView({
                         onClick={() => setPendingAttendanceChange({ enrollmentId: enrollment.id, status: "NO_SHOW" })}
                       >
                         <XCircle className="h-3.5 w-3.5 sm:mr-1" />
-                        <span className="hidden sm:inline">{t("enrollment.noShow")}</span>
+                        <span className="hidden sm:inline">{t("enrollments.noShow")}</span>
                       </Button>
                     )}
                   </div>

@@ -22,10 +22,10 @@ export const statusVariant: Record<string, "default" | "secondary" | "destructiv
 
 // Enrollment status translation keys
 export const enrollmentStatusKeys: Record<string, string> = {
-  ENROLLED: "enrollment.enrolled",
-  ATTENDED: "enrollment.attended",
-  NO_SHOW: "enrollment.noShow",
-  NO_RECORD: "enrollment.noRecord",
+  ENROLLED: "enrollments.enrolled",
+  ATTENDED: "enrollments.attended",
+  NO_SHOW: "enrollments.noShow",
+  NO_RECORD: "enrollments.noRecord",
 };
 
 // Enrollment status badge variants

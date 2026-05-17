@@ -1,18 +1,21 @@
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, roleProtectedProcedure } from "../trpc";
+import {
+  enrollSchema,
+  markAttendanceSchema,
+  addNoteSchema,
+  bulkSetAttendanceSchema,
+  bulkMarkAttendanceSchema,
+  listByStudentSchema,
+} from "@/lib/validations/enrollment";
 import { createNotification, formatClassTime } from "../lib/notifications";
 import { getStudentClassAccess } from "../lib/student-access";
 
 export const enrollmentRouter = router({
   /** Enroll a student in a class session */
   enroll: protectedProcedure
-    .input(
-      z.object({
-        sessionId: z.string().uuid(),
-        studentId: z.string().uuid().optional(), // Admin/secretary can enroll others
-      })
-    )
+    .input(enrollSchema)
     .mutation(async ({ ctx, input }) => {
       // Students can only enroll themselves
       const studentId =
@@ -78,7 +81,7 @@ export const enrollmentRouter = router({
       if (!allowedStatuses.includes(session.status)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "enrollment.classNotAvailable",
+          message: "enrollments.classNotAvailable",
         });
       }
 
@@ -94,26 +97,26 @@ export const enrollmentRouter = router({
         if (!activeCategory) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "enrollment.noActiveCourse",
+            message: "enrollments.noActiveCourse",
           });
         }
         if (session.classType === "THEORY" && !canSeeTheory) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "enrollment.theoryAlreadyPassed",
+            message: "enrollments.theoryAlreadyPassed",
           });
         }
         if (session.classType === "PRACTICAL") {
           if (!session.school.practicalSelfEnrollEnabled) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: "enrollment.practicalSelfEnrollDisabled",
+              message: "enrollments.practicalSelfEnrollDisabled",
             });
           }
           if (session.category !== activeCategory) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: "enrollment.categoryMismatch",
+              message: "enrollments.categoryMismatch",
             });
           }
         }
@@ -122,7 +125,7 @@ export const enrollmentRouter = router({
       if (session._count.enrollments >= session.capacity) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "enrollment.classFull",
+          message: "enrollments.classFull",
         });
       }
 
@@ -140,7 +143,7 @@ export const enrollmentRouter = router({
       if (existing) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "enrollment.alreadyEnrolled",
+          message: "enrollments.alreadyEnrolled",
         });
       }
 
@@ -199,7 +202,7 @@ export const enrollmentRouter = router({
       });
 
       if (!enrollment) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "enrollment.notFound" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "enrollments.notFound" });
       }
 
       // Instructors can only cancel enrollments in their own classes
@@ -222,7 +225,7 @@ export const enrollmentRouter = router({
         if (enrollment.status !== "ENROLLED") {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "enrollment.notActive",
+            message: "enrollments.notActive",
           });
         }
         const noticeHours = enrollment.session.school.cancellationNoticeHours;
@@ -231,7 +234,7 @@ export const enrollmentRouter = router({
           if (new Date() > cutoff) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: "enrollment.cancellationTooLate",
+              message: "enrollments.cancellationTooLate",
             });
           }
         }
@@ -259,12 +262,7 @@ export const enrollmentRouter = router({
 
   /** Mark attendance (instructor, secretary, admin) */
   markAttendance: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
-    .input(
-      z.object({
-        enrollmentId: z.string().uuid(),
-        status: z.enum(["ATTENDED", "NO_SHOW"]),
-      })
-    )
+    .input(markAttendanceSchema)
     .mutation(async ({ ctx, input }) => {
       // Instructors can only mark attendance on classes they teach. Staff
       // can mark anything in the tenant.
@@ -281,7 +279,7 @@ export const enrollmentRouter = router({
       });
 
       if (!enrollment) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "enrollment.notFound" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "enrollments.notFound" });
       }
 
       return ctx.db.enrollment.update({
@@ -293,10 +291,7 @@ export const enrollmentRouter = router({
 
   /** Add or update instructor notes on an enrollment */
   addNote: roleProtectedProcedure(["INSTRUCTOR"])
-    .input(z.object({
-      enrollmentId: z.string().uuid(),
-      notes: z.string().max(2000),
-    }))
+    .input(addNoteSchema)
     .mutation(async ({ ctx, input }) => {
       // Instructors can only annotate enrollments in classes they teach.
       const enrollment = await ctx.db.enrollment.findFirst({
@@ -309,7 +304,7 @@ export const enrollmentRouter = router({
       });
 
       if (!enrollment) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "enrollment.notFound" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "enrollments.notFound" });
       }
 
       await ctx.db.enrollment.update({
@@ -367,15 +362,7 @@ export const enrollmentRouter = router({
    * tenant (plus belong to the caller if they are an INSTRUCTOR).
    */
   bulkSetAttendance: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
-    .input(z.object({
-      sessionId: z.string().uuid(),
-      entries: z
-        .array(z.object({
-          enrollmentId: z.string().uuid(),
-          status: z.enum(["ATTENDED", "NO_SHOW"]),
-        }))
-        .min(1),
-    }))
+    .input(bulkSetAttendanceSchema)
     .mutation(async ({ ctx, input }) => {
       const session = await ctx.db.classSession.findFirst({
         where: {
@@ -394,7 +381,7 @@ export const enrollmentRouter = router({
         where: { id: { in: enrollmentIds }, sessionId: input.sessionId, tenantId: ctx.tenantId },
       });
       if (matchingCount !== enrollmentIds.length) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "enrollment.notFound" });
+        throw new TRPCError({ code: "BAD_REQUEST", message: "enrollments.notFound" });
       }
 
       await ctx.db.$transaction(
@@ -411,10 +398,7 @@ export const enrollmentRouter = router({
 
   /** Bulk mark attendance for all enrolled students in a session */
   bulkMarkAttendance: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
-    .input(z.object({
-      sessionId: z.string().uuid(),
-      status: z.enum(["ATTENDED", "NO_SHOW"]),
-    }))
+    .input(bulkMarkAttendanceSchema)
     .mutation(async ({ ctx, input }) => {
       // Instructors can only mark their own classes; staff can mark anything
       // in the tenant.
@@ -445,19 +429,7 @@ export const enrollmentRouter = router({
 
   /** List enrollments for a student (own) or all (admin/secretary) */
   listByStudent: protectedProcedure
-    .input(
-      z.object({
-        studentId: z.string().uuid().optional(),
-        // Pagination — when both passed, server pages. Otherwise all matching
-        // rows are returned (used by calendar/dashboards/classes-table).
-        page: z.number().int().min(1).optional(),
-        pageSize: z.number().int().min(1).max(100).optional(),
-        // Time slice: "current" → still ENROLLED and the class is in the
-        // future; "past" → anything else (cancelled, attended, no-show, or
-        // session already started).
-        time: z.enum(["current", "past"]).optional(),
-      }).optional()
-    )
+    .input(listByStudentSchema)
     .query(async ({ ctx, input }) => {
       const studentId =
         ctx.user.role === "STUDENT" ? ctx.user.id : input?.studentId;

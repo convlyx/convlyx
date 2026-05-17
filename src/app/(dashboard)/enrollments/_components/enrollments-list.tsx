@@ -69,7 +69,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">{t("enrollment.myEnrollments")}</h1>
+        <h1 className="text-2xl font-bold">{t("enrollments.myEnrollments")}</h1>
         <ViewToggle view={view} onChange={setView} />
       </div>
 
@@ -137,11 +137,11 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
                         disabled={cancelMutation.isPending || isWithinNoticeWindow(enrollment)}
                         onClick={() => setConfirmCancelId(enrollment.id)}
                       >
-                        {t("enrollment.cancel")}
+                        {t("enrollments.cancel")}
                       </Button>
                       {isWithinNoticeWindow(enrollment) && (
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {t("enrollment.cancellationLockedHint", { hours: enrollment.session.school.cancellationNoticeHours })}
+                          {t("enrollments.cancellationLockedHint", { hours: enrollment.session.school.cancellationNoticeHours })}
                         </p>
                       )}
                     </div>
@@ -155,11 +155,11 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
                       disabled={cancelMutation.isPending || isWithinNoticeWindow(enrollment)}
                       onClick={() => setConfirmCancelId(enrollment.id)}
                     >
-                      {t("enrollment.cancel")}
+                      {t("enrollments.cancel")}
                     </Button>
                     {isWithinNoticeWindow(enrollment) && (
                       <p className="text-xs text-muted-foreground text-right">
-                        {t("enrollment.cancellationLockedHint", { hours: enrollment.session.school.cancellationNoticeHours })}
+                        {t("enrollments.cancellationLockedHint", { hours: enrollment.session.school.cancellationNoticeHours })}
                       </p>
                     )}
                   </div>
@@ -212,11 +212,11 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
                             disabled={cancelMutation.isPending || isWithinNoticeWindow(enrollment)}
                             onClick={() => setConfirmCancelId(enrollment.id)}
                           >
-                            {t("enrollment.cancel")}
+                            {t("enrollments.cancel")}
                           </Button>
                           {isWithinNoticeWindow(enrollment) && (
                             <p className="text-xs text-muted-foreground">
-                              {t("enrollment.cancellationLockedHint", { hours: enrollment.session.school.cancellationNoticeHours })}
+                              {t("enrollments.cancellationLockedHint", { hours: enrollment.session.school.cancellationNoticeHours })}
                             </p>
                           )}
                         </div>

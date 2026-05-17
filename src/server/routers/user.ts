@@ -2,8 +2,7 @@ import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { createClient } from "@supabase/supabase-js";
 import { router, protectedProcedure, roleProtectedProcedure } from "../trpc";
-import { createUserSchema, updateUserSchema } from "@/lib/validations/user";
-import { LICENSE_CATEGORIES } from "@/lib/license-categories";
+import { createUserSchema, updateUserSchema, listUsersSchema } from "@/lib/validations/user";
 import { createNotification } from "../lib/notifications";
 import { syncClassStatuses } from "../lib/class-status";
 
@@ -79,24 +78,7 @@ function mapSupabaseAuthError(message: string | undefined): string {
 
 export const userRouter = router({
   list: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
-    .input(
-      z.object({
-        schoolId: z.string().uuid().optional(),
-        role: z.enum(["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"]).optional(),
-        status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
-        // Server-side pagination — when both are passed, server pages the
-        // result. Otherwise the full filtered set is returned (used by
-        // dropdowns, instructor pickers, etc. which need every match).
-        page: z.number().int().min(1).optional(),
-        pageSize: z.number().int().min(1).max(100).optional(),
-        // Filters used by the staff list pages — searched server-side so we
-        // can paginate without loading the whole tenant.
-        search: z.string().optional(),
-        // Only meaningful when `role: "STUDENT"`. Filters by the student's
-        // currently in-progress course category.
-        category: z.enum(LICENSE_CATEGORIES).optional(),
-      }).optional()
-    )
+    .input(listUsersSchema)
     .query(async ({ ctx, input }) => {
       const where = {
         tenantId: ctx.tenantId,

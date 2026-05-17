@@ -1,15 +1,11 @@
 import { z } from "zod/v4";
 import { router, protectedProcedure } from "../trpc";
+import { listNotificationsSchema } from "@/lib/validations/notification";
 
 export const notificationRouter = router({
   /** List notifications for the current user */
   list: protectedProcedure
-    .input(
-      z.object({
-        limit: z.number().int().min(1).max(50).optional(),
-        unreadOnly: z.boolean().optional(),
-      }).optional()
-    )
+    .input(listNotificationsSchema)
     .query(async ({ ctx, input }) => {
       return ctx.db.notification.findMany({
         where: {

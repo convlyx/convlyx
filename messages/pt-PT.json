@@ -440,7 +440,7 @@
     "qualifiedCategoriesHint": "Categorias que o/a instrutor/a está habilitado/a a ensinar",
     "noQualifiedCategories": "Sem categorias habilitadas"
   },
-  "enrollment": {
+  "enrollments": {
     "enroll": "Inscrever",
     "cancel": "Cancelar inscrição",
     "enrolled": "Inscrito/a",

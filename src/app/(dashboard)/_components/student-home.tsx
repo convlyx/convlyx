@@ -286,7 +286,7 @@ export function StudentHome({ userName, userId }: { userName: string; userId: st
                       disabled={enrollMutation.isPending}
                       onClick={() => enrollMutation.mutate({ sessionId: cls.id })}
                     >
-                      {t("enrollment.enroll")}
+                      {t("enrollments.enroll")}
                     </Button>
                   </div>
                   <div className="mt-1.5 space-y-1 text-xs text-muted-foreground">

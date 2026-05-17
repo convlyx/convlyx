@@ -123,7 +123,7 @@ export function MobileLayout({
               >
                 <Icon className={`h-5 w-5 ${isActive ? "stroke-[2.5px]" : ""}`} />
                 <span className="text-[10px] font-medium leading-tight">
-                  {tab.key === "settings" ? t("common.profile") : tab.key === "enrollments" ? t("enrollment.enrollmentsShort") : tNav(tab.key)}
+                  {tab.key === "settings" ? t("common.profile") : tab.key === "enrollments" ? t("enrollments.enrollmentsShort") : tNav(tab.key)}
                 </span>
               </Link>
             );

@@ -315,13 +315,13 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                           disabled={enrollingId === cls.id}
                           onClick={(e) => { e.preventDefault(); setEnrollingId(cls.id); enrollMutation.mutate({ sessionId: cls.id }); }}
                         >
-                          {enrollingId === cls.id ? t("common.loading") : t("enrollment.enroll")}
+                          {enrollingId === cls.id ? t("common.loading") : t("enrollments.enroll")}
                         </Button>
                       </div>
                     )}
                     {isStudent && enrolledSessionIds.has(cls.id) && (
                       <div className="mt-2">
-                        <Badge variant="default">{t("enrollment.enrolled")}</Badge>
+                        <Badge variant="default">{t("enrollments.enrolled")}</Badge>
                       </div>
                     )}
                     {canManage && (cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
@@ -401,11 +401,11 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                         disabled={enrollingId === cls.id}
                         onClick={() => { setEnrollingId(cls.id); enrollMutation.mutate({ sessionId: cls.id }); }}
                       >
-                        {enrollingId === cls.id ? t("common.loading") : t("enrollment.enroll")}
+                        {enrollingId === cls.id ? t("common.loading") : t("enrollments.enroll")}
                       </Button>
                     )}
                     {isStudent && enrolledSessionIds.has(cls.id) && (
-                      <Badge variant="default">{t("enrollment.enrolled")}</Badge>
+                      <Badge variant="default">{t("enrollments.enrolled")}</Badge>
                     )}
                     {canManage && (cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
                       <div className="flex gap-1">

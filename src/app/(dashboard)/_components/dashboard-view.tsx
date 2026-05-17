@@ -113,7 +113,7 @@ export function DashboardView({
           <>
             <StatCard
               icon={BookCheck}
-              label={t("enrollment.enrolled")}
+              label={t("enrollments.enrolled")}
               value={activeEnrollments}
               description={t("dashboard.activeEnrollments")}
             />

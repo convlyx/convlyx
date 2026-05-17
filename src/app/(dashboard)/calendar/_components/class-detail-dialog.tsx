@@ -194,7 +194,7 @@ export function ClassDetailDialog({
                                 status: "ATTENDED",
                               })}
                             >
-                              {t("enrollment.attended")}
+                              {t("enrollments.attended")}
                             </Button>
                             <Button
                               size="sm"
@@ -205,7 +205,7 @@ export function ClassDetailDialog({
                                 status: "NO_SHOW",
                               })}
                             >
-                              {t("enrollment.noShow")}
+                              {t("enrollments.noShow")}
                             </Button>
                           </>
                         )}
@@ -216,7 +216,7 @@ export function ClassDetailDialog({
                             disabled={cancelEnrollmentMutation.isPending}
                             onClick={() => setConfirmRemoveEnrollmentId(enrollment.id)}
                           >
-                            {t("enrollment.remove")}
+                            {t("enrollments.remove")}
                           </Button>
                         )}
                       </div>
@@ -240,11 +240,11 @@ export function ClassDetailDialog({
                     disabled={cancelEnrollmentMutation.isPending || isWithinNoticeWindow}
                     onClick={() => setConfirmCancelOwn(true)}
                   >
-                    {cancelEnrollmentMutation.isPending ? t("common.loading") : t("enrollment.cancel")}
+                    {cancelEnrollmentMutation.isPending ? t("common.loading") : t("enrollments.cancel")}
                   </Button>
                   {isWithinNoticeWindow && (
                     <p className="text-xs text-muted-foreground">
-                      {t("enrollment.cancellationLockedHint", { hours: noticeHours })}
+                      {t("enrollments.cancellationLockedHint", { hours: noticeHours })}
                     </p>
                   )}
                 </div>
@@ -253,10 +253,10 @@ export function ClassDetailDialog({
                   disabled={enrollMutation.isPending}
                   onClick={() => enrollMutation.mutate({ sessionId: classDetail.id })}
                 >
-                  {enrollMutation.isPending ? t("common.loading") : t("enrollment.enroll")}
+                  {enrollMutation.isPending ? t("common.loading") : t("enrollments.enroll")}
                 </Button>
               ) : isFull ? (
-                <Badge variant="destructive">{t("enrollment.classFull")}</Badge>
+                <Badge variant="destructive">{t("enrollments.classFull")}</Badge>
               ) : null}
             </>
           )}

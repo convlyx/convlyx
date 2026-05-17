@@ -5,36 +5,15 @@ import {
   createClassSchema,
   updateClassSchema,
   cancelClassSchema,
+  listClassesSchema,
 } from "@/lib/validations/class";
-import { LICENSE_CATEGORIES } from "@/lib/license-categories";
 import { syncClassStatuses } from "../lib/class-status";
 import { createNotification, createNotifications, formatClassTime } from "../lib/notifications";
 import { getStudentClassAccess } from "../lib/student-access";
 
 export const classRouter = router({
   list: protectedProcedure
-    .input(
-      z.object({
-        schoolId: z.string().uuid().optional(),
-        classType: z.enum(["THEORY", "PRACTICAL"]).optional(),
-        category: z.enum(LICENSE_CATEGORIES).optional(),
-        instructorId: z.string().uuid().optional(),
-        status: z.enum(["ALL", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"]).optional(),
-        from: z.string().datetime().optional(),
-        to: z.string().datetime().optional(),
-        // Pagination — when both are passed, server pages the result;
-        // otherwise the full filtered set is returned (used by the calendar
-        // and dashboard which need every class in their date window).
-        page: z.number().int().min(1).optional(),
-        pageSize: z.number().int().min(1).max(100).optional(),
-        // Filters used by the classes table — searched server-side so we can
-        // paginate without loading the whole tenant.
-        search: z.string().optional(),
-        // "upcoming" → startsAt >= now; "past" → startsAt < now. Ignored if
-        // `from`/`to` are also passed (those are an explicit window).
-        time: z.enum(["upcoming", "past"]).optional(),
-      }).optional()
-    )
+    .input(listClassesSchema)
     .query(async ({ ctx, input }) => {
       // Auto-update class statuses based on current time
       await syncClassStatuses(ctx.db, ctx.tenantId);
