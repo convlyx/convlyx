@@ -93,9 +93,10 @@ export function CoursesAndExamsSection({ studentId, courses, userRole }: Props) 
   });
 
   const abandonMutation = trpc.course.abandon.useMutation({
-    onSuccess: () => {
-      toast.success(t("toast.courseAbandoned"));
+    onSuccess: (result) => {
+      toast.success(t("toast.courseAbandoned", { count: result.cancelledCount }));
       utils.user.studentProfile.invalidate({ id: studentId });
+      utils.enrollment.listByStudent.invalidate();
       setAbandonId(null);
     },
     onError,

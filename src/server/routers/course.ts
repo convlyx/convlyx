@@ -6,6 +6,7 @@ import {
   completeCourseSchema,
   abandonCourseSchema,
 } from "@/lib/validations/course";
+import { createNotification } from "../lib/notifications";
 
 export const courseRouter = router({
   /** All courses for a given student (history + current). */
@@ -147,7 +148,7 @@ export const courseRouter = router({
     .mutation(async ({ ctx, input }) => {
       const course = await ctx.db.studentCourse.findFirst({
         where: { id: input.id, tenantId: ctx.tenantId },
-        select: { status: true },
+        select: { status: true, studentId: true, category: true },
       });
 
       if (!course) {
@@ -161,10 +162,70 @@ export const courseRouter = router({
         });
       }
 
-      return ctx.db.studentCourse.update({
-        where: { id: input.id },
-        data: { status: "ABANDONED", completedAt: new Date() },
-        select: { id: true },
+      const now = new Date();
+
+      // Theory classes are category-agnostic — only cancel theory enrollments
+      // if the student has no other active course left to attend them for.
+      const otherActiveCourses = await ctx.db.studentCourse.count({
+        where: {
+          tenantId: ctx.tenantId,
+          studentId: course.studentId,
+          status: "IN_PROGRESS",
+          id: { not: input.id },
+        },
       });
+
+      const sessionMatch =
+        otherActiveCourses === 0
+          ? {
+              OR: [
+                { category: course.category },
+                { classType: "THEORY" as const },
+              ],
+            }
+          : { category: course.category };
+
+      // Update course + cancel future enrollments in one transaction so we
+      // don't leave the student in a "course abandoned but still enrolled
+      // in future classes" half-state if the second update fails.
+      const [, cancelResult] = await ctx.db.$transaction([
+        ctx.db.studentCourse.update({
+          where: { id: input.id },
+          data: { status: "ABANDONED", completedAt: now },
+        }),
+        ctx.db.enrollment.updateMany({
+          where: {
+            tenantId: ctx.tenantId,
+            studentId: course.studentId,
+            status: "ENROLLED",
+            session: {
+              startsAt: { gt: now },
+              status: "SCHEDULED",
+              ...sessionMatch,
+            },
+          },
+          data: { status: "CANCELLED" },
+        }),
+      ]);
+
+      const cancelledCount = cancelResult.count;
+
+      // Notify the student. Split by whether anything got cancelled, so the
+      // server-side string substitution (which has no plural support) reads
+      // naturally in either case.
+      createNotification({
+        db: ctx.db,
+        tenantId: ctx.tenantId,
+        userId: course.studentId,
+        type: "course.abandoned",
+        titleKey: "notifications.courseWasAbandoned",
+        messageKey:
+          cancelledCount > 0
+            ? "notifications.courseAbandonedWithCancellations"
+            : "notifications.courseAbandoned",
+        params: { category: course.category, count: String(cancelledCount) },
+      }).catch((e) => console.warn("[notify]", e));
+
+      return { id: input.id, cancelledCount };
     }),
 });

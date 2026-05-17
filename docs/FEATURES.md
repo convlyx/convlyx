@@ -58,6 +58,7 @@ Living document of everything the app can do, organized by area.
 - Each student has one active course (single category) at a time, with full course history
 - "Iniciar carta de condução" action on student profile (admin/secretary) — picks a category, blocked if a carta de condução is already active
 - "Concluir carta de condução" / "Abandonar carta de condução" actions with confirmation modals
+- Abandoning a course also cancels the student's future `ENROLLED` enrollments in classes of that category (plus `THEORY` classes if no other in-progress course remains). One transaction, one notification to the student with the count.
 - Carta de condução history list per student with status badges (Em curso / Concluída / Abandonada), start date, completion date
 - After completing/abandoning a course, the student can start a new one in a different (or the same) category
 

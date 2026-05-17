@@ -63,7 +63,7 @@ Last reviewed: 2026-05-11.
 - [ ] Conflict detection between class schedule and accompanying exam schedule for the same instructor.
 - [ ] Cross-category stats on student profile (per-category attendance & exam pass rate).
 - [ ] PDF export of full course report (course + exams + classes attended) per category.
-- [ ] When abandoning a course, optionally archive related future enrollments.
+- [x] When abandoning a course, archive related future enrollments. `course.abandon` now cancels future `ENROLLED` enrollments in classes of the same category (plus `THEORY` classes if the student has no other in-progress course). All inside one transaction. The student gets a notification with the count.
 
 ---
 

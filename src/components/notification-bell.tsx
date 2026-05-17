@@ -29,12 +29,13 @@ function useNotificationText(
     }
   }
 
-  try {
-    return t(key, resolvedParams);
-  } catch {
-    // Fallback if key doesn't exist — show the raw key
-    return key;
-  }
+  // next-intl logs (rather than throws) on missing keys, so the prior
+  // try/catch never fired. Check existence first so old notification rows
+  // referencing deleted keys silently render as the key string.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!t.has(key as any)) return key;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return t(key as any, resolvedParams);
 }
 
 export function NotificationBell({ userId }: { userId: string }) {

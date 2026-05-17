@@ -25,6 +25,7 @@ export const enrollmentStatusKeys: Record<string, string> = {
   ENROLLED: "enrollments.enrolled",
   ATTENDED: "enrollments.attended",
   NO_SHOW: "enrollments.noShow",
+  CANCELLED: "enrollments.cancelled",
   NO_RECORD: "enrollments.noRecord",
 };
 
@@ -33,6 +34,7 @@ export const enrollmentStatusVariant: Record<string, "default" | "secondary" | "
   ENROLLED: "default",
   ATTENDED: "secondary",
   NO_SHOW: "destructive",
+  CANCELLED: "outline",
   NO_RECORD: "outline",
 };
 
