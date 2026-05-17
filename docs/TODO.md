@@ -13,7 +13,7 @@ Last reviewed: 2026-05-11.
 - [ ] **Rotate Supabase + VAPID keys** — shared during dev, treat as compromised. Update Vercel + `.env.prod`.
 - [x] **Cap `enrollment.addNote` length** — currently unbounded `z.string()`. Add `.max(2000)`.
 - [x] **`PushSubscription` lacks `tenantId`** — schema change so a tenant-moved user can't be pushed to from the wrong tenant. Backfill existing rows during migration.
-- [ ] **CSRF validation on POST API routes** — `src/app/api/webhooks/*` and any same-origin POST endpoints.
+- [x] **CSRF validation on POST API routes** — `isSameOrigin(headers)` helper in `src/lib/csrf.ts`, applied to all 6 POST routes (push subscribe/unsubscribe, platform-admin admins/schools/tenants, demo-request) and the tRPC POST handler (mutations). Belt-and-braces on top of Supabase's SameSite=Lax cookies. Cron route uses CRON_SECRET bearer auth — separate concern.
 - [x] **Replace hardcoded seed password** with env var.
 - [ ] **CAPTCHA on repeated failed logins** — basic abuse defence.
 - [ ] **MFA for platform admin accounts**.

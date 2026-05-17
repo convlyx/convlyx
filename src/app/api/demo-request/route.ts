@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod/v4";
+import { isSameOrigin } from "@/lib/csrf";
 
 /**
  * Public, unauthenticated endpoint for the "Pedir demonstração" form on the
@@ -25,6 +26,9 @@ const demoRequestSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  if (!isSameOrigin(request.headers)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   let body: unknown;
   try {
     body = await request.json();

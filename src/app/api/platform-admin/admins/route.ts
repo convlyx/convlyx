@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
+import { isSameOrigin } from "@/lib/csrf";
 
 const ADMIN_EMAILS = (process.env.PLATFORM_ADMIN_EMAILS ?? "")
   .split(",")
@@ -24,6 +25,9 @@ async function verifyPlatformAdmin() {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isSameOrigin(request.headers)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   const admin = await verifyPlatformAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

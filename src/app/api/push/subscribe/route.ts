@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { isSameOrigin } from "@/lib/csrf";
 
 export async function POST(request: NextRequest) {
+  if (!isSameOrigin(request.headers)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   const ip = getClientIp(request.headers);
   const { success } = rateLimit({ key: `push-subscribe:${ip}`, limit: 5, windowMs: 60000 });
   if (!success) {
