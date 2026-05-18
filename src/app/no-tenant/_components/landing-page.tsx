@@ -963,50 +963,58 @@ function Lightbox({
           isPhone ? "max-w-md" : "max-w-5xl"
         } max-h-[92vh]`}
       >
+        {/* Close button sits on the outer (non-scrolling) container so it
+            stays in place even when the inner content scrolls on short
+            viewports. */}
         <button
           type="button"
           onClick={onClose}
           aria-label={t("landing.showcaseLightboxClose")}
-          className="absolute top-3 right-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-background/90 text-foreground shadow-md hover:bg-foreground hover:text-background hover:scale-110 active:scale-95 transition-all cursor-pointer ring-1 ring-border"
+          className="absolute top-3 right-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full bg-background/90 text-foreground shadow-md hover:bg-foreground hover:text-background hover:scale-110 active:scale-95 transition-all cursor-pointer ring-1 ring-border"
         >
           <X className="h-4 w-4" />
         </button>
-        {isPhone ? (
-          <div className="flex items-center justify-center bg-gradient-to-br from-primary/5 via-emerald-400/5 to-muted/40 p-4 md:p-6">
-            {hasImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={state.src}
-                alt={state.title}
-                className="h-[65vh] w-auto rounded-2xl shadow-lg object-contain"
-                onError={() => setHasImage(false)}
-              />
-            ) : (
-              <div className="relative w-[280px] aspect-[9/19] rounded-2xl bg-card shadow-lg overflow-hidden">
+        {/* Scrollable inner: short laptop heights can't fit a 16:10 image
+            + description in 92vh, so the description spills below and the
+            user scrolls instead of getting it clipped. */}
+        <div className="overflow-y-auto flex-1 min-h-0">
+          {isPhone ? (
+            <div className="flex items-center justify-center bg-gradient-to-br from-primary/5 via-emerald-400/5 to-muted/40 p-4 md:p-6">
+              {hasImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={state.src}
+                  alt={state.title}
+                  className="max-h-[65vh] w-auto rounded-2xl shadow-lg object-contain"
+                  onError={() => setHasImage(false)}
+                />
+              ) : (
+                <div className="relative w-[280px] aspect-[9/19] rounded-2xl bg-card shadow-lg overflow-hidden">
+                  <ScreenshotPlaceholder icon={state.icon} label={state.title} />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="relative aspect-[16/10] bg-gradient-to-br from-primary/5 via-emerald-400/5 to-muted/40">
+              {hasImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={state.src}
+                  alt={state.title}
+                  className="absolute inset-0 h-full w-full object-contain"
+                  onError={() => setHasImage(false)}
+                />
+              ) : (
                 <ScreenshotPlaceholder icon={state.icon} label={state.title} />
-              </div>
-            )}
+              )}
+            </div>
+          )}
+          <div className="p-6 md:p-7 border-t">
+            <h3 className="text-lg md:text-xl font-bold pr-12">{state.title}</h3>
+            <p className="mt-3 text-sm md:text-base text-muted-foreground leading-relaxed">
+              {state.description}
+            </p>
           </div>
-        ) : (
-          <div className="relative aspect-[16/10] bg-gradient-to-br from-primary/5 via-emerald-400/5 to-muted/40">
-            {hasImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={state.src}
-                alt={state.title}
-                className="absolute inset-0 h-full w-full object-contain"
-                onError={() => setHasImage(false)}
-              />
-            ) : (
-              <ScreenshotPlaceholder icon={state.icon} label={state.title} />
-            )}
-          </div>
-        )}
-        <div className="p-6 md:p-7 border-t">
-          <h3 className="text-lg md:text-xl font-bold">{state.title}</h3>
-          <p className="mt-3 text-sm md:text-base text-muted-foreground leading-relaxed">
-            {state.description}
-          </p>
         </div>
       </div>
     </div>
