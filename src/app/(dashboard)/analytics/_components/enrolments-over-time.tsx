@@ -72,7 +72,7 @@ export function EnrolmentsOverTime({
                 labelStyle={{ color: "var(--foreground)" }}
                 formatter={(value) => [`${value}`, t("analytics.enrolments")]}
               />
-              <Bar dataKey="count" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="count" fill="var(--primary)" radius={[4, 4, 0, 0]} isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
         </div>

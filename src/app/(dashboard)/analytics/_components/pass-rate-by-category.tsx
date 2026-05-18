@@ -93,7 +93,7 @@ export function PassRateByCategory({
                     : [`${value}%`, t("analytics.passRate")];
                 }}
               />
-              <Bar dataKey="pct" radius={[0, 4, 4, 0]}>
+              <Bar dataKey="pct" radius={[0, 4, 4, 0]} isAnimationActive={false}>
                 {rows.map((r, i) => (
                   <Cell key={i} fill={barColour(r.pct)} />
                 ))}

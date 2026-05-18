@@ -4,7 +4,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 const publicPaths = ["/login", "/register", "/reset-password", "/update-password", "/install"];
 
 // Root domains that should not serve the app (no subdomain)
-const ROOT_DOMAINS = ["convlyx.com"];
+const ROOT_DOMAINS = ["convlyx.com", "localhost:3000"];
 
 // Reserved subdomains that are not real schools
 const RESERVED_SUBDOMAINS = ["admin", "www", "api"];
@@ -75,7 +75,7 @@ export async function middleware(request: NextRequest) {
       return response;
     }
     // Allow SEO/PWA files served from public/ and Next.js internals
-    const ALLOWED = ["/robots.txt", "/sitemap.xml", "/favicon", "/manifest.json", "/sw.js", "/og-image", "/llms.txt"];
+    const ALLOWED = ["/robots.txt", "/sitemap.xml", "/favicon", "/manifest.json", "/sw.js", "/og-image", "/llms.txt", "/screenshots/"];
     if (ALLOWED.some((p) => pathname.startsWith(p)) || pathname.startsWith("/_next/")) {
       return response;
     }

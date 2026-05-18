@@ -1,20 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { SiteFooter } from "./site-footer";
 import { DemoDialog } from "./demo-dialog";
 import {
   CalendarDays, Users, BookOpen, Bell, Shield, BarChart3,
   ChevronRight, ArrowRight, Smartphone, Globe, Check, HelpCircle,
-  Sparkles, CalendarCheck, ShieldCheck,
+  Sparkles, CalendarCheck, ShieldCheck, GraduationCap,
+  ImageIcon, Home, Tablet, LayoutDashboard, UserCog, Settings,
+  X, ZoomIn, Briefcase, ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { LucideIcon } from "lucide-react";
 
+// Drop real screenshots into /public/screenshots/ with the filenames below and
+// they replace the placeholder visuals automatically. Until they exist, each
+// slot renders a styled placeholder with an icon + caption so the layout is
+// stable for design review.
+const BO_SCREENSHOTS = {
+  calendar: "/screenshots/bo-calendar.png",
+  calendarModal: "/screenshots/bo-calendar-modal.png",
+  dashboard: "/screenshots/bo-dashboard.png",
+  classes: "/screenshots/bo-classes.png",
+  classDetails: "/screenshots/bo-class-details.png",
+  students: "/screenshots/bo-students.png",
+  studentDetail: "/screenshots/bo-student-detail.png",
+  instructorDetail: "/screenshots/bo-instructor-detail.png",
+  analytics: "/screenshots/bo-analytics.png",
+  settings: "/screenshots/bo-settings.png",
+} as const;
+
+const APP_SCREENSHOTS = {
+  home: "/screenshots/app-home.png",
+  enrolments: "/screenshots/app-enrolments.png",
+  homeInstructor: "/screenshots/app-home-instructor.png",
+} as const;
+
+type LightboxState = {
+  src: string;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  aspect: "browser" | "phone";
+};
+
 export function LandingPage() {
   const t = useTranslations();
   const [demoOpen, setDemoOpen] = useState(false);
+  const [showcaseTab, setShowcaseTab] = useState<"bo" | "app">("bo");
+  const [lightbox, setLightbox] = useState<LightboxState | null>(null);
 
   function scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -31,11 +66,20 @@ export function LandingPage() {
             </div>
             <span className="text-lg font-bold bg-gradient-to-r from-primary to-emerald-500 bg-clip-text text-transparent">{t("common.appName")}</span>
           </div>
-          <div className="flex items-center gap-4">
-            <button onClick={() => scrollTo("features")} className="text-sm text-muted-foreground hover:text-primary transition-colors hidden sm:block px-3 py-1.5">
+          <div className="flex items-center gap-3">
+            <button onClick={() => scrollTo("features")} className="text-sm text-muted-foreground hover:text-primary transition-colors hidden sm:block px-3 py-1.5 cursor-pointer">
               {t("landing.seeFeatures")}
             </button>
-            <Button onClick={() => setDemoOpen(true)} size="sm" className="gap-1.5 shadow-md shadow-primary/20">
+            <Button
+              onClick={() => scrollTo("showcase")}
+              variant="outline"
+              size="sm"
+              className="gap-1.5 hidden md:inline-flex border-primary/30 text-primary hover:bg-primary/5 hover:text-primary hover:border-primary/50 cursor-pointer"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {t("landing.showcaseNav")}
+            </Button>
+            <Button onClick={() => setDemoOpen(true)} size="sm" className="gap-1.5 shadow-md shadow-primary/20 cursor-pointer">
               <span className="hidden sm:inline">{t("landing.requestDemo")}</span>
               <span className="sm:hidden">{t("landing.demoCTA")}</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -68,13 +112,18 @@ export function LandingPage() {
                 {t("landing.heroDescription")}
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                <Button onClick={() => setDemoOpen(true)} size="lg" className="gap-2 w-full sm:w-auto shadow-lg shadow-primary/20">
+                <Button onClick={() => setDemoOpen(true)} size="lg" className="gap-2 w-full sm:w-auto shadow-lg shadow-primary/20 cursor-pointer">
                   {t("landing.requestDemo")}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
-                <Button onClick={() => scrollTo("features")} variant="outline" size="lg" className="gap-2 w-full sm:w-auto">
-                  {t("landing.seeFeatures")}
-                  <ChevronRight className="h-4 w-4" />
+                <Button
+                  onClick={() => scrollTo("showcase")}
+                  variant="outline"
+                  size="lg"
+                  className="gap-2 w-full sm:w-auto border-primary/30 text-primary hover:bg-primary/5 hover:text-primary hover:border-primary/50 cursor-pointer"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {t("landing.showcaseNav")}
                 </Button>
               </div>
             </div>
@@ -181,6 +230,259 @@ export function LandingPage() {
             <FeatureCard icon={Smartphone} title={t("landing.featureMobile")} description={t("landing.featureMobileDesc")} gradient="from-violet-500/10 to-purple-400/10" />
             <FeatureCard icon={BarChart3} title={t("landing.featureReports")} description={t("landing.featureReportsDesc")} gradient="from-rose-500/10 to-pink-400/10" />
           </div>
+        </div>
+      </section>
+
+      {/* Showcase — real screenshots of Backoffice and App */}
+      <section id="showcase" className="relative py-14 md:py-20 overflow-hidden">
+        <div className="absolute top-20 left-0 w-72 h-72 rounded-full bg-primary/8 blur-[120px] -z-10" />
+        <div className="absolute bottom-10 right-0 w-80 h-80 rounded-full bg-emerald-400/8 blur-[120px] -z-10" />
+
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary mb-4">
+              <Sparkles className="h-3.5 w-3.5" />
+              {t("landing.showcaseKicker")}
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold">{t("landing.showcaseTitle")}</h2>
+            <p className="mt-4 text-muted-foreground text-lg">
+              {t("landing.showcaseDescription")}
+            </p>
+          </div>
+
+          {/* Tab toggle */}
+          <div className="flex justify-center mb-14 md:mb-10">
+            <div
+              role="tablist"
+              aria-label={t("landing.showcaseTitle")}
+              className="inline-flex items-center gap-1 rounded-xl border bg-card p-1 shadow-sm"
+            >
+              <ShowcaseTabButton
+                active={showcaseTab === "bo"}
+                onClick={() => setShowcaseTab("bo")}
+                icon={Tablet}
+                label={t("landing.showcaseTabBackoffice")}
+              />
+              <ShowcaseTabButton
+                active={showcaseTab === "app"}
+                onClick={() => setShowcaseTab("app")}
+                icon={Smartphone}
+                label={t("landing.showcaseTabApp")}
+              />
+            </div>
+          </div>
+
+          {showcaseTab === "bo" ? (
+            <div className="space-y-6">
+              {/* Hero: calendar with class-detail modal */}
+              <BrowserFrame
+                src={BO_SCREENSHOTS.calendar}
+                url={t("landing.showcaseBrowserUrl")}
+                path="/calendar"
+                placeholderIcon={CalendarDays}
+                placeholderLabel={t("landing.showcaseBoCalendarLabel")}
+                caption={t("landing.showcaseBoCalendarCaption")}
+                onOpen={() =>
+                  setLightbox({
+                    src: BO_SCREENSHOTS.calendar,
+                    title: t("landing.showcaseBoCalendarLabel"),
+                    description: t("landing.showcaseBoCalendarDescription"),
+                    icon: CalendarDays,
+                    aspect: "browser",
+                  })
+                }
+              />
+              {/* 9-up grid of feature screens */}
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <BrowserFrame
+                  src={BO_SCREENSHOTS.dashboard}
+                  url={t("landing.showcaseBrowserUrl")}
+                  path="/"
+                  placeholderIcon={LayoutDashboard}
+                  placeholderLabel={t("landing.showcaseBoDashboardLabel")}
+                  caption={t("landing.showcaseBoDashboardCaption")}
+                  compact
+                  onOpen={() =>
+                    setLightbox({
+                      src: BO_SCREENSHOTS.dashboard,
+                      title: t("landing.showcaseBoDashboardLabel"),
+                      description: t("landing.showcaseBoDashboardDescription"),
+                      icon: LayoutDashboard,
+                      aspect: "browser",
+                    })
+                  }
+                />
+                <BrowserFrame
+                  src={BO_SCREENSHOTS.calendarModal}
+                  url={t("landing.showcaseBrowserUrl")}
+                  path="/calendar"
+                  placeholderIcon={CalendarDays}
+                  placeholderLabel={t("landing.showcaseBoCalendarModalLabel")}
+                  caption={t("landing.showcaseBoCalendarModalCaption")}
+                  compact
+                  onOpen={() =>
+                    setLightbox({
+                      src: BO_SCREENSHOTS.calendarModal,
+                      title: t("landing.showcaseBoCalendarModalLabel"),
+                      description: t("landing.showcaseBoCalendarModalDescription"),
+                      icon: CalendarDays,
+                      aspect: "browser",
+                    })
+                  }
+                />
+                <BrowserFrame
+                  src={BO_SCREENSHOTS.classes}
+                  url={t("landing.showcaseBrowserUrl")}
+                  path="/classes"
+                  placeholderIcon={BookOpen}
+                  placeholderLabel={t("landing.showcaseBoClassesLabel")}
+                  caption={t("landing.showcaseBoClassesCaption")}
+                  compact
+                  onOpen={() =>
+                    setLightbox({
+                      src: BO_SCREENSHOTS.classes,
+                      title: t("landing.showcaseBoClassesLabel"),
+                      description: t("landing.showcaseBoClassesDescription"),
+                      icon: BookOpen,
+                      aspect: "browser",
+                    })
+                  }
+                />
+                <BrowserFrame
+                  src={BO_SCREENSHOTS.classDetails}
+                  url={t("landing.showcaseBrowserUrl")}
+                  path="/classes/…"
+                  placeholderIcon={ClipboardList}
+                  placeholderLabel={t("landing.showcaseBoClassDetailsLabel")}
+                  caption={t("landing.showcaseBoClassDetailsCaption")}
+                  compact
+                  onOpen={() =>
+                    setLightbox({
+                      src: BO_SCREENSHOTS.classDetails,
+                      title: t("landing.showcaseBoClassDetailsLabel"),
+                      description: t("landing.showcaseBoClassDetailsDescription"),
+                      icon: ClipboardList,
+                      aspect: "browser",
+                    })
+                  }
+                />
+                <BrowserFrame
+                  src={BO_SCREENSHOTS.students}
+                  url={t("landing.showcaseBrowserUrl")}
+                  path="/students"
+                  placeholderIcon={GraduationCap}
+                  placeholderLabel={t("landing.showcaseBoStudentsLabel")}
+                  caption={t("landing.showcaseBoStudentsCaption")}
+                  compact
+                  onOpen={() =>
+                    setLightbox({
+                      src: BO_SCREENSHOTS.students,
+                      title: t("landing.showcaseBoStudentsLabel"),
+                      description: t("landing.showcaseBoStudentsDescription"),
+                      icon: GraduationCap,
+                      aspect: "browser",
+                    })
+                  }
+                />
+                <BrowserFrame
+                  src={BO_SCREENSHOTS.studentDetail}
+                  url={t("landing.showcaseBrowserUrl")}
+                  path="/students/…"
+                  placeholderIcon={Users}
+                  placeholderLabel={t("landing.showcaseBoStudentDetailLabel")}
+                  caption={t("landing.showcaseBoStudentDetailCaption")}
+                  compact
+                  onOpen={() =>
+                    setLightbox({
+                      src: BO_SCREENSHOTS.studentDetail,
+                      title: t("landing.showcaseBoStudentDetailLabel"),
+                      description: t("landing.showcaseBoStudentDetailDescription"),
+                      icon: Users,
+                      aspect: "browser",
+                    })
+                  }
+                />
+                <BrowserFrame
+                  src={BO_SCREENSHOTS.instructorDetail}
+                  url={t("landing.showcaseBrowserUrl")}
+                  path="/instructors/…"
+                  placeholderIcon={UserCog}
+                  placeholderLabel={t("landing.showcaseBoInstructorDetailLabel")}
+                  caption={t("landing.showcaseBoInstructorDetailCaption")}
+                  compact
+                  onOpen={() =>
+                    setLightbox({
+                      src: BO_SCREENSHOTS.instructorDetail,
+                      title: t("landing.showcaseBoInstructorDetailLabel"),
+                      description: t("landing.showcaseBoInstructorDetailDescription"),
+                      icon: UserCog,
+                      aspect: "browser",
+                    })
+                  }
+                />
+                <BrowserFrame
+                  src={BO_SCREENSHOTS.analytics}
+                  url={t("landing.showcaseBrowserUrl")}
+                  path="/analytics"
+                  placeholderIcon={BarChart3}
+                  placeholderLabel={t("landing.showcaseBoAnalyticsLabel")}
+                  caption={t("landing.showcaseBoAnalyticsCaption")}
+                  compact
+                  onOpen={() =>
+                    setLightbox({
+                      src: BO_SCREENSHOTS.analytics,
+                      title: t("landing.showcaseBoAnalyticsLabel"),
+                      description: t("landing.showcaseBoAnalyticsDescription"),
+                      icon: BarChart3,
+                      aspect: "browser",
+                    })
+                  }
+                />
+                <BrowserFrame
+                  src={BO_SCREENSHOTS.settings}
+                  url={t("landing.showcaseBrowserUrl")}
+                  path="/settings"
+                  placeholderIcon={Settings}
+                  placeholderLabel={t("landing.showcaseBoSettingsLabel")}
+                  caption={t("landing.showcaseBoSettingsCaption")}
+                  compact
+                  onOpen={() =>
+                    setLightbox({
+                      src: BO_SCREENSHOTS.settings,
+                      title: t("landing.showcaseBoSettingsLabel"),
+                      description: t("landing.showcaseBoSettingsDescription"),
+                      icon: Settings,
+                      aspect: "browser",
+                    })
+                  }
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap justify-center items-end gap-6 md:gap-10 pt-10 md:pt-14">
+              <PhoneFrame
+                src={APP_SCREENSHOTS.home}
+                placeholderIcon={Home}
+                placeholderLabel={t("landing.showcaseAppHomeLabel")}
+                caption={t("landing.showcaseAppHomeCaption")}
+                tilt="-rotate-2"
+              />
+              <PhoneFrame
+                src={APP_SCREENSHOTS.enrolments}
+                placeholderIcon={ClipboardList}
+                placeholderLabel={t("landing.showcaseAppEnrolmentsLabel")}
+                caption={t("landing.showcaseAppEnrolmentsCaption")}
+                featured
+              />
+              <PhoneFrame
+                src={APP_SCREENSHOTS.homeInstructor}
+                placeholderIcon={Briefcase}
+                placeholderLabel={t("landing.showcaseAppHomeInstructorLabel")}
+                caption={t("landing.showcaseAppHomeInstructorCaption")}
+                tilt="rotate-2"
+              />
+            </div>
+          )}
         </div>
       </section>
 
@@ -386,6 +688,8 @@ export function LandingPage() {
       <SiteFooter onRequestDemo={() => setDemoOpen(true)} />
 
       <DemoDialog open={demoOpen} onOpenChange={setDemoOpen} />
+
+      {lightbox && <Lightbox state={lightbox} onClose={() => setLightbox(null)} />}
     </div>
   );
 }
@@ -472,6 +776,256 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
       </summary>
       <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{answer}</p>
     </details>
+  );
+}
+
+function ShowcaseTabButton({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: LucideIcon;
+  label: string;
+}) {
+  return (
+    <button
+      role="tab"
+      aria-selected={active}
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all cursor-pointer ${
+        active
+          ? "bg-gradient-to-br from-primary to-emerald-500 text-primary-foreground shadow-md shadow-primary/25"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+      }`}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </button>
+  );
+}
+
+function BrowserFrame({
+  src,
+  url,
+  path,
+  placeholderIcon,
+  placeholderLabel,
+  caption,
+  compact = false,
+  onOpen,
+}: {
+  src: string;
+  url: string;
+  path: string;
+  placeholderIcon: LucideIcon;
+  placeholderLabel: string;
+  caption: string;
+  compact?: boolean;
+  onOpen?: () => void;
+}) {
+  const t = useTranslations();
+  const [hasImage, setHasImage] = useState(true);
+  return (
+    <figure className="group">
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`${t("landing.showcaseLightboxZoom")}: ${placeholderLabel}`}
+        className="block w-full text-left rounded-xl border bg-card shadow-xl shadow-primary/5 overflow-hidden hover:shadow-2xl hover:shadow-primary/10 transition-shadow cursor-zoom-in"
+      >
+        {/* Browser chrome */}
+        <div className="flex items-center gap-2 border-b bg-muted/50 px-3 py-2">
+          <div className="flex gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-rose-400/70" />
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
+          </div>
+          <div className="ml-2 flex-1 rounded-md bg-background/80 px-3 py-1 text-[10px] font-mono text-muted-foreground truncate">
+            <span className="text-foreground/70">{url}</span>
+            <span className="opacity-50">{path}</span>
+          </div>
+        </div>
+        {/* Image / placeholder */}
+        <div className={`relative ${compact ? "aspect-[16/10]" : "aspect-[16/10]"} bg-gradient-to-br from-primary/5 via-emerald-400/5 to-background`}>
+          {hasImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={src}
+              alt={placeholderLabel}
+              className="absolute inset-0 h-full w-full object-cover object-top"
+              onError={() => setHasImage(false)}
+            />
+          ) : (
+            <ScreenshotPlaceholder icon={placeholderIcon} label={placeholderLabel} />
+          )}
+          {/* Zoom hint on hover */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center bg-black/30 pointer-events-none">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 text-foreground text-xs font-medium px-3 py-1.5 shadow-md">
+              <ZoomIn className="h-3.5 w-3.5" />
+              {t("landing.showcaseLightboxZoom")}
+            </span>
+          </div>
+        </div>
+      </button>
+      <figcaption className="mt-3 text-center text-sm text-muted-foreground">{caption}</figcaption>
+    </figure>
+  );
+}
+
+function PhoneFrame({
+  src,
+  placeholderIcon,
+  placeholderLabel,
+  caption,
+  tilt,
+  featured = false,
+}: {
+  src: string;
+  placeholderIcon: LucideIcon;
+  placeholderLabel: string;
+  caption: string;
+  tilt?: string;
+  featured?: boolean;
+}) {
+  const [hasImage, setHasImage] = useState(true);
+  return (
+    <figure className={featured ? "scale-110" : "scale-100"}>
+      <div
+        className={`relative ${tilt ?? ""} rounded-[2.25rem] border-[6px] border-foreground/85 bg-foreground/85 shadow-2xl shadow-primary/10 overflow-hidden ${
+          featured ? "w-56" : "w-48"
+        }`}
+      >
+        {/* Notch */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10 h-5 w-24 bg-foreground/85 rounded-b-2xl" />
+        {/* Phone screen — small inner padding so the screenshot doesn't touch the bezel */}
+        <div className="aspect-[9/19] bg-foreground/85 p-[3px]">
+          <div className="relative h-full w-full overflow-hidden rounded-[1.6rem] bg-gradient-to-br from-primary/8 via-emerald-400/5 to-background">
+            {hasImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={src}
+                alt={placeholderLabel}
+                className="absolute inset-0 h-full w-full object-cover object-top"
+                onError={() => setHasImage(false)}
+              />
+            ) : (
+              <ScreenshotPlaceholder icon={placeholderIcon} label={placeholderLabel} />
+            )}
+          </div>
+        </div>
+      </div>
+      <figcaption className="mt-4 text-center text-sm text-muted-foreground max-w-[14rem] mx-auto">{caption}</figcaption>
+    </figure>
+  );
+}
+
+function Lightbox({
+  state,
+  onClose,
+}: {
+  state: LightboxState;
+  onClose: () => void;
+}) {
+  const t = useTranslations();
+  const [hasImage, setHasImage] = useState(true);
+
+  // Reset image-availability check whenever the source changes
+  useEffect(() => {
+    setHasImage(true);
+  }, [state.src]);
+
+  // Close on Escape
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const isPhone = state.aspect === "phone";
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={state.title}
+      onClick={onClose}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 md:p-8 animate-in fade-in"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`relative bg-card rounded-2xl shadow-2xl w-full overflow-hidden flex flex-col ${
+          isPhone ? "max-w-md" : "max-w-5xl"
+        } max-h-[92vh]`}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={t("landing.showcaseLightboxClose")}
+          className="absolute top-3 right-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-background/90 text-foreground shadow-md hover:bg-foreground hover:text-background hover:scale-110 active:scale-95 transition-all cursor-pointer ring-1 ring-border"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        {isPhone ? (
+          <div className="flex items-center justify-center bg-gradient-to-br from-primary/5 via-emerald-400/5 to-muted/40 p-4 md:p-6">
+            {hasImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={state.src}
+                alt={state.title}
+                className="h-[65vh] w-auto rounded-2xl shadow-lg object-contain"
+                onError={() => setHasImage(false)}
+              />
+            ) : (
+              <div className="relative w-[280px] aspect-[9/19] rounded-2xl bg-card shadow-lg overflow-hidden">
+                <ScreenshotPlaceholder icon={state.icon} label={state.title} />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="relative aspect-[16/10] bg-gradient-to-br from-primary/5 via-emerald-400/5 to-muted/40">
+            {hasImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={state.src}
+                alt={state.title}
+                className="absolute inset-0 h-full w-full object-contain"
+                onError={() => setHasImage(false)}
+              />
+            ) : (
+              <ScreenshotPlaceholder icon={state.icon} label={state.title} />
+            )}
+          </div>
+        )}
+        <div className="p-6 md:p-7 border-t">
+          <h3 className="text-lg md:text-xl font-bold">{state.title}</h3>
+          <p className="mt-3 text-sm md:text-base text-muted-foreground leading-relaxed">
+            {state.description}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScreenshotPlaceholder({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+  const t = useTranslations();
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-emerald-400/20 ring-1 ring-primary/15">
+        <Icon className="h-6 w-6 text-primary" />
+      </div>
+      <span className="text-sm font-medium text-foreground/70">{label}</span>
+      <span className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground">
+        <ImageIcon className="h-3 w-3" />
+        {t("landing.showcasePlaceholderPending")}
+      </span>
+    </div>
   );
 }
 

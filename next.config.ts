@@ -32,6 +32,10 @@ const cspDirectives = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  // Hide the dev overlay button (bottom-left "N" with build/route info) so
+  // landing-page screenshots taken from the running dev server are clean.
+  // No effect on production builds.
+  devIndicators: false,
   headers: async () => [
     {
       source: "/(.*)",

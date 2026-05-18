@@ -100,6 +100,7 @@ export function AttendanceTrend({
                 strokeWidth={2}
                 dot={{ r: 3 }}
                 activeDot={{ r: 5 }}
+                isAnimationActive={false}
               />
               <Line
                 yAxisId="right"
@@ -111,6 +112,7 @@ export function AttendanceTrend({
                 dot={{ r: 3 }}
                 activeDot={{ r: 5 }}
                 unit="%"
+                isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>
