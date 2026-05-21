@@ -1,4 +1,7 @@
 {
+    "errors": {
+        "unexpected": "Ocorreu um erro inesperado. Tenta novamente."
+    },
     "common": {
         "appName": "Convlyx",
         "appDescription": "Gestão de escolas de condução",

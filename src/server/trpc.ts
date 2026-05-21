@@ -64,6 +64,23 @@ export const createTRPCContext = async (opts: {
 
 const t = initTRPC.context<TRPCContext>().create({
   transformer: superjson,
+  // Expected errors are thrown as `new TRPCError({ message: "<i18n key>" })`,
+  // so their `message` is safe to ship to the client. Unexpected throws
+  // (Prisma, Supabase, JS) come through as INTERNAL_SERVER_ERROR with raw
+  // messages that can leak table/column names — scrub those on the wire.
+  // `onError` in the route handler still receives the original error, so
+  // Sentry keeps the full detail for debugging.
+  errorFormatter({ shape, error }) {
+    if (process.env.NODE_ENV !== "production") return shape;
+    if (error.code === "INTERNAL_SERVER_ERROR") {
+      return {
+        ...shape,
+        message: "errors.unexpected",
+        data: { ...shape.data, message: "errors.unexpected" },
+      };
+    }
+    return shape;
+  },
 });
 
 export const createCallerFactory = t.createCallerFactory;

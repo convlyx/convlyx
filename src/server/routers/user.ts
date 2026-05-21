@@ -219,6 +219,16 @@ export const userRouter = router({
         });
 
       if (authError) {
+        // Log the raw Supabase error before mapping — `mapSupabaseAuthError`
+        // collapses unknown failures into `users.inviteFailed`, which hides
+        // the actual SMTP / auth-service reason from the Vercel logs.
+        console.error("[user.create] supabase invite error", {
+          email: input.email,
+          status: authError.status,
+          name: authError.name,
+          code: authError.code,
+          message: authError.message,
+        });
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: mapSupabaseAuthError(authError.message),
@@ -281,6 +291,13 @@ export const userRouter = router({
       });
 
       if (error) {
+        console.error("[user.resendInvite] supabase reset-password error", {
+          email: user.email,
+          status: error.status,
+          name: error.name,
+          code: error.code,
+          message: error.message,
+        });
         throw new TRPCError({ code: "BAD_REQUEST", message: mapSupabaseAuthError(error.message) });
       }
 
