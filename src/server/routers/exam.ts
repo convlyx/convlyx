@@ -8,6 +8,10 @@ import {
   cancelExamSchema,
 } from "@/lib/validations/exam";
 import { createNotification, formatClassTime } from "../lib/notifications";
+import { hasInstructorScheduleConflict } from "../lib/schedule-conflict";
+
+// Exams occupy a 60-min slot starting at `scheduledAt` (UI convention).
+const EXAM_DURATION_MS = 60 * 60 * 1000;
 
 export const examRouter = router({
   /** List exams visible to the caller in a date range (used by calendar). */
@@ -186,6 +190,25 @@ export const examRouter = router({
             message: "classes.instructorNotFound",
           });
         }
+
+        // Refuse if the instructor is already booked (class OR another exam)
+        // during this exam's 60-min slot.
+        const scheduledAt = new Date(input.scheduledAt);
+        const conflict = await hasInstructorScheduleConflict({
+          db: ctx.db,
+          tenantId: ctx.tenantId,
+          instructorId: input.instructorId,
+          windows: [{
+            startsAt: scheduledAt,
+            endsAt: new Date(scheduledAt.getTime() + EXAM_DURATION_MS),
+          }],
+        });
+        if (conflict) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "exams.scheduleConflict",
+          });
+        }
       }
 
       const exam = await ctx.db.exam.create({
@@ -278,6 +301,25 @@ export const examRouter = router({
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "classes.instructorNotFound",
+          });
+        }
+
+        // Conflict check, excluding the exam being updated.
+        const scheduledAt = new Date(input.scheduledAt);
+        const conflict = await hasInstructorScheduleConflict({
+          db: ctx.db,
+          tenantId: ctx.tenantId,
+          instructorId: input.instructorId,
+          windows: [{
+            startsAt: scheduledAt,
+            endsAt: new Date(scheduledAt.getTime() + EXAM_DURATION_MS),
+          }],
+          excludeExamId: input.id,
+        });
+        if (conflict) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "exams.scheduleConflict",
           });
         }
       }

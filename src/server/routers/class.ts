@@ -10,6 +10,7 @@ import {
 import { syncClassStatuses } from "../lib/class-status";
 import { createNotification, createNotifications, formatClassTime } from "../lib/notifications";
 import { getStudentClassAccess } from "../lib/student-access";
+import { hasInstructorScheduleConflict } from "../lib/schedule-conflict";
 
 export const classRouter = router({
   list: protectedProcedure
@@ -214,18 +215,13 @@ export const classRouter = router({
           });
         }
 
-        // Check conflicts across all generated sessions in a single query
-        const conflictAny = await ctx.db.classSession.findFirst({
-          where: {
-            tenantId: ctx.tenantId,
-            instructorId: input.instructorId,
-            status: { not: "CANCELLED" },
-            OR: sessions.map((s) => ({
-              startsAt: { lt: s.endsAt },
-              endsAt: { gt: s.startsAt },
-            })),
-          },
-          select: { id: true },
+        // Check the instructor isn't already booked (class OR exam) for any
+        // of these generated occurrences.
+        const conflictAny = await hasInstructorScheduleConflict({
+          db: ctx.db,
+          tenantId: ctx.tenantId,
+          instructorId: input.instructorId,
+          windows: sessions.map((s) => ({ startsAt: s.startsAt, endsAt: s.endsAt })),
         });
 
         if (conflictAny) {
@@ -242,20 +238,12 @@ export const classRouter = router({
         return { count: created.count };
       }
 
-      // One-off: check conflict for the single occurrence
-      const conflict = await ctx.db.classSession.findFirst({
-        where: {
-          tenantId: ctx.tenantId,
-          instructorId: input.instructorId,
-          status: { not: "CANCELLED" },
-          OR: [
-            {
-              startsAt: { lt: new Date(input.endsAt) },
-              endsAt: { gt: new Date(input.startsAt) },
-            },
-          ],
-        },
-        select: { id: true, title: true, startsAt: true },
+      // One-off: check the instructor isn't booked (class OR exam) for this window.
+      const conflict = await hasInstructorScheduleConflict({
+        db: ctx.db,
+        tenantId: ctx.tenantId,
+        instructorId: input.instructorId,
+        windows: [{ startsAt: new Date(input.startsAt), endsAt: new Date(input.endsAt) }],
       });
 
       if (conflict) {
@@ -357,21 +345,13 @@ export const classRouter = router({
         });
       }
 
-      // Check for schedule conflicts (excluding the class being updated)
-      const conflict = await ctx.db.classSession.findFirst({
-        where: {
-          tenantId: ctx.tenantId,
-          instructorId: input.instructorId,
-          id: { not: input.id },
-          status: { not: "CANCELLED" },
-          OR: [
-            {
-              startsAt: { lt: new Date(input.endsAt) },
-              endsAt: { gt: new Date(input.startsAt) },
-            },
-          ],
-        },
-        select: { id: true },
+      // Check for schedule conflicts (class OR exam, excluding this class).
+      const conflict = await hasInstructorScheduleConflict({
+        db: ctx.db,
+        tenantId: ctx.tenantId,
+        instructorId: input.instructorId,
+        windows: [{ startsAt: new Date(input.startsAt), endsAt: new Date(input.endsAt) }],
+        excludeClassId: input.id,
       });
 
       if (conflict) {

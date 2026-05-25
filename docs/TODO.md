@@ -26,7 +26,7 @@ Last reviewed: 2026-05-11.
 
 ## 3. Operational holes (you'll regret skipping after first real users)
 
-- [ ] **Sentry / error monitoring** — production errors are invisible right now.
+- [x] **Sentry / error monitoring** — wired up; production errors trigger email alerts via Sentry.
 - [ ] **Structured logging** — pair with Sentry; replace ad-hoc `console.error`.
 - [x] **CI pipeline** — GitHub Actions workflow at `.github/workflows/ci.yml` runs lint + type-check on every push to main and every PR. Tests still TODO (no test suite yet).
 - [x] **Tenant-isolation integration tests** — Vitest set up; `tests/isolation.test.ts` covers `class.list`, `user.list`, `enrollment.listByStudent` (staff path), and `user.studentProfile` cross-tenant rejection. Helper in `tests/helpers/tenant.ts` seeds two fresh tenants per test file with random UUIDs and cleans up after. CI runs against a Postgres service container with migrations applied. Pattern set — add more procedures as needed.
@@ -60,7 +60,7 @@ Last reviewed: 2026-05-11.
 ## 6. License / exam follow-ups (from existing FUTURE.md)
 
 - [x] Defence-in-depth: partial unique index in Postgres enforcing one `IN_PROGRESS` `StudentCourse` per student per category (currently only validated at the tRPC layer). Migration `20260517102730_add_unique_in_progress_course_per_category` — partial index on `(student_id, category) WHERE status = 'IN_PROGRESS'`.
-- [ ] Conflict detection between class schedule and accompanying exam schedule for the same instructor.
+- [x] Conflict detection between class schedule and accompanying exam schedule for the same instructor. `hasInstructorScheduleConflict` helper in `src/server/lib/schedule-conflict.ts` checks both `class_sessions` and `exams` (60-min slot) for a given instructor + windows. Wired into `class.create` (one-off + recurring), `class.update`, `exam.schedule`, `exam.update`. Tests in `tests/instructor-schedule.test.ts`.
 - [ ] Cross-category stats on student profile (per-category attendance & exam pass rate).
 - [ ] PDF export of full course report (course + exams + classes attended) per category.
 - [x] When abandoning a course, archive related future enrollments. `course.abandon` now cancels future `ENROLLED` enrollments in classes of the same category (plus `THEORY` classes if the student has no other in-progress course). All inside one transaction. The student gets a notification with the count.
