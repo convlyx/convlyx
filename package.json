@@ -8,6 +8,8 @@
         "start": "next start",
         "lint": "eslint",
         "type-check": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
         "db:migrate": "dotenv -e .env -- prisma migrate dev",
         "db:migrate:deploy": "dotenv -e .env -- prisma migrate deploy",
         "db:migrate:deploy:prod": "dotenv -e .env.prod -- prisma migrate deploy",
@@ -86,7 +88,8 @@
         "eslint-config-next": "16.2.4",
         "tailwindcss": "^4",
         "tsx": "^4.21.0",
-        "typescript": "^5"
+        "typescript": "^5",
+        "vitest": "^4.1.7"
     },
     "pnpm": {
         "onlyBuiltDependencies": [

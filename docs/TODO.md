@@ -29,7 +29,7 @@ Last reviewed: 2026-05-11.
 - [ ] **Sentry / error monitoring** — production errors are invisible right now.
 - [ ] **Structured logging** — pair with Sentry; replace ad-hoc `console.error`.
 - [x] **CI pipeline** — GitHub Actions workflow at `.github/workflows/ci.yml` runs lint + type-check on every push to main and every PR. Tests still TODO (no test suite yet).
-- [ ] **Tenant-isolation integration tests** — the single most important test suite that doesn't exist. Hits every `*.list` / `*.get` procedure across two tenants and asserts no cross-tenant leakage.
+- [x] **Tenant-isolation integration tests** — Vitest set up; `tests/isolation.test.ts` covers `class.list`, `user.list`, `enrollment.listByStudent` (staff path), and `user.studentProfile` cross-tenant rejection. Helper in `tests/helpers/tenant.ts` seeds two fresh tenants per test file with random UUIDs and cleans up after. CI runs against a Postgres service container with migrations applied. Pattern set — add more procedures as needed.
 - [ ] **E2E tests (Playwright)** — at minimum the golden paths: login, create class, enrol student, mark attendance.
 - [ ] **Audit logging for platform-admin actions** — tenant/school create/edit, user impersonation if added.
 - [x] **16 silent `.catch(() => {})` on notification calls** — replace with at least `console.warn`. Long-term: move to event-driven pattern so notifications can't desync from the DB write.

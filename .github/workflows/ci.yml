@@ -12,9 +12,32 @@ concurrency:
 
 jobs:
   ci:
-    name: lint + type-check
+    name: lint + type-check + tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
+    # Postgres service container for the integration tests. Migrations apply
+    # cleanly to it on every run, so tests get a fresh schema each time.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Pointed at the service container above. The `?schema=public` is
+      # required for Prisma's Postgres adapter.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test?schema=public
+
     steps:
       - uses: actions/checkout@v4
 
@@ -32,17 +55,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Prisma client lives in src/generated/prisma (gitignored), so lint
-      # and type-check both need it generated before they run. `prisma generate`
-      # never connects to the DB but prisma.config.ts requires DATABASE_URL
-      # to resolve at config-load time — feed it a dummy URL.
       - name: Generate Prisma client
-        env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
         run: pnpm exec prisma generate
+
+      - name: Apply migrations
+        run: pnpm exec prisma migrate deploy
 
       - name: Lint
         run: pnpm lint
 
       - name: Type-check
         run: pnpm type-check
+
+      - name: Run tests
+        run: pnpm test
