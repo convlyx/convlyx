@@ -214,6 +214,7 @@ export function StudentDetailPage({
       <CoursesAndExamsSection
         studentId={id}
         courses={student.studentCourses}
+        enrollments={student.enrollments}
         userRole={userRole}
       />
 

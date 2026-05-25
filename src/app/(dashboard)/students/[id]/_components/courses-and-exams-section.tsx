@@ -32,11 +32,66 @@ type Course = {
   }>;
 };
 
+// Subset of the enrollment shape returned by user.studentProfile that this
+// component needs for per-category stats. Defined locally so the section
+// doesn't pull in the full Prisma type.
+type Enrollment = {
+  status: "ENROLLED" | "CANCELLED" | "ATTENDED" | "NO_SHOW";
+  session: {
+    classType: "THEORY" | "PRACTICAL";
+    category: LicenseCategory | null;
+  };
+};
+
 type Props = {
   studentId: string;
   courses: Course[];
+  enrollments: Enrollment[];
   userRole: UserRole;
 };
+
+type CourseStats = {
+  practicalAttended: number;
+  practicalMissed: number;
+  practicalScheduled: number;
+  practicalTotal: number;
+  attendanceRate: number | null;
+  examPassed: number;
+  examFailed: number;
+  examScheduled: number;
+  examNoShow: number;
+};
+
+/**
+ * Compute per-category stats for one course. Practical attendance is scoped
+ * to enrollments where `session.category` matches the course AND the class
+ * is practical. Theory is intentionally excluded — it's category-agnostic
+ * and shown separately in the top-level student stat cards.
+ */
+function statsForCourse(course: Course, enrollments: Enrollment[]): CourseStats {
+  const practical = enrollments.filter(
+    (e) => e.session.classType === "PRACTICAL" && e.session.category === course.category,
+  );
+  const practicalAttended = practical.filter((e) => e.status === "ATTENDED").length;
+  const practicalMissed = practical.filter((e) => e.status === "NO_SHOW").length;
+  const practicalScheduled = practical.filter((e) => e.status === "ENROLLED").length;
+  const practicalTotal = practicalAttended + practicalMissed + practicalScheduled;
+
+  const decided = practicalAttended + practicalMissed;
+  const attendanceRate = decided > 0 ? Math.round((practicalAttended / decided) * 100) : null;
+
+  return {
+    practicalAttended,
+    practicalMissed,
+    practicalScheduled,
+    practicalTotal,
+    attendanceRate,
+    examPassed: course.exams.filter((e) => e.result === "PASSED").length,
+    examFailed: course.exams.filter((e) => e.result === "FAILED").length,
+    examScheduled: course.exams.filter((e) => e.result === "SCHEDULED").length,
+    examNoShow: course.exams.filter((e) => e.result === "NO_SHOW").length,
+  };
+}
 
 const RESULT_VARIANT: Record<Course["exams"][number]["result"], "default" | "secondary" | "destructive" | "outline"> = {
   SCHEDULED: "secondary",
@@ -66,7 +121,7 @@ const COURSE_STATUS_VARIANT: Record<Course["status"], "default" | "secondary" | 
   ABANDONED: "outline",
 };
 
-export function CoursesAndExamsSection({ studentId, courses, userRole }: Props) {
+export function CoursesAndExamsSection({ studentId, courses, enrollments, userRole }: Props) {
   const t = useTranslations();
   const format = useFormatter();
   const { onError } = useTranslatedError();
@@ -137,56 +192,94 @@ export function CoursesAndExamsSection({ studentId, courses, userRole }: Props) 
             </div>
           </div>
         ) : (
-          activeCourses.map((course) => (
-            <div key={course.id} className="rounded-xl border bg-card p-4 sm:p-5 card-shadow">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <GraduationCap className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0">
-                      <span className="text-lg font-bold">{t(`categories.${course.category}`)}</span>
-                      <span className="text-sm text-muted-foreground truncate">
-                        · {t(`categories.${course.category}_desc`)}
-                      </span>
+          activeCourses.map((course) => {
+            const stats = statsForCourse(course, enrollments);
+            return (
+              <div key={course.id} className="rounded-xl border bg-card p-4 sm:p-5 card-shadow">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <GraduationCap className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0">
+                        <span className="text-lg font-bold">{t(`categories.${course.category}`)}</span>
+                        <span className="text-sm text-muted-foreground truncate">
+                          · {t(`categories.${course.category}_desc`)}
+                        </span>
+                      </div>
                     </div>
                   </div>
+                  {canManage && (
+                    <div className="flex flex-wrap gap-2 sm:shrink-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5"
+                        onClick={() => setScheduleForCourse(course)}
+                      >
+                        <CalendarPlus className="h-3.5 w-3.5" />
+                        {t("exams.schedule")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5"
+                        onClick={() => setCompleteId(course.id)}
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        {t("courses.completeCourse")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5"
+                        onClick={() => setAbandonId(course.id)}
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                        {t("courses.abandonCourse")}
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                {canManage && (
-                  <div className="flex flex-wrap gap-2 sm:shrink-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => setScheduleForCourse(course)}
-                    >
-                      <CalendarPlus className="h-3.5 w-3.5" />
-                      {t("exams.schedule")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => setCompleteId(course.id)}
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      {t("courses.completeCourse")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => setAbandonId(course.id)}
-                    >
-                      <XCircle className="h-3.5 w-3.5" />
-                      {t("courses.abandonCourse")}
-                    </Button>
+
+                {/* Per-category stats: practical attendance + exam result counts */}
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <p className="text-xs font-medium text-muted-foreground">{t("courses.practicalProgress")}</p>
+                    {stats.practicalTotal === 0 ? (
+                      <p className="mt-1 text-sm text-muted-foreground">{t("courses.noPracticalYet")}</p>
+                    ) : (
+                      <>
+                        <p className="mt-1 text-lg font-semibold">
+                          {stats.practicalAttended}/{stats.practicalAttended + stats.practicalMissed}
+                        </p>
+                        {stats.attendanceRate !== null && (
+                          <p className="text-xs text-muted-foreground">
+                            {t("courses.attendanceRate", { rate: stats.attendanceRate })}
+                          </p>
+                        )}
+                      </>
+                    )}
                   </div>
-                )}
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <p className="text-xs font-medium text-muted-foreground">{t("courses.examProgress")}</p>
+                    {course.exams.length === 0 ? (
+                      <p className="mt-1 text-sm text-muted-foreground">{t("courses.noExamsYet")}</p>
+                    ) : (
+                      <p className="mt-1 text-sm">
+                        {t("courses.examsBreakdown", {
+                          passed: stats.examPassed,
+                          failed: stats.examFailed,
+                          scheduled: stats.examScheduled,
+                        })}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 

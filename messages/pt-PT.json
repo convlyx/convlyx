@@ -458,7 +458,13 @@
         "statusAbandoned": "Abandonada",
         "startedOn": "Iniciada em {date}",
         "completedOn": "Concluída em {date}",
-        "abandonedOn": "Abandonada em {date}"
+        "abandonedOn": "Abandonada em {date}",
+        "practicalProgress": "Aulas práticas",
+        "examProgress": "Exames",
+        "attendanceRate": "{rate}% de assiduidade",
+        "examsBreakdown": "{passed, plural, one {# aprovado} other {# aprovados}} · {failed, plural, one {# reprovado} other {# reprovados}} · {scheduled, plural, one {# marcado} other {# marcados}}",
+        "noPracticalYet": "Sem aulas práticas registadas",
+        "noExamsYet": "Sem exames registados"
     },
     "exams": {
         "title": "Exames",

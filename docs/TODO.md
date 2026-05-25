@@ -61,7 +61,7 @@ Last reviewed: 2026-05-11.
 
 - [x] Defence-in-depth: partial unique index in Postgres enforcing one `IN_PROGRESS` `StudentCourse` per student per category (currently only validated at the tRPC layer). Migration `20260517102730_add_unique_in_progress_course_per_category` — partial index on `(student_id, category) WHERE status = 'IN_PROGRESS'`.
 - [x] Conflict detection between class schedule and accompanying exam schedule for the same instructor. `hasInstructorScheduleConflict` helper in `src/server/lib/schedule-conflict.ts` checks both `class_sessions` and `exams` (60-min slot) for a given instructor + windows. Wired into `class.create` (one-off + recurring), `class.update`, `exam.schedule`, `exam.update`. Tests in `tests/instructor-schedule.test.ts`.
-- [ ] Cross-category stats on student profile (per-category attendance & exam pass rate).
+- [x] Cross-category stats on student profile (per-category attendance & exam pass rate). Each active course card on the student detail page now shows practical attendance (X/Y + %) and exam result counts scoped to that category. Theory stays at the top-level aggregate (category-agnostic). Computed client-side from `user.studentProfile`'s existing payload — no new endpoint.
 - [ ] PDF export of full course report (course + exams + classes attended) per category.
 - [x] When abandoning a course, archive related future enrollments. `course.abandon` now cancels future `ENROLLED` enrollments in classes of the same category (plus `THEORY` classes if the student has no other in-progress course). All inside one transaction. The student gets a notification with the count.
 
