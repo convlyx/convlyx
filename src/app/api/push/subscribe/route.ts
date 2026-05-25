@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/csrf";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   if (!isSameOrigin(request.headers)) {
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("[Push Subscribe]", error);
+    logger.error("push subscribe failed", { error });
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }

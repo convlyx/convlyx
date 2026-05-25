@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/nextjs";
 import { appRouter } from "@/server/routers/_app";
 import { createTRPCContext } from "@/server/trpc";
 import { isSameOrigin } from "@/lib/csrf";
+import { logger } from "@/lib/logger";
 
 const handler = (req: Request) =>
   fetchRequestHandler({
@@ -15,10 +16,16 @@ const handler = (req: Request) =>
     // forward them explicitly, and always log so failures are visible in
     // Vercel function logs (which only see 200s otherwise).
     onError: ({ path, error, type, input }) => {
-      console.error(
-        `[trpc] ${type} ${path ?? "<no-path>"} ${error.code}: ${error.message}`,
-        error.cause ?? "",
-      );
+      // Structured log line — logger.warn (not error) so we don't double-
+      // report to Sentry; the explicit captureException below carries the
+      // richer tagging.
+      logger.warn("trpc procedure failed", {
+        type,
+        path: path ?? "<no-path>",
+        code: error.code,
+        message: error.message,
+        cause: error.cause,
+      });
       Sentry.captureException(error, {
         tags: { trpc_path: path ?? "unknown", trpc_type: type, trpc_code: error.code },
         extra: { input },
@@ -46,7 +53,7 @@ const handler = (req: Request) =>
 // surfaces when superjson can't parse the response body.
 const postHandler = (req: Request) => {
   if (!isSameOrigin(req.headers)) {
-    console.warn("[csrf] rejected POST", {
+    logger.warn("csrf: rejected POST", {
       url: req.url,
       origin: req.headers.get("origin"),
       host: req.headers.get("host"),

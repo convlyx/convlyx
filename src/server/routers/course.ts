@@ -7,6 +7,7 @@ import {
   abandonCourseSchema,
 } from "@/lib/validations/course";
 import { createNotification } from "../lib/notifications";
+import { logger } from "@/lib/logger";
 
 export const courseRouter = router({
   /** All courses for a given student (history + current). */
@@ -224,7 +225,7 @@ export const courseRouter = router({
             ? "notifications.courseAbandonedWithCancellations"
             : "notifications.courseAbandoned",
         params: { category: course.category, count: String(cancelledCount) },
-      }).catch((e) => console.warn("[notify]", e));
+      }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
 
       return { id: input.id, cancelledCount };
     }),

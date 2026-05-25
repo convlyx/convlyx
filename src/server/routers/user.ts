@@ -5,18 +5,28 @@ import { router, protectedProcedure, roleProtectedProcedure } from "../trpc";
 import { createUserSchema, updateUserSchema, listUsersSchema } from "@/lib/validations/user";
 import { createNotification } from "../lib/notifications";
 import { syncClassStatuses } from "../lib/class-status";
+import { logger } from "@/lib/logger";
+
+// Construction-time fallback: Supabase JS throws if URL/key are empty,
+// which would crash the module on import in environments where env vars
+// aren't set (CI integration tests). Real env values still win in prod;
+// when the placeholder is used, every API call against this client will
+// fail and is caught at the call site.
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "placeholder-service-key";
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
 
 // Admin client for creating auth users
 const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  SUPABASE_URL,
+  SUPABASE_SERVICE_KEY,
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
 // Anon client used to trigger email-sending flows (e.g. password reset)
 const supabaseAnon = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
@@ -72,7 +82,7 @@ function mapSupabaseAuthError(message: string | undefined): string {
   if (lower.includes("invalid email")) {
     return "users.invalidEmail";
   }
-  console.warn("[user] Unmapped Supabase auth error:", message);
+  logger.warn("unmapped Supabase auth error", { message });
   return "users.inviteFailed";
 }
 
@@ -147,7 +157,7 @@ export const userRouter = router({
           confirmedById.set(u.id, !!u.email_confirmed_at);
         }
       } catch (e) {
-        console.error("[user.list] failed to fetch auth users", e);
+        logger.error("user.list: failed to fetch auth users", { error: e });
       }
 
       const items = usersRaw.map(({ studentCourses, ...u }) => ({
@@ -222,7 +232,7 @@ export const userRouter = router({
         // Log the raw Supabase error before mapping — `mapSupabaseAuthError`
         // collapses unknown failures into `users.inviteFailed`, which hides
         // the actual SMTP / auth-service reason from the Vercel logs.
-        console.error("[user.create] supabase invite error", {
+        logger.error("user.create: supabase invite failed", {
           email: input.email,
           status: authError.status,
           name: authError.name,
@@ -291,7 +301,7 @@ export const userRouter = router({
       });
 
       if (error) {
-        console.error("[user.resendInvite] supabase reset-password error", {
+        logger.error("user.resendInvite: supabase reset-password failed", {
           email: user.email,
           status: error.status,
           name: error.name,
@@ -393,7 +403,7 @@ export const userRouter = router({
         type: "user.deactivated",
         titleKey: "notifications.accountWasDeactivated",
         messageKey: "notifications.accountDeactivated",
-      }).catch((e) => console.warn("[notify]", e));
+      }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
 
       return result;
     }),
@@ -458,7 +468,7 @@ export const userRouter = router({
         await tx.user.delete({ where: { id: target.id } });
         const { error } = await supabaseAdmin.auth.admin.deleteUser(target.id);
         if (error) {
-          console.error("[user.delete] Supabase auth delete failed", error);
+          logger.error("user.delete: supabase auth delete failed", { error });
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "users.deleteFailed" });
         }
       });

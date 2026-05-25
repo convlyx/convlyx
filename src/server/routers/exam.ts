@@ -9,6 +9,7 @@ import {
 } from "@/lib/validations/exam";
 import { createNotification, formatClassTime } from "../lib/notifications";
 import { hasInstructorScheduleConflict } from "../lib/schedule-conflict";
+import { logger } from "@/lib/logger";
 
 // Exams occupy a 60-min slot starting at `scheduledAt` (UI convention).
 const EXAM_DURATION_MS = 60 * 60 * 1000;
@@ -250,7 +251,7 @@ export const examRouter = router({
             ? "notifications.theoryExamScheduledMessage"
             : "notifications.practicalExamScheduledMessage",
         params: { time: timeStr },
-      }).catch((e) => console.warn("[notify]", e));
+      }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
 
       // Notify accompanying instructor if any
       if (input.instructorId) {
@@ -262,7 +263,7 @@ export const examRouter = router({
           titleKey: "notifications.examAccompanyTitle",
           messageKey: "notifications.examAccompanyMessage",
           params: { student: exam.course.student.name, time: timeStr },
-        }).catch((e) => console.warn("[notify]", e));
+        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
       }
 
       return exam;
@@ -417,7 +418,7 @@ export const examRouter = router({
               ? "teórico"
               : "prático",
         },
-      }).catch((e) => console.warn("[notify]", e));
+      }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
 
       return updated;
     }),
@@ -464,7 +465,7 @@ export const examRouter = router({
         titleKey: "notifications.examCancelledTitle",
         messageKey: "notifications.examCancelledMessage",
         params: { time: timeStr },
-      }).catch((e) => console.warn("[notify]", e));
+      }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
 
       if (exam.instructorId) {
         createNotification({
@@ -475,7 +476,7 @@ export const examRouter = router({
           titleKey: "notifications.examCancelledTitle",
           messageKey: "notifications.examCancelledInstructorMessage",
           params: { time: timeStr },
-        }).catch((e) => console.warn("[notify]", e));
+        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
       }
 
       return updated;

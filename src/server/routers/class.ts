@@ -11,6 +11,7 @@ import { syncClassStatuses } from "../lib/class-status";
 import { createNotification, createNotifications, formatClassTime } from "../lib/notifications";
 import { getStudentClassAccess } from "../lib/student-access";
 import { hasInstructorScheduleConflict } from "../lib/schedule-conflict";
+import { logger } from "@/lib/logger";
 
 export const classRouter = router({
   list: protectedProcedure
@@ -282,7 +283,7 @@ export const classRouter = router({
         titleKey: "notifications.newClassAssigned",
         messageKey: "notifications.classCreatedInstructor",
         params: { title: session.title, time: timeStr },
-      }).catch((e) => console.warn("[notify]", e));
+      }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
 
       // Auto-enroll assigned students (practical classes)
       if (input.studentIds && input.studentIds.length > 0) {
@@ -303,7 +304,7 @@ export const classRouter = router({
           titleKey: "notifications.newClass",
           messageKey: "notifications.classAssigned",
           params: { title: session.title, time: timeStr },
-        }).catch((e) => console.warn("[notify]", e));
+        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
       }
 
       return session;
@@ -398,7 +399,7 @@ export const classRouter = router({
           titleKey: "notifications.removedFromClass",
           messageKey: "notifications.removedFromClassMessage",
           params: { title: input.title, time: timeStr },
-        }).catch((e) => console.warn("[notify]", e));
+        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
 
         // Notify new instructor (assigned)
         createNotification({
@@ -409,7 +410,7 @@ export const classRouter = router({
           titleKey: "notifications.assignedToClass",
           messageKey: "notifications.assignedToClassMessage",
           params: { title: input.title, time: timeStr },
-        }).catch((e) => console.warn("[notify]", e));
+        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
 
         // Notify enrolled students
         const studentIds = session.enrollments.map((e) => e.studentId);
@@ -422,7 +423,7 @@ export const classRouter = router({
             titleKey: "notifications.instructorChanged",
             messageKey: "notifications.instructorChangedMessage",
             params: { title: input.title, time: timeStr, instructor: newInstructorName },
-          }).catch((e) => console.warn("[notify]", e));
+          }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
         }
       }
 
@@ -439,7 +440,7 @@ export const classRouter = router({
             titleKey: "notifications.scheduleChanged",
             messageKey: "notifications.scheduleChangedMessage",
             params: { title: input.title, time: newTimeStr },
-          }).catch((e) => console.warn("[notify]", e));
+          }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
         }
         // Notify instructor about schedule change
         createNotification({
@@ -450,7 +451,7 @@ export const classRouter = router({
           titleKey: "notifications.scheduleChanged",
           messageKey: "notifications.scheduleChangedMessage",
           params: { title: input.title, time: newTimeStr },
-        }).catch((e) => console.warn("[notify]", e));
+        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
       }
 
       return { id: input.id, title: input.title };
@@ -506,7 +507,7 @@ export const classRouter = router({
           titleKey: "notifications.classWasCancelled",
           messageKey: "notifications.classCancelled",
           params: { title: session.title, time: timeStr },
-        }).catch((e) => console.warn("[notify]", e));
+        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
       }
 
       createNotification({
@@ -517,7 +518,7 @@ export const classRouter = router({
         titleKey: "notifications.classWasCancelled",
         messageKey: "notifications.classCancelledInstructor",
         params: { title: session.title, time: timeStr },
-      }).catch((e) => console.warn("[notify]", e));
+      }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
 
       return { success: true };
     }),
@@ -573,7 +574,7 @@ export const classRouter = router({
           titleKey: "notifications.classWasCancelled",
           messageKey: "notifications.classCancelledByInstructor",
           params: { title: session.title, time: timeStr },
-        }).catch((e) => console.warn("[notify]", e));
+        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
       }
 
       // Notify admins/secretaries
@@ -603,10 +604,10 @@ export const classRouter = router({
               titleKey: "notifications.instructorWasUnavailable",
               messageKey: "notifications.instructorUnavailable",
               params: { instructor: instructorName, title: session.title, time: timeStr },
-            }).catch((e) => console.warn("[notify]", e));
+            }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
           }
         })
-        .catch((e) => console.warn("[notify] class.instructorUnavailable", e));
+        .catch((e) => logger.warn("notification dispatch failed", { error: e, kind: "class.instructorUnavailable" }));
 
       return { success: true };
     }),

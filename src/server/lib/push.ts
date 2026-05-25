@@ -1,5 +1,6 @@
 import webpush from "web-push";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { logger } from "@/lib/logger";
 
 // Configure web-push with VAPID keys
 const VAPID_PUBLIC = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -47,7 +48,7 @@ export async function sendPushToUser(
       const statusCode = (error as { statusCode?: number })?.statusCode;
       if (statusCode === 404 || statusCode === 410) {
         await db.pushSubscription.delete({ where: { id: sub.id } })
-          .catch((e) => console.warn("[push] cleanup of stale subscription failed", e));
+          .catch((e) => logger.warn("push subscription cleanup failed", { error: e, subscriptionId: sub.id }));
       }
     }
   }

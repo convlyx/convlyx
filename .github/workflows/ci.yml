@@ -37,6 +37,14 @@ jobs:
       # Pointed at the service container above. The `?schema=public` is
       # required for Prisma's Postgres adapter.
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test?schema=public
+      # Module-load-time placeholders. The Supabase admin client is
+      # constructed when user.ts is imported and throws on undefined URL;
+      # actual auth API calls are inside try/catch and tolerate bad creds.
+      # Tests don't authenticate — they use tRPC's createCallerFactory with
+      # synthetic contexts — so real values aren't required.
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key-for-ci
+      SUPABASE_SERVICE_ROLE_KEY: dummy-service-role-key-for-ci
 
     steps:
       - uses: actions/checkout@v4

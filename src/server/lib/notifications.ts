@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import { sendPushToUser, sendPushToUsers } from "./push";
+import { logger } from "@/lib/logger";
 import messages from "@/../messages/pt-PT.json";
 
 /**
@@ -100,11 +101,11 @@ export async function createNotification({
       title: pushTitle ?? resolveTranslation(titleKey, params),
       body: pushBody ?? resolveTranslation(messageKey, params),
       url: "/",
-    }).catch((e) => console.warn("[push] sendPushToUser failed", e));
+    }).catch((e) => logger.warn("push send failed", { error: e, kind: "sendPushToUser" }));
 
     return result;
   } catch (error) {
-    console.error("[Notification] Failed to create:", error);
+    logger.error("notification create failed", { error });
     throw error;
   }
 }
@@ -147,11 +148,11 @@ export async function createNotifications({
       title: pushTitle ?? resolveTranslation(titleKey, params),
       body: pushBody ?? resolveTranslation(messageKey, params),
       url: "/",
-    }).catch((e) => console.warn("[push] sendPushToUsers failed", e));
+    }).catch((e) => logger.warn("push send failed", { error: e, kind: "sendPushToUsers" }));
 
     return result;
   } catch (error) {
-    console.error("[Notification] Failed to create many:", error);
+    logger.error("notification createMany failed", { error });
     throw error;
   }
 }

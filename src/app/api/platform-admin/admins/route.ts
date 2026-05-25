@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
 import { isSameOrigin } from "@/lib/csrf";
+import { logger } from "@/lib/logger";
 
 const ADMIN_EMAILS = (process.env.PLATFORM_ADMIN_EMAILS ?? "")
   .split(",")
@@ -110,10 +111,11 @@ export async function POST(request: NextRequest) {
     try {
       await supabaseAdmin.auth.admin.deleteUser(orphanId);
     } catch (e) {
-      console.error(
-        `[platform-admin] auth rollback FAILED — orphaned auth user id=${orphanId} email=${email}`,
-        e,
-      );
+      logger.error("platform-admin: auth rollback failed — orphaned auth user", {
+        error: e,
+        orphanId,
+        email,
+      });
     }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Erro ao criar utilizador" },

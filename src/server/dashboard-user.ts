@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
+import { logger } from "@/lib/logger";
 
 export type DashboardUser = {
   id: string;
@@ -47,7 +48,7 @@ async function loadDashboardUser(): Promise<DashboardUser | null> {
         await new Promise((r) => setTimeout(r, 500));
         continue;
       }
-      console.error("[dashboard-user] DB query failed:", error);
+      logger.error("dashboard-user: DB query failed", { error });
       return null;
     }
   }

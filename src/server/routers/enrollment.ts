@@ -11,6 +11,7 @@ import {
 } from "@/lib/validations/enrollment";
 import { createNotification, formatClassTime } from "../lib/notifications";
 import { getStudentClassAccess } from "../lib/student-access";
+import { logger } from "@/lib/logger";
 
 export const enrollmentRouter = router({
   /** Enroll a student in a class session */
@@ -170,7 +171,7 @@ export const enrollmentRouter = router({
           titleKey: "notifications.enrollmentWasConfirmed",
           messageKey: "notifications.classAssigned",
           params: { title: session.title, time: formatClassTime(new Date(session.startsAt)) },
-        }).catch((e) => console.warn("[notify]", e));
+        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
       }
 
       return result;
@@ -254,7 +255,7 @@ export const enrollmentRouter = router({
           titleKey: "notifications.enrollmentWasCancelled",
           messageKey: "notifications.enrollmentCancelled",
           params: { title: enrollment.session.title, time: formatClassTime(new Date(enrollment.session.startsAt)) },
-        }).catch((e) => console.warn("[notify]", e));
+        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
       }
 
       return { success: true };

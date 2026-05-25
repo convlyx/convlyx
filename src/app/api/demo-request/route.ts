@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod/v4";
 import { isSameOrigin } from "@/lib/csrf";
+import { logger } from "@/lib/logger";
 
 /**
  * Public, unauthenticated endpoint for the "Pedir demonstração" form on the
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
 
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.error("[demo-request] RESEND_API_KEY not configured");
+    logger.error("demo-request: RESEND_API_KEY not configured");
     return NextResponse.json({ error: "emailNotConfigured" }, { status: 500 });
   }
 
@@ -110,7 +111,7 @@ export async function POST(request: Request) {
 
   if (!res.ok) {
     const errorBody = await res.text();
-    console.error("[demo-request] Resend error", res.status, errorBody);
+    logger.error("demo-request: Resend send failed", { status: res.status, body: errorBody });
     return NextResponse.json({ error: "sendFailed" }, { status: 502 });
   }
 
