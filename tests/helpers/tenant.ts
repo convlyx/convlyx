@@ -11,6 +11,9 @@ export type TestTenant = {
   adminUserId: string;
   instructorUserId: string;
   studentUserId: string;
+  sessionId: string;
+  enrollmentId: string;
+  courseId: string;
   /** tRPC caller authenticated as the ADMIN of this tenant. */
   asAdmin: ReturnType<typeof createCaller>;
 };
@@ -71,8 +74,12 @@ export async function createTestTenant(label: string): Promise<TestTenant> {
     }),
   ]);
 
-  // Add a future class taught by the instructor, plus an enrollment.
+  // Add a future class taught by the instructor, an enrollment, and an
+  // in-progress course for the student — covers the surface most cross-
+  // tenant tests need to exercise (sessionId / enrollmentId / courseId).
   const sessionId = randomUUID();
+  const enrollmentId = randomUUID();
+  const courseId = randomUUID();
   const startsAt = new Date(Date.now() + 86_400_000); // tomorrow
   const endsAt = new Date(startsAt.getTime() + 3_600_000);
   await db.classSession.create({
@@ -92,10 +99,20 @@ export async function createTestTenant(label: string): Promise<TestTenant> {
   });
   await db.enrollment.create({
     data: {
+      id: enrollmentId,
       tenantId,
       schoolId,
       sessionId,
       studentId: studentUserId,
+    },
+  });
+  await db.studentCourse.create({
+    data: {
+      id: courseId,
+      tenantId,
+      schoolId,
+      studentId: studentUserId,
+      category: "B",
     },
   });
 
@@ -110,7 +127,17 @@ export async function createTestTenant(label: string): Promise<TestTenant> {
     },
   });
 
-  return { tenantId, schoolId, adminUserId, instructorUserId, studentUserId, asAdmin };
+  return {
+    tenantId,
+    schoolId,
+    adminUserId,
+    instructorUserId,
+    studentUserId,
+    sessionId,
+    enrollmentId,
+    courseId,
+    asAdmin,
+  };
 }
 
 /** Delete tenants + all dependent rows, in FK-safe order. */

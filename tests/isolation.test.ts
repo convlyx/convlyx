@@ -1,4 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { randomUUID } from "node:crypto";
+import { db } from "@/server/db";
 import { cleanupTenants, createTestTenant, type TestTenant } from "./helpers/tenant";
 
 /**
@@ -63,5 +65,78 @@ describe("tenant isolation", () => {
     await expect(
       a.asAdmin.user.studentProfile({ id: b.studentUserId }),
     ).rejects.toThrow(/notFound/i);
+  });
+
+  test("exam.list never returns exams from another tenant", async () => {
+    // Seed one exam per tenant directly (no procedure exists to create an
+    // exam without an instructor; we just want the row).
+    const examA = randomUUID();
+    const examB = randomUUID();
+    await db.exam.createMany({
+      data: [
+        {
+          id: examA,
+          tenantId: a.tenantId,
+          schoolId: a.schoolId,
+          courseId: a.courseId,
+          type: "THEORY",
+          scheduledAt: new Date(Date.now() + 7 * 86_400_000),
+          createdById: a.adminUserId,
+          updatedById: a.adminUserId,
+        },
+        {
+          id: examB,
+          tenantId: b.tenantId,
+          schoolId: b.schoolId,
+          courseId: b.courseId,
+          type: "THEORY",
+          scheduledAt: new Date(Date.now() + 7 * 86_400_000),
+          createdById: b.adminUserId,
+          updatedById: b.adminUserId,
+        },
+      ],
+    });
+
+    try {
+      const result = await a.asAdmin.exam.list();
+      const ids = result.map((e) => e.id);
+      expect(ids).toContain(examA);
+      expect(ids).not.toContain(examB);
+    } finally {
+      await db.exam.deleteMany({ where: { id: { in: [examA, examB] } } });
+    }
+  });
+
+  test("course.listByStudent for another tenant's student returns no courses", async () => {
+    // Staff path: A's admin asks for tenant B's student's courses. The
+    // procedure scopes the query by ctx.tenantId, so B's student in A's
+    // tenant context resolves to no rows — leak-safe by design.
+    const result = await a.asAdmin.course.listByStudent({ studentId: b.studentUserId });
+    expect(result).toEqual([]);
+  });
+
+  test("notification.list never returns another user's notifications", async () => {
+    // Seed a notification for B's admin directly, then make sure A's admin
+    // (who's calling) doesn't see it.
+    const notifId = randomUUID();
+    await db.notification.create({
+      data: {
+        id: notifId,
+        tenantId: b.tenantId,
+        schoolId: b.schoolId,
+        userId: b.adminUserId,
+        type: "test.leak",
+        title: "notifications.classWasCancelled",
+        message: "notifications.classCancelled",
+      },
+    });
+
+    try {
+      const result = await a.asAdmin.notification.list();
+      const ids = result.map((n) => n.id);
+      expect(ids).not.toContain(notifId);
+    } finally {
+      await db.notification.delete({ where: { id: notifId } });
+    }
   });
 });
