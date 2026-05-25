@@ -39,9 +39,35 @@ const handler = (req: Request) =>
 
 // Mutations go through POST. Refuse them unless the request came from our
 // own UI — defence-in-depth on top of Supabase's SameSite=Lax auth cookies.
+//
+// On rejection we return a tRPC-shaped error envelope (rather than a bare
+// `{error:"Forbidden"}`) so the client's `useTranslatedError` shows a real
+// toast (`errors.unexpected`) instead of the cryptic transformer error that
+// surfaces when superjson can't parse the response body.
 const postHandler = (req: Request) => {
   if (!isSameOrigin(req.headers)) {
-    return new Response(JSON.stringify({ error: "Forbidden" }), {
+    console.warn("[csrf] rejected POST", {
+      url: req.url,
+      origin: req.headers.get("origin"),
+      host: req.headers.get("host"),
+      xForwardedHost: req.headers.get("x-forwarded-host"),
+      referer: req.headers.get("referer"),
+      userAgent: req.headers.get("user-agent"),
+    });
+    // tRPC batch responses are arrays of result envelopes — return a single-
+    // entry array with a FORBIDDEN error so superjson can deserialize it.
+    const body = [
+      {
+        error: {
+          json: {
+            message: "errors.unexpected",
+            code: -32603,
+            data: { code: "FORBIDDEN", httpStatus: 403 },
+          },
+        },
+      },
+    ];
+    return new Response(JSON.stringify(body), {
       status: 403,
       headers: { "Content-Type": "application/json" },
     });

@@ -5,14 +5,19 @@
  *
  * Browsers attach `Origin` to all cross-origin POST/fetch and to same-origin
  * POSTs as well (since the Fetch Living Standard). Compare against the
- * request `Host` to confirm the request came from our own UI.
+ * user-facing host to confirm the request came from our own UI.
+ *
+ * Behind Vercel/Cloudflare, the raw `host` header can be an internal routing
+ * hostname (varies by HTTP version and PoP), while the *real* host the
+ * browser typed is in `x-forwarded-host`. Prefer the forwarded header — the
+ * Next.js middleware uses the same precedence for tenant resolution.
  *
  * Returns `true` when the origin matches the host (or, in a few legitimate
  * cases below, when the request demonstrably isn't a browser at all).
  */
 export function isSameOrigin(headers: Headers): boolean {
   const origin = headers.get("origin");
-  const host = headers.get("host");
+  const host = headers.get("x-forwarded-host") ?? headers.get("host");
 
   if (!host) return false; // No host header — bail.
 
