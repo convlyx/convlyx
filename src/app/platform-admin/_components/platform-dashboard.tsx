@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Building2, Users, BookOpen, ClipboardList, Plus, Globe, ExternalLink, UserPlus,
 } from "lucide-react";
@@ -115,9 +116,17 @@ export function PlatformDashboard({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Painel de Administração</h1>
-        <p className="text-sm text-muted-foreground mt-1">Gestão da plataforma Convlyx</p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Painel de Administração</h1>
+          <p className="text-sm text-muted-foreground mt-1">Gestão da plataforma Convlyx</p>
+        </div>
+        <Link href="/platform-admin/audit">
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <ClipboardList className="h-3.5 w-3.5" />
+            Registo de auditoria
+          </Button>
+        </Link>
       </div>
 
       {/* Platform stats */}
