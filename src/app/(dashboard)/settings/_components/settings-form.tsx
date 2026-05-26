@@ -25,6 +25,7 @@ import { PushManager } from "@/components/push-manager";
 import { InstallQR } from "./install-qr";
 import { Tabs, TabsList, TabsTab, TabsPanel } from "@/components/ui/tabs";
 import { Building2, Lock, Bell, Users2 } from "lucide-react";
+import { GdprPanel } from "./gdpr-panel";
 
 type SettingsFormProps = {
   user: {
@@ -315,6 +316,7 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
             {canEditSchool && <TabsTab value="school">{t("tabSchool")}</TabsTab>}
             <TabsTab value="account">{t("tabAccount")}</TabsTab>
             {isAdmin && <TabsTab value="group">{t("tabGroup")}</TabsTab>}
+            {isAdmin && <TabsTab value="gdpr">{t("tabGdpr")}</TabsTab>}
           </TabsList>
 
           {canEditSchool && (
@@ -322,6 +324,11 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
           )}
           <TabsPanel value="account">{accountPanel}</TabsPanel>
           {isAdmin && <TabsPanel value="group">{groupPanel}</TabsPanel>}
+          {isAdmin && (
+            <TabsPanel value="gdpr">
+              <GdprPanel />
+            </TabsPanel>
+          )}
         </Tabs>
       ) : (
         <div className="space-y-6">{accountPanel}</div>

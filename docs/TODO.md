@@ -52,7 +52,7 @@ Last reviewed: 2026-05-11.
 
 ## 5. Compliance follow-ups
 
-- [ ] **GDPR data export** — full export of a user's data as JSON/CSV. Required for Art. 15 / 20 requests.
+- [x] **GDPR data export** — `user.exportData` (ADMIN-only, tenant-scoped) returns a complete JSON dump: profile + studentCourses (with exams) + enrollments + instructedSessions + accompaniedExams + notifications + pushSubscriptions. Top-level `exportedAt` + `format: "convlyx.gdpr.v1"` for forward-compat. UI lives in a dedicated "RGPD" tab in `/settings` (ADMIN-only) — search a user by name/email, click Export → downloads `dados-{name}-{YYYY-MM-DD}.json`. Per-user detail pages don't surface it; it's a rare compliance action and stays out of common flows.
 - [x] **GDPR hard-delete for users with history** — anonymize-in-place shipped as `user.anonymize`. ADMIN-only, STUDENT/INSTRUCTOR only, self forbidden. Strips PII (`name → "Anonimizado"`, `email → anonimizado-{id}@convlyx.invalid`, `phone → null`), marks INACTIVE, wipes notifications + push subscriptions, deletes Supabase Auth row (404 tolerated). Historical FK rows (enrollments, classes, exams, courses) stay intact. Detail-page button shows the right action based on `user.deletable` — delete when no history, anonymize when there is.
 - [ ] **Data processing agreement template** for schools to sign on signup.
 - [x] **Backfill `category` for legacy `class_sessions`** rows — intentionally skipped on prod. Legacy NULL rows are kept as-is for historical accuracy; new rows are required at the validation layer. Column stays nullable until we have a confident inference strategy (or accept lossy default).

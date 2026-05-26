@@ -337,7 +337,9 @@
         "anonymize": "Anonimizar",
         "anonymizeTitle": "Anonimizar utilizador",
         "anonymizeMessage": "Esta ação é permanente. O nome, email e telefone deste utilizador serão substituídos por placeholders, mas o histórico (inscrições, exames, aulas) permanecerá para registo. O utilizador não poderá voltar a iniciar sessão. Tem a certeza?",
-        "cannotAnonymizeSelf": "Não pode anonimizar a sua própria conta"
+        "cannotAnonymizeSelf": "Não pode anonimizar a sua própria conta",
+        "exportData": "Exportar dados (RGPD)",
+        "exportDataFailed": "Não foi possível exportar os dados"
     },
     "classes": {
         "title": "Aulas",
@@ -703,6 +705,11 @@
         "tabSchool": "Escola",
         "tabAccount": "Conta",
         "tabGroup": "Grupo",
+        "tabGdpr": "RGPD",
+        "gdprTitle": "Conformidade RGPD",
+        "gdprIntro": "Procure um utilizador para descarregar todos os dados pessoais que mantemos sobre ele em formato JSON. Use apenas em resposta a um pedido formal de acesso (Art. 15) ou portabilidade (Art. 20).",
+        "gdprSearchPlaceholder": "Procurar por nome ou email…",
+        "gdprNoResults": "Nenhum utilizador encontrado.",
         "profile": "Perfil",
         "updateName": "Atualizar nome",
         "changePassword": "Alterar palavra-passe",
@@ -758,6 +765,7 @@
         "userActivated": "Utilizador ativado",
         "userDeleted": "Utilizador eliminado",
         "userAnonymized": "Utilizador anonimizado",
+        "dataExported": "Dados exportados",
         "attendanceSaved": "Presenças registadas",
         "enrollmentSuccess": "Inscrito com sucesso",
         "enrollmentCancelled": "Inscrição cancelada",

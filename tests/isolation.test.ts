@@ -115,6 +115,25 @@ describe("tenant isolation", () => {
     expect(result).toEqual([]);
   });
 
+  test("user.exportData rejects another tenant's user id", async () => {
+    await expect(
+      a.asAdmin.user.exportData({ id: b.studentUserId }),
+    ).rejects.toThrow(/notFound/i);
+  });
+
+  test("user.exportData returns the expected sections", async () => {
+    const dump = await a.asAdmin.user.exportData({ id: a.studentUserId });
+    expect(dump.format).toBe("convlyx.gdpr.v1");
+    expect(dump.exportedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(dump.profile.id).toBe(a.studentUserId);
+    // The helper seeded a course and an enrollment for the student.
+    expect(dump.studentCourses.length).toBeGreaterThan(0);
+    expect(dump.enrollments.length).toBeGreaterThan(0);
+    expect(Array.isArray(dump.instructedSessions)).toBe(true);
+    expect(Array.isArray(dump.notifications)).toBe(true);
+    expect(Array.isArray(dump.pushSubscriptions)).toBe(true);
+  });
+
   test("notification.list never returns another user's notifications", async () => {
     // Seed a notification for B's admin directly, then make sure A's admin
     // (who's calling) doesn't see it.

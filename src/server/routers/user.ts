@@ -551,6 +551,155 @@ export const userRouter = router({
       return { success: true };
     }),
 
+  // GDPR Art. 15 ("right of access") — a complete machine-readable dump of
+  // everything we hold about this user, scoped to the current tenant.
+  // ADMIN-only; if you later want students to self-export, lift the role
+  // check and add `id` validation against `ctx.user.id`.
+  //
+  // The shape is intentionally flat-ish JSON: one `profile` object plus
+  // arrays for each related collection. Stable enough to hand to a data
+  // subject as-is.
+  exportData: roleProtectedProcedure(["ADMIN"])
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.db.user.findFirst({
+        where: { id: input.id, tenantId: ctx.tenantId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          status: true,
+          qualifiedCategories: true,
+          createdAt: true,
+          updatedAt: true,
+          school: { select: { id: true, name: true, subdomain: true } },
+          tenant: { select: { id: true, name: true } },
+          studentCourses: {
+            select: {
+              id: true,
+              category: true,
+              status: true,
+              startedAt: true,
+              completedAt: true,
+              exams: {
+                select: {
+                  id: true,
+                  type: true,
+                  scheduledAt: true,
+                  result: true,
+                  location: true,
+                  examinerNotes: true,
+                  instructor: { select: { id: true, name: true } },
+                  createdAt: true,
+                  updatedAt: true,
+                },
+                orderBy: { scheduledAt: "asc" },
+              },
+            },
+            orderBy: { startedAt: "asc" },
+          },
+          enrollments: {
+            select: {
+              id: true,
+              status: true,
+              notes: true,
+              enrolledAt: true,
+              updatedAt: true,
+              session: {
+                select: {
+                  id: true,
+                  title: true,
+                  classType: true,
+                  category: true,
+                  startsAt: true,
+                  endsAt: true,
+                  status: true,
+                  instructor: { select: { id: true, name: true } },
+                },
+              },
+            },
+            orderBy: { enrolledAt: "asc" },
+          },
+          instructedSessions: {
+            select: {
+              id: true,
+              title: true,
+              classType: true,
+              category: true,
+              startsAt: true,
+              endsAt: true,
+              status: true,
+              capacity: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+            orderBy: { startsAt: "asc" },
+          },
+          accompaniedExams: {
+            select: {
+              id: true,
+              type: true,
+              scheduledAt: true,
+              result: true,
+              course: { select: { category: true, student: { select: { id: true, name: true } } } },
+            },
+            orderBy: { scheduledAt: "asc" },
+          },
+          notifications: {
+            select: {
+              id: true,
+              type: true,
+              title: true,
+              message: true,
+              data: true,
+              read: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: "asc" },
+          },
+          pushSubscriptions: {
+            select: {
+              id: true,
+              endpoint: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: "asc" },
+          },
+        },
+      });
+
+      if (!user) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
+      }
+
+      // The relation arrays are stripped from the top-level profile so the
+      // export has a clean `profile + arrays` shape; the arrays themselves
+      // become sibling fields under their natural names.
+      const {
+        studentCourses,
+        enrollments,
+        instructedSessions,
+        accompaniedExams,
+        notifications,
+        pushSubscriptions,
+        ...profile
+      } = user;
+
+      return {
+        exportedAt: new Date().toISOString(),
+        format: "convlyx.gdpr.v1",
+        profile,
+        studentCourses,
+        enrollments,
+        instructedSessions,
+        accompaniedExams,
+        notifications,
+        pushSubscriptions,
+      };
+    }),
+
   me: protectedProcedure.query(async ({ ctx }) => {
       const user = await ctx.db.user.findUnique({
         where: { id: ctx.user.id },
