@@ -63,4 +63,10 @@ describe("cross-tenant mutations", () => {
       a.asAdmin.course.abandon({ id: b.courseId }),
     ).rejects.toThrow(/notFound/i);
   });
+
+  test("user.anonymize rejects another tenant's user id", async () => {
+    await expect(
+      a.asAdmin.user.anonymize({ id: b.studentUserId }),
+    ).rejects.toThrow(/notFound/i);
+  });
 });

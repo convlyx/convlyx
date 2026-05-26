@@ -31,6 +31,15 @@ const supabaseAnon = createClient(
 );
 
 /**
+ * Anonymized users have their email stripped to a placeholder of the form
+ * `anonimizado-<id-prefix>@convlyx.invalid` (see `user.anonymize`). The
+ * prefix + sentinel domain is unambiguous against any real address.
+ */
+function isAnonymizedEmail(email: string): boolean {
+  return email.startsWith("anonimizado-") && email.endsWith("@convlyx.invalid");
+}
+
+/**
  * A STUDENT is deletable if they have no Enrollment and no Exam (via any of
  * their StudentCourses). An INSTRUCTOR is deletable if no ClassSession or
  * Exam references them — including audit FKs (createdBy/updatedBy).
@@ -164,6 +173,7 @@ export const userRouter = router({
         ...u,
         currentCategory: studentCourses[0]?.category ?? null,
         emailConfirmed: confirmedById.get(u.id) ?? false,
+        anonymized: isAnonymizedEmail(u.email),
       }));
 
       return { items, total };
@@ -466,9 +476,74 @@ export const userRouter = router({
       // auth row in an inconsistent state.
       await ctx.db.$transaction(async (tx) => {
         await tx.user.delete({ where: { id: target.id } });
+        // 404 = auth row already gone, which is the desired end state.
         const { error } = await supabaseAdmin.auth.admin.deleteUser(target.id);
-        if (error) {
+        if (error && error.status !== 404) {
           logger.error("user.delete: supabase auth delete failed", { error });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "users.deleteFailed" });
+        }
+      });
+
+      return { success: true };
+    }),
+
+  // GDPR Art. 17 ("right to be forgotten") companion to `delete`. For users
+  // who can't be hard-deleted because they have history (enrollments, exams,
+  // taught classes), this strips PII in place: name → "Anonimizado", email →
+  // a unique placeholder, phone → null. Historical FK rows stay intact so
+  // attendance records and exam history aren't silently rewritten — the
+  // person is just unidentifiable.
+  //
+  // The Supabase Auth row is also deleted so the account can't log in again.
+  // Same guards as `delete`: ADMIN-only, self forbidden, STUDENT/INSTRUCTOR
+  // only (staff with audit-trail FKs would still be undeletable; if a staff
+  // member ever needs anonymizing, lift the role check then).
+  anonymize: roleProtectedProcedure(["ADMIN"])
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.id === ctx.user.id) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "users.cannotAnonymizeSelf" });
+      }
+
+      const target = await ctx.db.user.findFirst({
+        where: { id: input.id, tenantId: ctx.tenantId },
+        select: { id: true, role: true },
+      });
+      if (!target) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
+      }
+      if (target.role !== "STUDENT" && target.role !== "INSTRUCTOR") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "users.cannotDeleteStaff" });
+      }
+
+      // The User table is `@@unique([tenantId, email])`. The first 8 chars of
+      // the user's UUID make the placeholder unique enough to avoid collisions
+      // with other anonymized users in the same tenant, without dragging the
+      // full UUID into anything an operator might still see in the UI.
+      const placeholderEmail = `anonimizado-${target.id.slice(0, 8)}@convlyx.invalid`;
+
+      await ctx.db.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: target.id },
+          data: {
+            name: "Anonimizado",
+            email: placeholderEmail,
+            phone: null,
+            status: "INACTIVE",
+          },
+        });
+        // Notifications + push subscriptions hold name-adjacent personal data
+        // and don't need to survive anonymization. Wipe them explicitly
+        // (cascade rules only fire on user delete, which we're not doing).
+        await tx.notification.deleteMany({ where: { userId: target.id } });
+        await tx.pushSubscription.deleteMany({ where: { userId: target.id } });
+        // Lock the auth account so the person can't log in again. If the
+        // auth row is already gone (404), accept that as success — that's
+        // the end state we want. Anything else rolls the transaction back
+        // so the Prisma row stays identifiable.
+        const { error } = await supabaseAdmin.auth.admin.deleteUser(target.id);
+        if (error && error.status !== 404) {
+          logger.error("user.anonymize: supabase auth delete failed", { error });
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "users.deleteFailed" });
         }
       });
@@ -583,8 +658,9 @@ export const userRouter = router({
       } catch {}
 
       const { deletable } = await computeDeletability(ctx.db, ctx.tenantId, student.id, "STUDENT");
+      const anonymized = isAnonymizedEmail(student.email);
 
-      return { ...student, stats, emailConfirmed, deletable };
+      return { ...student, stats, emailConfirmed, deletable, anonymized };
     }),
 
   /** Instructor profile with class stats and schedule */
@@ -643,7 +719,8 @@ export const userRouter = router({
       } catch {}
 
       const { deletable } = await computeDeletability(ctx.db, ctx.tenantId, instructor.id, "INSTRUCTOR");
+      const anonymized = isAnonymizedEmail(instructor.email);
 
-      return { ...instructor, stats, emailConfirmed, deletable };
+      return { ...instructor, stats, emailConfirmed, deletable, anonymized };
     }),
 });

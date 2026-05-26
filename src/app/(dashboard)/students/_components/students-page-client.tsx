@@ -139,7 +139,7 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground truncate mt-0.5">{student.email}</p>
-                  {canManage && (
+                  {canManage && !student.anonymized && (
                     <div className="mt-2 flex gap-2 sm:hidden">
                       <Button variant="outline" size="sm" onClick={(e) => { e.preventDefault(); setEditStudent(student); }}>
                         <Pencil className="h-3.5 w-3.5 mr-1" />{t("common.edit")}
@@ -156,7 +156,7 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
                     </div>
                   )}
                 </div>
-                {canManage ? (
+                {canManage && !student.anonymized ? (
                   <div className="hidden sm:flex shrink-0 gap-1 items-center">
                     <Button variant="outline" size="icon-sm" onClick={(e) => { e.preventDefault(); setEditStudent(student); }} title={t("common.edit")}>
                       <Pencil className="h-3.5 w-3.5" />
@@ -210,20 +210,22 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
                   </TableCell>
                   {canManage && (
                     <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="outline" size="icon-sm" onClick={() => setEditStudent(student)} title={t("common.edit")}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        {student.status === "ACTIVE" ? (
-                          <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => setDeactivateUserId(student.id)}>
-                            {t("users.deactivate")}
+                      {student.anonymized ? null : (
+                        <div className="flex gap-1">
+                          <Button variant="outline" size="icon-sm" onClick={() => setEditStudent(student)} title={t("common.edit")}>
+                            <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                        ) : (
-                          <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: student.id })}>
-                            {t("users.activate")}
-                          </Button>
-                        )}
-                      </div>
+                          {student.status === "ACTIVE" ? (
+                            <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => setDeactivateUserId(student.id)}>
+                              {t("users.deactivate")}
+                            </Button>
+                          ) : (
+                            <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: student.id })}>
+                              {t("users.activate")}
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </TableCell>
                   )}
                 </TableRow>

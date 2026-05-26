@@ -132,36 +132,42 @@ export function InstructorsPageClient() {
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground truncate mt-0.5">{instructor.email}</p>
-                  <div className="mt-2 flex gap-2 sm:hidden">
-                    <Button variant="outline" size="sm" onClick={(e) => { e.preventDefault(); setEditInstructor(instructor); }}>
-                      <Pencil className="h-3.5 w-3.5 mr-1" />{t("common.edit")}
+                  {!instructor.anonymized && (
+                    <div className="mt-2 flex gap-2 sm:hidden">
+                      <Button variant="outline" size="sm" onClick={(e) => { e.preventDefault(); setEditInstructor(instructor); }}>
+                        <Pencil className="h-3.5 w-3.5 mr-1" />{t("common.edit")}
+                      </Button>
+                      {instructor.status === "ACTIVE" ? (
+                        <Button variant="destructive" size="sm" className="flex-1" disabled={deactivateMutation.isPending} onClick={(e) => { e.preventDefault(); setDeactivateUserId(instructor.id); }}>
+                          {t("users.deactivate")}
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" className="flex-1" disabled={activateMutation.isPending} onClick={(e) => { e.preventDefault(); activateMutation.mutate({ id: instructor.id }); }}>
+                          {t("users.activate")}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {instructor.anonymized ? (
+                  <ChevronRight className="hidden sm:block h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
+                ) : (
+                  <div className="hidden sm:flex shrink-0 gap-1 items-center">
+                    <Button variant="outline" size="icon-sm" onClick={(e) => { e.preventDefault(); setEditInstructor(instructor); }} title={t("common.edit")}>
+                      <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     {instructor.status === "ACTIVE" ? (
-                      <Button variant="destructive" size="sm" className="flex-1" disabled={deactivateMutation.isPending} onClick={(e) => { e.preventDefault(); setDeactivateUserId(instructor.id); }}>
+                      <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={(e) => { e.preventDefault(); setDeactivateUserId(instructor.id); }}>
                         {t("users.deactivate")}
                       </Button>
                     ) : (
-                      <Button variant="outline" size="sm" className="flex-1" disabled={activateMutation.isPending} onClick={(e) => { e.preventDefault(); activateMutation.mutate({ id: instructor.id }); }}>
+                      <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={(e) => { e.preventDefault(); activateMutation.mutate({ id: instructor.id }); }}>
                         {t("users.activate")}
                       </Button>
                     )}
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors ml-1" />
                   </div>
-                </div>
-                <div className="hidden sm:flex shrink-0 gap-1 items-center">
-                  <Button variant="outline" size="icon-sm" onClick={(e) => { e.preventDefault(); setEditInstructor(instructor); }} title={t("common.edit")}>
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  {instructor.status === "ACTIVE" ? (
-                    <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={(e) => { e.preventDefault(); setDeactivateUserId(instructor.id); }}>
-                      {t("users.deactivate")}
-                    </Button>
-                  ) : (
-                    <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={(e) => { e.preventDefault(); activateMutation.mutate({ id: instructor.id }); }}>
-                      {t("users.activate")}
-                    </Button>
-                  )}
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors ml-1" />
-                </div>
+                )}
               </div>
             </Link>
           ))}
@@ -194,20 +200,22 @@ export function InstructorsPageClient() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
-                      <Button variant="outline" size="icon-sm" onClick={() => setEditInstructor(instructor)} title={t("common.edit")}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      {instructor.status === "ACTIVE" ? (
-                        <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => setDeactivateUserId(instructor.id)}>
-                          {t("users.deactivate")}
+                    {instructor.anonymized ? null : (
+                      <div className="flex gap-1">
+                        <Button variant="outline" size="icon-sm" onClick={() => setEditInstructor(instructor)} title={t("common.edit")}>
+                          <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                      ) : (
-                        <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: instructor.id })}>
-                          {t("users.activate")}
-                        </Button>
-                      )}
-                    </div>
+                        {instructor.status === "ACTIVE" ? (
+                          <Button variant="destructive" size="sm" disabled={deactivateMutation.isPending} onClick={() => setDeactivateUserId(instructor.id)}>
+                            {t("users.deactivate")}
+                          </Button>
+                        ) : (
+                          <Button variant="outline" size="sm" disabled={activateMutation.isPending} onClick={() => activateMutation.mutate({ id: instructor.id })}>
+                            {t("users.activate")}
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

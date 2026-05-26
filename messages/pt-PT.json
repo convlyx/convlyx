@@ -333,7 +333,11 @@
         "cannotDeleteSelf": "Não pode eliminar a sua própria conta",
         "cannotDeleteStaff": "Apenas alunos e instrutores podem ser eliminados",
         "cannotDeleteHasData": "Este utilizador tem dados associados e não pode ser eliminado. Desative em alternativa.",
-        "deleteFailed": "Não foi possível eliminar o utilizador"
+        "deleteFailed": "Não foi possível eliminar o utilizador",
+        "anonymize": "Anonimizar",
+        "anonymizeTitle": "Anonimizar utilizador",
+        "anonymizeMessage": "Esta ação é permanente. O nome, email e telefone deste utilizador serão substituídos por placeholders, mas o histórico (inscrições, exames, aulas) permanecerá para registo. O utilizador não poderá voltar a iniciar sessão. Tem a certeza?",
+        "cannotAnonymizeSelf": "Não pode anonimizar a sua própria conta"
     },
     "classes": {
         "title": "Aulas",
@@ -753,6 +757,7 @@
         "userDeactivated": "Utilizador desativado",
         "userActivated": "Utilizador ativado",
         "userDeleted": "Utilizador eliminado",
+        "userAnonymized": "Utilizador anonimizado",
         "attendanceSaved": "Presenças registadas",
         "enrollmentSuccess": "Inscrito com sucesso",
         "enrollmentCancelled": "Inscrição cancelada",

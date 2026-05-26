@@ -47,6 +47,7 @@ export function InstructorDetailPage({
   const [historyPage, setHistoryPage] = useState(1);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [showAnonymize, setShowAnonymize] = useState(false);
   const [showDeactivate, setShowDeactivate] = useState(false);
   const router = useRouter();
   const { onError } = useTranslatedError();
@@ -58,6 +59,16 @@ export function InstructorDetailPage({
       toast.success(t("toast.userDeleted"));
       utils.user.list.invalidate();
       router.push("/instructors");
+    },
+    onError,
+  });
+
+  const anonymizeMutation = trpc.user.anonymize.useMutation({
+    onSuccess: () => {
+      toast.success(t("toast.userAnonymized"));
+      utils.user.list.invalidate();
+      utils.user.instructorProfile.invalidate({ id });
+      setShowAnonymize(false);
     },
     onError,
   });
@@ -117,7 +128,7 @@ export function InstructorDetailPage({
               </Badge>
             </div>
             <div className="flex flex-wrap gap-2 sm:shrink-0 self-start">
-              {canManage && (
+              {canManage && !instructor.anonymized && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -128,7 +139,9 @@ export function InstructorDetailPage({
                   {t("common.edit")}
                 </Button>
               )}
-              {canManage && (instructor.status === "ACTIVE" ? (
+              {/* Activate / deactivate doesn't apply to anonymized users —
+                  there's no real account to (re-)enable. */}
+              {canManage && !instructor.anonymized && (instructor.status === "ACTIVE" ? (
                 <Button
                   variant="destructive"
                   size="sm"
@@ -251,19 +264,34 @@ export function InstructorDetailPage({
         )}
       </div>
 
-      {/* Danger zone — ADMIN-only, hard delete (gated by instructor.deletable) */}
-      {canDelete && instructor.deletable && (
+      {/* Danger zone — ADMIN-only. Deletable users (no history) get hard
+          delete; users with history can be anonymized in place instead
+          (GDPR Art. 17 — keeps FK history, strips PII). Already-anonymized
+          users have no remaining destructive action. */}
+      {canDelete && !instructor.anonymized && (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pt-4 border-t">
           <p className="text-sm text-muted-foreground">{t("users.dangerZoneDescription")}</p>
-          <Button
-            variant="destructive"
-            size="sm"
-            className="gap-1.5 sm:shrink-0"
-            onClick={() => setShowDelete(true)}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            {t("users.delete")}
-          </Button>
+          {instructor.deletable ? (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="gap-1.5 sm:shrink-0"
+              onClick={() => setShowDelete(true)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {t("users.delete")}
+            </Button>
+          ) : (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="gap-1.5 sm:shrink-0"
+              onClick={() => setShowAnonymize(true)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {t("users.anonymize")}
+            </Button>
+          )}
         </div>
       )}
 
@@ -298,6 +326,16 @@ export function InstructorDetailPage({
         message={t("users.deleteMessage")}
         confirmLabel={t("users.delete")}
         loading={deleteMutation.isPending}
+      />
+
+      <ConfirmDialog
+        open={showAnonymize}
+        onClose={() => setShowAnonymize(false)}
+        onConfirm={() => anonymizeMutation.mutate({ id })}
+        title={t("users.anonymizeTitle")}
+        message={t("users.anonymizeMessage")}
+        confirmLabel={t("users.anonymize")}
+        loading={anonymizeMutation.isPending}
       />
     </div>
   );
