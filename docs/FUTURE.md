@@ -58,6 +58,7 @@ Living document of things to build, improve, or investigate post-MVP.
 - [ ] School-wide analytics (enrollment trends, attendance rates)
 - [ ] IMT compliance reports
 - [ ] Print-friendly views for all reports
+- [ ] **Tenant activity log** — browsable in-app log of staff actions ("Secretary X created class Y", "Admin Z removed student W from class V", "Instructor marked attendance for class K"). Visible to ADMIN/SECRETARY inside the backoffice. Open questions for design: which actions are worth logging, retention window, filtering UI, whether to surface from inside each entity's detail page or a global `/activity` page. Separate concern from the platform-admin audit log (which is internal to admin.convlyx.com — see TODO.md).
 
 ## UX Improvements
 - [ ] Dark mode toggle

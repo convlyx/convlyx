@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
 import { isSameOrigin } from "@/lib/csrf";
+import { audit } from "@/server/lib/audit";
 
 const ADMIN_EMAILS = (process.env.PLATFORM_ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
 
@@ -30,6 +31,15 @@ export async function POST(request: NextRequest) {
 
   const tenant = await db.tenant.create({
     data: { name },
+  });
+
+  await audit({
+    db,
+    actorEmail: admin.email ?? "unknown",
+    action: "tenant.create",
+    targetType: "tenant",
+    targetId: tenant.id,
+    metadata: { name: tenant.name },
   });
 
   return NextResponse.json(tenant);

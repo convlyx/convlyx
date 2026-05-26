@@ -4,6 +4,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
 import { isSameOrigin } from "@/lib/csrf";
 import { logger } from "@/lib/logger";
+import { audit } from "@/server/lib/audit";
 
 const ADMIN_EMAILS = (process.env.PLATFORM_ADMIN_EMAILS ?? "")
   .split(",")
@@ -99,6 +100,15 @@ export async function POST(request: NextRequest) {
         role: "ADMIN",
       },
       select: { id: true, name: true, email: true, role: true },
+    });
+
+    await audit({
+      db,
+      actorEmail: admin.email ?? "unknown",
+      action: "admin.create",
+      targetType: "user",
+      targetId: user.id,
+      metadata: { email, schoolId: school.id, tenantId: school.tenantId },
     });
 
     return NextResponse.json(user);

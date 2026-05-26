@@ -318,3 +318,33 @@ model PushSubscription {
   @@index([tenantId])
   @@map("push_subscriptions")
 }
+
+// Platform-admin audit trail. Each row is one action performed by an
+// operator at admin.convlyx.com against a tenant/school/admin row.
+// Deliberately NOT tenant-scoped — these actions cut across tenants and
+// the platform team owns them. Read-only from the application; rows are
+// inspected via SQL or a future admin UI.
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  actorEmail  String   @map("actor_email")
+  // Free-form verb describing the action, e.g. "tenant.create",
+  // "school.create", "admin.create". Keep dotted to match notification
+  // type naming.
+  action      String
+  // The row that was acted upon. `targetType` mirrors `action`'s prefix
+  // ("tenant", "school", "user"); `targetId` is its primary-key UUID
+  // (string so we can log non-uuid identifiers if needed later).
+  targetType  String   @map("target_type")
+  targetId    String   @map("target_id")
+  // Small structured payload — the human-readable bits that help an
+  // operator reconstruct the action without joining other tables. Never
+  // store secrets here (no passwords, no tokens).
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([actorEmail])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
