@@ -39,7 +39,7 @@ export function RecordExamResultDialog({ examId, studentId, open, onClose }: Pro
   const mutation = trpc.exam.recordResult.useMutation({
     onSuccess: () => {
       toast.success(t("toast.examResultRecorded"));
-      utils.user.studentProfile.invalidate({ id: studentId });
+      utils.user.studentOverview.invalidate({ id: studentId });
       utils.course.listByStudent.invalidate({ studentId });
       utils.exam.list.invalidate();
       reset();

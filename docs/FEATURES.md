@@ -172,6 +172,7 @@ Living document of everything the app can do, organized by area.
 - Stat cards: upcoming, attended, no-shows, enrolled
 - Theory/practical progress breakdown
 - Full enrollment history with color-coded type badges and status — clickable rows link to class detail page
+- Progressive loading: header / stats+courses / paginated history each have their own tRPC query (`user.studentHeader`, `user.studentOverview`, `user.studentEnrollments`) and skeleton, so sections light up as their data arrives instead of blocking on one monolithic fetch. Backed by `httpBatchStreamLink` so the page-wide batch still goes out as a single HTTP request but each procedure's response streams back independently. The top-level PDF export fetches the full dump (`user.studentProfile`) on click only.
 
 ## Instructor Profiles (`/instructors/[id]`)
 - Server-side UUID validation + existence check (404 for invalid)

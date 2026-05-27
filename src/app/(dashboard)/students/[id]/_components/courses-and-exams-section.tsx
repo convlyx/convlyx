@@ -5,6 +5,7 @@ import { useTranslations, useFormatter } from "next-intl";
 import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryBadge } from "@/components/category-badge";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { GraduationCap, CalendarPlus, CheckCircle2, XCircle, FileText, MapPin, User as UserIcon, FileDown } from "lucide-react";
@@ -14,100 +15,12 @@ import { exportCourseProgressPDF } from "@/lib/pdf-export";
 import { StartCourseDialog } from "./start-course-dialog";
 import { ScheduleExamDialog } from "./schedule-exam-dialog";
 import { RecordExamResultDialog } from "./record-exam-result-dialog";
-import type { LicenseCategory } from "@/lib/license-categories";
 import type { UserRole } from "@/generated/prisma/enums";
+import type { RouterOutput } from "@/lib/trpc";
 
-type Course = {
-  id: string;
-  category: LicenseCategory;
-  status: "IN_PROGRESS" | "COMPLETED" | "ABANDONED";
-  startedAt: Date | string;
-  completedAt: Date | string | null;
-  exams: Array<{
-    id: string;
-    type: "THEORY" | "PRACTICAL";
-    scheduledAt: Date | string;
-    result: "SCHEDULED" | "PASSED" | "FAILED" | "NO_SHOW" | "CANCELLED";
-    location: string | null;
-    instructor: { id: string; name: string } | null;
-  }>;
-};
+type OverviewCourse = RouterOutput["user"]["studentOverview"]["studentCourses"][number];
 
-// Subset of the enrollment shape returned by user.studentProfile that this
-// component needs for per-category stats AND the per-course PDF export.
-type Enrollment = {
-  status: "ENROLLED" | "CANCELLED" | "ATTENDED" | "NO_SHOW";
-  session: {
-    title: string;
-    classType: "THEORY" | "PRACTICAL";
-    category: LicenseCategory | null;
-    startsAt: Date | string;
-    endsAt: Date | string;
-    instructor: { name: string };
-  };
-};
-
-// Just enough of the student record for the per-course PDF header.
-type StudentInfo = {
-  name: string;
-  email: string;
-  phone: string | null;
-  school: { name: string };
-  createdAt: Date | string;
-};
-
-type Props = {
-  studentId: string;
-  student: StudentInfo;
-  courses: Course[];
-  enrollments: Enrollment[];
-  userRole: UserRole;
-};
-
-type CourseStats = {
-  practicalAttended: number;
-  practicalMissed: number;
-  practicalScheduled: number;
-  practicalTotal: number;
-  attendanceRate: number | null;
-  examPassed: number;
-  examFailed: number;
-  examScheduled: number;
-  examNoShow: number;
-};
-
-/**
- * Compute per-category stats for one course. Practical attendance is scoped
- * to enrollments where `session.category` matches the course AND the class
- * is practical. Theory is intentionally excluded — it's category-agnostic
- * and shown separately in the top-level student stat cards.
- */
-function statsForCourse(course: Course, enrollments: Enrollment[]): CourseStats {
-  const practical = enrollments.filter(
-    (e) => e.session.classType === "PRACTICAL" && e.session.category === course.category,
-  );
-  const practicalAttended = practical.filter((e) => e.status === "ATTENDED").length;
-  const practicalMissed = practical.filter((e) => e.status === "NO_SHOW").length;
-  const practicalScheduled = practical.filter((e) => e.status === "ENROLLED").length;
-  const practicalTotal = practicalAttended + practicalMissed + practicalScheduled;
-
-  const decided = practicalAttended + practicalMissed;
-  const attendanceRate = decided > 0 ? Math.round((practicalAttended / decided) * 100) : null;
-
-  return {
-    practicalAttended,
-    practicalMissed,
-    practicalScheduled,
-    practicalTotal,
-    attendanceRate,
-    examPassed: course.exams.filter((e) => e.result === "PASSED").length,
-    examFailed: course.exams.filter((e) => e.result === "FAILED").length,
-    examScheduled: course.exams.filter((e) => e.result === "SCHEDULED").length,
-    examNoShow: course.exams.filter((e) => e.result === "NO_SHOW").length,
-  };
-}
-
-const RESULT_VARIANT: Record<Course["exams"][number]["result"], "default" | "secondary" | "destructive" | "outline"> = {
+const RESULT_VARIANT: Record<OverviewCourse["exams"][number]["result"], "default" | "secondary" | "destructive" | "outline"> = {
   SCHEDULED: "secondary",
   PASSED: "default",
   FAILED: "destructive",
@@ -115,7 +28,7 @@ const RESULT_VARIANT: Record<Course["exams"][number]["result"], "default" | "sec
   CANCELLED: "outline",
 };
 
-const RESULT_KEYS: Record<Course["exams"][number]["result"], string> = {
+const RESULT_KEYS: Record<OverviewCourse["exams"][number]["result"], string> = {
   SCHEDULED: "exams.scheduledStatus",
   PASSED: "exams.passedStatus",
   FAILED: "exams.failedStatus",
@@ -123,39 +36,52 @@ const RESULT_KEYS: Record<Course["exams"][number]["result"], string> = {
   CANCELLED: "exams.cancelledStatus",
 };
 
-const COURSE_STATUS_KEYS: Record<Course["status"], string> = {
+const COURSE_STATUS_KEYS: Record<OverviewCourse["status"], string> = {
   IN_PROGRESS: "courses.statusInProgress",
   COMPLETED: "courses.statusCompleted",
   ABANDONED: "courses.statusAbandoned",
 };
 
-const COURSE_STATUS_VARIANT: Record<Course["status"], "default" | "secondary" | "destructive" | "outline"> = {
+const COURSE_STATUS_VARIANT: Record<OverviewCourse["status"], "default" | "secondary" | "destructive" | "outline"> = {
   IN_PROGRESS: "default",
   COMPLETED: "secondary",
   ABANDONED: "outline",
 };
 
-export function CoursesAndExamsSection({ studentId, student, courses, enrollments, userRole }: Props) {
+export function CoursesAndExamsSection({
+  studentId,
+  userRole,
+}: {
+  studentId: string;
+  userRole: UserRole;
+}) {
   const t = useTranslations();
   const format = useFormatter();
   const { onError } = useTranslatedError();
   const utils = trpc.useUtils();
 
   const [showStart, setShowStart] = useState(false);
-  const [scheduleForCourse, setScheduleForCourse] = useState<Course | null>(null);
+  const [scheduleForCourse, setScheduleForCourse] = useState<OverviewCourse | null>(null);
   const [recordResultExamId, setRecordResultExamId] = useState<string | null>(null);
   const [completeId, setCompleteId] = useState<string | null>(null);
   const [abandonId, setAbandonId] = useState<string | null>(null);
   const [cancelExamId, setCancelExamId] = useState<string | null>(null);
 
+  // Both queries are deduped via TanStack — we share them with the header
+  // and stats sections without doing extra network work.
+  const { data: header } = trpc.user.studentHeader.useQuery({ id: studentId });
+  const { data: overview, isLoading } = trpc.user.studentOverview.useQuery({ id: studentId });
+
   const canManage = userRole === "ADMIN" || userRole === "SECRETARY";
-  const activeCourses = courses.filter((c) => c.status === "IN_PROGRESS");
-  const activeCategories = activeCourses.map((c) => c.category);
+
+  function invalidateCoursesPath() {
+    utils.user.studentOverview.invalidate({ id: studentId });
+  }
 
   const completeMutation = trpc.course.complete.useMutation({
     onSuccess: () => {
       toast.success(t("toast.courseCompleted"));
-      utils.user.studentProfile.invalidate({ id: studentId });
+      invalidateCoursesPath();
       setCompleteId(null);
     },
     onError,
@@ -164,7 +90,8 @@ export function CoursesAndExamsSection({ studentId, student, courses, enrollment
   const abandonMutation = trpc.course.abandon.useMutation({
     onSuccess: (result) => {
       toast.success(t("toast.courseAbandoned", { count: result.cancelledCount }));
-      utils.user.studentProfile.invalidate({ id: studentId });
+      invalidateCoursesPath();
+      utils.user.studentEnrollments.invalidate({ id: studentId });
       utils.enrollment.listByStudent.invalidate();
       setAbandonId(null);
     },
@@ -174,12 +101,20 @@ export function CoursesAndExamsSection({ studentId, student, courses, enrollment
   const cancelExamMutation = trpc.exam.cancel.useMutation({
     onSuccess: () => {
       toast.success(t("toast.examCancelled"));
-      utils.user.studentProfile.invalidate({ id: studentId });
+      invalidateCoursesPath();
       utils.exam.list.invalidate();
       setCancelExamId(null);
     },
     onError,
   });
+
+  if (isLoading || !overview) {
+    return <CoursesAndExamsSkeleton />;
+  }
+
+  const { studentCourses: courses } = overview;
+  const activeCourses = courses.filter((c) => c.status === "IN_PROGRESS");
+  const activeCategories = activeCourses.map((c) => c.category);
 
   return (
     <div className="space-y-6">
@@ -207,7 +142,13 @@ export function CoursesAndExamsSection({ studentId, student, courses, enrollment
           </div>
         ) : (
           activeCourses.map((course) => {
-            const stats = statsForCourse(course, enrollments);
+            const decided = course.practicalAttended + course.practicalMissed;
+            const attendanceRate = decided > 0 ? Math.round((course.practicalAttended / decided) * 100) : null;
+            const practicalTotal = course.practicalAttended + course.practicalMissed + course.practicalScheduled;
+            const examPassed = course.exams.filter((e) => e.result === "PASSED").length;
+            const examFailed = course.exams.filter((e) => e.result === "FAILED").length;
+            const examScheduled = course.exams.filter((e) => e.result === "SCHEDULED").length;
+
             return (
               <div key={course.id} className="@container rounded-xl border bg-card p-4 sm:p-5 card-shadow">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -246,7 +187,21 @@ export function CoursesAndExamsSection({ studentId, student, courses, enrollment
                         size="sm"
                         className="gap-1.5"
                         title={t("common.exportPDF")}
-                        onClick={() => exportCourseProgressPDF({ student, course, enrollments })}
+                        disabled={!header}
+                        onClick={() => {
+                          if (!header) return;
+                          exportCourseProgressPDF({
+                            student: {
+                              name: header.name,
+                              email: header.email,
+                              phone: header.phone,
+                              school: header.school,
+                              createdAt: header.createdAt,
+                            },
+                            course,
+                            enrollments: course.practicalEnrollments,
+                          });
+                        }}
                       >
                         <FileDown className="h-3.5 w-3.5" />
                         <span className="hidden @2xl:inline">{t("common.exportPDF")}</span>
@@ -279,16 +234,16 @@ export function CoursesAndExamsSection({ studentId, student, courses, enrollment
                 <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="rounded-lg border bg-muted/30 p-3">
                     <p className="text-xs font-medium text-muted-foreground">{t("courses.practicalProgress")}</p>
-                    {stats.practicalTotal === 0 ? (
+                    {practicalTotal === 0 ? (
                       <p className="mt-1 text-sm text-muted-foreground">{t("courses.noPracticalYet")}</p>
                     ) : (
                       <>
                         <p className="mt-1 text-lg font-semibold">
-                          {stats.practicalAttended}/{stats.practicalAttended + stats.practicalMissed}
+                          {course.practicalAttended}/{course.practicalAttended + course.practicalMissed}
                         </p>
-                        {stats.attendanceRate !== null && (
+                        {attendanceRate !== null && (
                           <p className="text-xs text-muted-foreground">
-                            {t("courses.attendanceRate", { rate: stats.attendanceRate })}
+                            {t("courses.attendanceRate", { rate: attendanceRate })}
                           </p>
                         )}
                       </>
@@ -301,9 +256,9 @@ export function CoursesAndExamsSection({ studentId, student, courses, enrollment
                     ) : (
                       <p className="mt-1 text-sm">
                         {t("courses.examsBreakdown", {
-                          passed: stats.examPassed,
-                          failed: stats.examFailed,
-                          scheduled: stats.examScheduled,
+                          passed: examPassed,
+                          failed: examFailed,
+                          scheduled: examScheduled,
                         })}
                       </p>
                     )}
@@ -467,6 +422,34 @@ export function CoursesAndExamsSection({ studentId, student, courses, enrollment
         onClose={() => setCancelExamId(null)}
         variant="destructive"
       />
+    </div>
+  );
+}
+
+function CoursesAndExamsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-9 w-32" />
+        </div>
+        <div className="rounded-xl border bg-card p-4 sm:p-5 card-shadow space-y-4">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-xl shrink-0" />
+            <Skeleton className="h-6 w-40" />
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Skeleton className="h-16 rounded-lg" />
+            <Skeleton className="h-16 rounded-lg" />
+          </div>
+        </div>
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-6 w-40" />
+        <Skeleton className="h-12 w-full rounded-lg" />
+        <Skeleton className="h-12 w-full rounded-lg" />
+      </div>
     </div>
   );
 }

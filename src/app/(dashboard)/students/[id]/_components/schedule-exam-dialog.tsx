@@ -50,7 +50,7 @@ export function ScheduleExamDialog({ studentId, courseId, category, open, onClos
   const scheduleMutation = trpc.exam.schedule.useMutation({
     onSuccess: () => {
       toast.success(t("toast.examScheduled"));
-      utils.user.studentProfile.invalidate({ id: studentId });
+      utils.user.studentOverview.invalidate({ id: studentId });
       utils.course.listByStudent.invalidate({ studentId });
       utils.exam.list.invalidate();
       reset();

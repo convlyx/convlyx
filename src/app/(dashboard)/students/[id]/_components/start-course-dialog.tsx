@@ -30,7 +30,7 @@ export function StartCourseDialog({ studentId, excludeCategories, open, onClose 
   const startMutation = trpc.course.start.useMutation({
     onSuccess: () => {
       toast.success(t("toast.courseStarted"));
-      utils.user.studentProfile.invalidate({ id: studentId });
+      utils.user.studentOverview.invalidate({ id: studentId });
       utils.course.listByStudent.invalidate({ studentId });
       utils.course.currentForStudent.invalidate({ studentId });
       utils.user.list.invalidate();

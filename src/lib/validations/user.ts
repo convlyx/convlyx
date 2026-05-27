@@ -49,6 +49,15 @@ export const listUsersSchema = z
   })
   .optional();
 
+// Paginated enrollment history for the student detail page. When `page`
+// is omitted, the full set is returned (used by the PDF export path).
+export const listStudentEnrollmentsSchema = z.object({
+  id: z.string().uuid(),
+  page: z.number().int().min(1).optional(),
+  pageSize: z.number().int().min(1).max(100).optional(),
+});
+
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type ListUsersInput = z.infer<typeof listUsersSchema>;
+export type ListStudentEnrollmentsInput = z.infer<typeof listStudentEnrollmentsSchema>;

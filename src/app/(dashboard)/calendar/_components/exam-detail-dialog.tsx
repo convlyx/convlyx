@@ -64,7 +64,7 @@ export function ExamDetailDialog({
     onSuccess: () => {
       toast.success(t("toast.examCancelled"));
       utils.exam.list.invalidate();
-      utils.user.studentProfile.invalidate();
+      utils.user.studentOverview.invalidate();
       setShowCancel(false);
       onClose();
     },
@@ -75,7 +75,7 @@ export function ExamDetailDialog({
     onSuccess: () => {
       toast.success(t("toast.examResultRecorded"));
       utils.exam.list.invalidate();
-      utils.user.studentProfile.invalidate();
+      utils.user.studentOverview.invalidate();
       onClose();
     },
     onError,

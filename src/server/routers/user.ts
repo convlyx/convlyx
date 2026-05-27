@@ -2,7 +2,7 @@ import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { createClient } from "@supabase/supabase-js";
 import { router, protectedProcedure, roleProtectedProcedure } from "../trpc";
-import { createUserSchema, updateUserSchema, listUsersSchema } from "@/lib/validations/user";
+import { createUserSchema, updateUserSchema, listUsersSchema, listStudentEnrollmentsSchema } from "@/lib/validations/user";
 import { createNotification } from "../lib/notifications";
 import { syncClassStatuses } from "../lib/class-status";
 import { logger } from "@/lib/logger";
@@ -725,12 +725,219 @@ export const userRouter = router({
       return { success: true };
     }),
 
+  /**
+   * Identity + status + flags for the student detail page header. Kept
+   * deliberately lean so it can land in ~50–100ms — the rest of the page
+   * (stats/courses/history) fetches in parallel via the dedicated
+   * `studentOverview` / `studentEnrollments` procedures.
+   */
+  studentHeader: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const student = await ctx.db.user.findFirst({
+        where: { id: input.id, tenantId: ctx.tenantId, role: "STUDENT" },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          status: true,
+          createdAt: true,
+          school: { select: { id: true, name: true } },
+        },
+      });
+
+      if (!student) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
+      }
+
+      // emailConfirmed lives on the auth side — used by EditUserDialog to
+      // show "send confirmation" affordances. Best-effort; failure is
+      // non-fatal so a Supabase outage doesn't break the header.
+      let emailConfirmed = false;
+      try {
+        const { data } = await supabaseAdmin.auth.admin.getUserById(student.id);
+        emailConfirmed = !!data?.user?.email_confirmed_at;
+      } catch {}
+
+      const { deletable } = await computeDeletability(ctx.db, ctx.tenantId, student.id, "STUDENT");
+      const anonymized = isAnonymizedEmail(student.email);
+
+      return { ...student, emailConfirmed, deletable, anonymized };
+    }),
+
+  /**
+   * Stats + courses (with per-category practical aggregates baked in).
+   * Aggregates are computed server-side so the page doesn't need to ship
+   * the full enrollment list just to render counters. Active-course
+   * payloads also include the (bounded) list of practical enrollments
+   * scoped to that category — they feed the per-course PDF export.
+   */
+  studentOverview: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const studentExists = await ctx.db.user.findFirst({
+        where: { id: input.id, tenantId: ctx.tenantId, role: "STUDENT" },
+        select: { id: true },
+      });
+      if (!studentExists) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
+      }
+
+      // Minimal enrollment slice for top-level stats — only the columns we
+      // need to count. Avoids dragging instructor names, titles, etc.
+      const enrollmentSlice = await ctx.db.enrollment.findMany({
+        where: { studentId: input.id, tenantId: ctx.tenantId },
+        select: {
+          status: true,
+          session: { select: { classType: true, category: true, startsAt: true } },
+        },
+      });
+
+      const now = new Date();
+      const stats = {
+        totalClasses: enrollmentSlice.length,
+        totalAttended: enrollmentSlice.filter((e) => e.status === "ATTENDED").length,
+        totalNoShow: enrollmentSlice.filter((e) => e.status === "NO_SHOW").length,
+        theoryAttended: enrollmentSlice.filter((e) => e.status === "ATTENDED" && e.session.classType === "THEORY").length,
+        practicalAttended: enrollmentSlice.filter((e) => e.status === "ATTENDED" && e.session.classType === "PRACTICAL").length,
+        upcoming: enrollmentSlice.filter((e) => e.status === "ENROLLED" && new Date(e.session.startsAt) > now).length,
+      };
+
+      const courses = await ctx.db.studentCourse.findMany({
+        where: { studentId: input.id, tenantId: ctx.tenantId },
+        select: {
+          id: true,
+          category: true,
+          status: true,
+          startedAt: true,
+          completedAt: true,
+          exams: {
+            select: {
+              id: true,
+              type: true,
+              scheduledAt: true,
+              result: true,
+              location: true,
+              instructor: { select: { id: true, name: true } },
+            },
+            orderBy: { scheduledAt: "desc" },
+          },
+        },
+        orderBy: { startedAt: "desc" },
+      });
+
+      const activeCategories = courses
+        .filter((c) => c.status === "IN_PROGRESS")
+        .map((c) => c.category);
+
+      // Practical enrollments scoped to active courses — bounded by the
+      // student's enrollments in those categories (typically <50 per
+      // course). Needed for the per-course PDF export's class history.
+      const practicalEnrollments =
+        activeCategories.length === 0
+          ? []
+          : await ctx.db.enrollment.findMany({
+              where: {
+                studentId: input.id,
+                tenantId: ctx.tenantId,
+                session: { classType: "PRACTICAL", category: { in: activeCategories } },
+              },
+              select: {
+                status: true,
+                session: {
+                  select: {
+                    title: true,
+                    classType: true,
+                    category: true,
+                    startsAt: true,
+                    endsAt: true,
+                    instructor: { select: { name: true } },
+                  },
+                },
+              },
+              orderBy: { session: { startsAt: "desc" } },
+            });
+
+      const studentCourses = courses.map((course) => {
+        const courseEnrollments =
+          course.status === "IN_PROGRESS"
+            ? practicalEnrollments.filter((e) => e.session.category === course.category)
+            : [];
+        const practicalAttended = courseEnrollments.filter((e) => e.status === "ATTENDED").length;
+        const practicalMissed = courseEnrollments.filter((e) => e.status === "NO_SHOW").length;
+        const practicalScheduled = courseEnrollments.filter((e) => e.status === "ENROLLED").length;
+        return {
+          ...course,
+          practicalAttended,
+          practicalMissed,
+          practicalScheduled,
+          practicalEnrollments: courseEnrollments,
+        };
+      });
+
+      return { stats, studentCourses };
+    }),
+
+  /**
+   * Paginated enrollment history. When `page` is omitted, returns the
+   * full set (used by the PDF export which needs every row).
+   */
+  studentEnrollments: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
+    .input(listStudentEnrollmentsSchema)
+    .query(async ({ ctx, input }) => {
+      const { id, page, pageSize } = input;
+
+      const studentExists = await ctx.db.user.findFirst({
+        where: { id, tenantId: ctx.tenantId, role: "STUDENT" },
+        select: { id: true },
+      });
+      if (!studentExists) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
+      }
+
+      const where = { studentId: id, tenantId: ctx.tenantId };
+      const select = {
+        id: true,
+        status: true,
+        enrolledAt: true,
+        session: {
+          select: {
+            id: true,
+            title: true,
+            classType: true,
+            category: true,
+            startsAt: true,
+            endsAt: true,
+            status: true,
+            instructor: { select: { name: true } },
+          },
+        },
+      } as const;
+      const orderBy = { enrolledAt: "desc" } as const;
+
+      if (page && pageSize) {
+        const [items, total] = await Promise.all([
+          ctx.db.enrollment.findMany({
+            where,
+            select,
+            orderBy,
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+          }),
+          ctx.db.enrollment.count({ where }),
+        ]);
+        return { items, total };
+      }
+
+      const items = await ctx.db.enrollment.findMany({ where, select, orderBy });
+      return { items, total: items.length };
+    }),
+
   /** Student profile with enrollment stats, course history and exam history */
   studentProfile: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      await syncClassStatuses(ctx.db, ctx.tenantId);
-
       const student = await ctx.db.user.findFirst({
         where: { id: input.id, tenantId: ctx.tenantId, role: "STUDENT" },
         select: {
