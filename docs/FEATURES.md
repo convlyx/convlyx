@@ -275,6 +275,7 @@ Living document of everything the app can do, organized by area.
 ## Cron Jobs
 - Daily class reminder: runs at 20:00 UTC via Vercel Cron, notifies students and instructors about tomorrow's classes
 - Daily exam reminder: same cron — notifies student + accompanying instructor about tomorrow's exams
+- Class status sync: runs every minute, sweeps every tenant in one SQL pass — `SCHEDULED→IN_PROGRESS` when `startsAt <= now`, `IN_PROGRESS→COMPLETED` when `endsAt <= now`. Centralised here so read paths (`class.list`, calendar, dashboard) stay pure SELECTs. Worst-case lag: a class that ended <1 min ago may briefly still show as IN_PROGRESS until the next sweep.
 - Secured via `CRON_SECRET` Bearer token
 
 ## Infrastructure

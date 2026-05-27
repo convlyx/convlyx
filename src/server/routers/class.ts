@@ -7,7 +7,6 @@ import {
   cancelClassSchema,
   listClassesSchema,
 } from "@/lib/validations/class";
-import { syncClassStatuses } from "../lib/class-status";
 import { createNotification, createNotifications, formatClassTime } from "../lib/notifications";
 import { getStudentClassAccess } from "../lib/student-access";
 import { hasInstructorScheduleConflict } from "../lib/schedule-conflict";
@@ -17,8 +16,8 @@ export const classRouter = router({
   list: protectedProcedure
     .input(listClassesSchema)
     .query(async ({ ctx, input }) => {
-      // Auto-update class statuses based on current time
-      await syncClassStatuses(ctx.db, ctx.tenantId);
+      // Status accuracy is maintained by the `sync-class-statuses` cron
+      // (every minute) — this read path stays a pure SELECT.
 
       // Instructors see only their classes, students see available + enrolled.
       // The role-level instructor pin always wins over an explicit input filter.

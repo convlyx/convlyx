@@ -17,9 +17,20 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 5 * 1000,
-            refetchOnWindowFocus: true,
-            refetchOnMount: "always",
+            // Cached results are considered fresh for 30s — covers normal
+            // navigation between pages without refetching. Mutations
+            // continue to invalidate explicitly so post-edit freshness
+            // is unchanged.
+            staleTime: 30 * 1000,
+            // Tab focus no longer triggers a refetch storm. Views that
+            // need live data (e.g. the calendar) can override per-query
+            // with `refetchOnWindowFocus: true`.
+            refetchOnWindowFocus: false,
+            // Default smart behaviour: refetch only if the data is stale,
+            // not on every mount. Was "always" — that meant remounting
+            // a page (which happens on every navigation back) hit the
+            // server again even if the cache was fresh.
+            refetchOnMount: true,
           },
         },
       })
