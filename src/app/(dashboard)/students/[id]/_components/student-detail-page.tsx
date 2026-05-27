@@ -226,6 +226,13 @@ export function StudentDetailPage({
       {/* Courses + exams */}
       <CoursesAndExamsSection
         studentId={id}
+        student={{
+          name: student.name,
+          email: student.email,
+          phone: student.phone,
+          school: student.school,
+          createdAt: student.createdAt,
+        }}
         courses={student.studentCourses}
         enrollments={student.enrollments}
         userRole={userRole}

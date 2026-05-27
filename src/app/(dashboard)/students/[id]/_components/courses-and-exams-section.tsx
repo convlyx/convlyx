@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryBadge } from "@/components/category-badge";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { GraduationCap, CalendarPlus, CheckCircle2, XCircle, FileText, MapPin, User as UserIcon } from "lucide-react";
+import { GraduationCap, CalendarPlus, CheckCircle2, XCircle, FileText, MapPin, User as UserIcon, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
+import { exportCourseProgressPDF } from "@/lib/pdf-export";
 import { StartCourseDialog } from "./start-course-dialog";
 import { ScheduleExamDialog } from "./schedule-exam-dialog";
 import { RecordExamResultDialog } from "./record-exam-result-dialog";
@@ -33,18 +34,31 @@ type Course = {
 };
 
 // Subset of the enrollment shape returned by user.studentProfile that this
-// component needs for per-category stats. Defined locally so the section
-// doesn't pull in the full Prisma type.
+// component needs for per-category stats AND the per-course PDF export.
 type Enrollment = {
   status: "ENROLLED" | "CANCELLED" | "ATTENDED" | "NO_SHOW";
   session: {
+    title: string;
     classType: "THEORY" | "PRACTICAL";
     category: LicenseCategory | null;
+    startsAt: Date | string;
+    endsAt: Date | string;
+    instructor: { name: string };
   };
+};
+
+// Just enough of the student record for the per-course PDF header.
+type StudentInfo = {
+  name: string;
+  email: string;
+  phone: string | null;
+  school: { name: string };
+  createdAt: Date | string;
 };
 
 type Props = {
   studentId: string;
+  student: StudentInfo;
   courses: Course[];
   enrollments: Enrollment[];
   userRole: UserRole;
@@ -121,7 +135,7 @@ const COURSE_STATUS_VARIANT: Record<Course["status"], "default" | "secondary" | 
   ABANDONED: "outline",
 };
 
-export function CoursesAndExamsSection({ studentId, courses, enrollments, userRole }: Props) {
+export function CoursesAndExamsSection({ studentId, student, courses, enrollments, userRole }: Props) {
   const t = useTranslations();
   const format = useFormatter();
   const { onError } = useTranslatedError();
@@ -195,7 +209,7 @@ export function CoursesAndExamsSection({ studentId, courses, enrollments, userRo
           activeCourses.map((course) => {
             const stats = statsForCourse(course, enrollments);
             return (
-              <div key={course.id} className="rounded-xl border bg-card p-4 sm:p-5 card-shadow">
+              <div key={course.id} className="@container rounded-xl border bg-card p-4 sm:p-5 card-shadow">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -212,32 +226,50 @@ export function CoursesAndExamsSection({ studentId, courses, enrollments, userRo
                   </div>
                   {canManage && (
                     <div className="flex flex-wrap gap-2 sm:shrink-0">
+                      {/* Container query: when the card itself is narrower
+                          than @2xl (672px) — e.g. mobile, or a sidebar-eaten
+                          laptop layout — collapse to icons only. Above that,
+                          full PT labels reappear. title= keeps the action
+                          name discoverable on hover/long-press. */}
                       <Button
                         variant="outline"
                         size="sm"
                         className="gap-1.5"
+                        title={t("exams.schedule")}
                         onClick={() => setScheduleForCourse(course)}
                       >
                         <CalendarPlus className="h-3.5 w-3.5" />
-                        {t("exams.schedule")}
+                        <span className="hidden @2xl:inline">{t("exams.schedule")}</span>
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         className="gap-1.5"
+                        title={t("common.exportPDF")}
+                        onClick={() => exportCourseProgressPDF({ student, course, enrollments })}
+                      >
+                        <FileDown className="h-3.5 w-3.5" />
+                        <span className="hidden @2xl:inline">{t("common.exportPDF")}</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5"
+                        title={t("courses.completeCourse")}
                         onClick={() => setCompleteId(course.id)}
                       >
                         <CheckCircle2 className="h-3.5 w-3.5" />
-                        {t("courses.completeCourse")}
+                        <span className="hidden @2xl:inline">{t("courses.completeCourse")}</span>
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         className="gap-1.5"
+                        title={t("courses.abandonCourse")}
                         onClick={() => setAbandonId(course.id)}
                       >
                         <XCircle className="h-3.5 w-3.5" />
-                        {t("courses.abandonCourse")}
+                        <span className="hidden @2xl:inline">{t("courses.abandonCourse")}</span>
                       </Button>
                     </div>
                   )}

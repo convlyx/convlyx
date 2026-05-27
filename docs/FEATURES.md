@@ -265,6 +265,7 @@ Living document of everything the app can do, organized by area.
 ## PDF Export
 - Class attendance sheet: exports class info + student list with attendance status and notes
 - Student progress report: exports student info, stats (attendance rate, theory/practical counts), full class history
+- Per-course report (one PDF per licence category): header with student + course meta, practical-only attendance stats scoped to that category, exam result counts, exam history table, and a practical class history table. "Exportar PDF" button lives on each active course card on the student detail page.
 - Green branded header with Convlyx branding
 - Auto-generated filename with class/student name and date
 - Download button on class detail page and student profile

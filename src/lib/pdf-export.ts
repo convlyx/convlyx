@@ -335,3 +335,277 @@ export async function exportStudentProgressPDF(student: {
   const fileName = `relatorio_${student.name.replace(/\s+/g, "_")}_${formatDate(new Date())}.pdf`;
   doc.save(fileName);
 }
+
+/**
+ * Export a per-course PDF report. Same vibe as the student-progress PDF but
+ * scoped to a single licence category — useful when a school needs to hand
+ * the student a printed summary for just Cat B (or just Cat A, etc.).
+ *
+ * Stats and class history are practical-only for the matching category, in
+ * sync with the per-category stats on the student detail page. Exams come
+ * from the course's own relation (theory + practical, both attached to
+ * this course).
+ */
+export async function exportCourseProgressPDF({
+  student,
+  course,
+  enrollments,
+}: {
+  student: {
+    name: string;
+    email: string;
+    phone?: string | null;
+    school: { name: string };
+    createdAt: string | Date;
+  };
+  course: {
+    category: string;
+    status: "IN_PROGRESS" | "COMPLETED" | "ABANDONED";
+    startedAt: string | Date;
+    completedAt: string | Date | null;
+    exams: Array<{
+      type: "THEORY" | "PRACTICAL";
+      scheduledAt: string | Date;
+      result: string;
+      location: string | null;
+      instructor: { name: string } | null;
+    }>;
+  };
+  enrollments: Array<{
+    status: string;
+    session: {
+      title: string;
+      classType: string;
+      category: string | null;
+      startsAt: string | Date;
+      endsAt: string | Date;
+      instructor: { name: string };
+    };
+  }>;
+}) {
+  const doc = new jsPDF();
+  const logo = await getLogoBase64();
+
+  const courseStatusLabel: Record<typeof course.status, string> = {
+    IN_PROGRESS: "Em curso",
+    COMPLETED: "Concluída",
+    ABANDONED: "Abandonada",
+  };
+
+  addHeader(
+    doc,
+    `Carta de condução ${course.category} · ${student.name}`,
+    student.school.name,
+    logo,
+  );
+
+  // Student + course info block
+  let y = 38;
+  doc.setFontSize(10);
+
+  const infoLines: Array<[string, string]> = [
+    ["Aluno:", student.name],
+    ["Email:", student.email],
+    ...(student.phone ? ([["Telefone:", student.phone]] as [string, string][]) : []),
+    ["Categoria:", course.category],
+    ["Estado:", courseStatusLabel[course.status]],
+    ["Iniciada em:", formatDate(new Date(course.startedAt))],
+    ...(course.completedAt
+      ? ([[
+          course.status === "COMPLETED" ? "Concluída em:" : "Encerrada em:",
+          formatDate(new Date(course.completedAt)),
+        ]] as [string, string][])
+      : []),
+  ];
+
+  for (const [label, value] of infoLines) {
+    doc.setTextColor(...MUTED_COLOR);
+    doc.text(label, 14, y);
+    doc.setTextColor(...TEXT_COLOR);
+    doc.text(value, 50, y);
+    y += 6;
+  }
+
+  // Practical class stats — scoped to this category (theory is shared and
+  // covered in the all-up student-progress report instead).
+  const practical = enrollments.filter(
+    (e) => e.session.classType === "PRACTICAL" && e.session.category === course.category,
+  );
+  const attended = practical.filter((e) => e.status === "ATTENDED").length;
+  const missed = practical.filter((e) => e.status === "NO_SHOW").length;
+  const scheduled = practical.filter((e) => e.status === "ENROLLED").length;
+  const decided = attended + missed;
+  const attendanceRate = decided > 0 ? `${Math.round((attended / decided) * 100)}%` : "N/A";
+
+  const examPassed = course.exams.filter((e) => e.result === "PASSED").length;
+  const examFailed = course.exams.filter((e) => e.result === "FAILED").length;
+  const examScheduled = course.exams.filter((e) => e.result === "SCHEDULED").length;
+  const examNoShow = course.exams.filter((e) => e.result === "NO_SHOW").length;
+
+  y += 4;
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...TEXT_COLOR);
+  doc.text("Aulas práticas", 14, y);
+  y += 6;
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  const practicalStats: Array<[string, string]> = [
+    ["Presenças:", String(attended)],
+    ["Faltas:", String(missed)],
+    ["Agendadas:", String(scheduled)],
+    ["Assiduidade:", attendanceRate],
+  ];
+  for (const [label, value] of practicalStats) {
+    doc.setTextColor(...MUTED_COLOR);
+    doc.text(label, 14, y);
+    doc.setTextColor(...TEXT_COLOR);
+    doc.text(value, 55, y);
+    y += 5;
+  }
+
+  y += 4;
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("Exames", 14, y);
+  y += 6;
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  const examStats: Array<[string, string]> = [
+    ["Aprovados:", String(examPassed)],
+    ["Reprovados:", String(examFailed)],
+    ["Marcados:", String(examScheduled)],
+    ["Faltas:", String(examNoShow)],
+  ];
+  for (const [label, value] of examStats) {
+    doc.setTextColor(...MUTED_COLOR);
+    doc.text(label, 14, y);
+    doc.setTextColor(...TEXT_COLOR);
+    doc.text(value, 55, y);
+    y += 5;
+  }
+
+  // Exam history table (theory + practical attached to this course).
+  if (course.exams.length > 0) {
+    y += 4;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("Histórico de exames", 14, y);
+
+    const examTypeLabels: Record<string, string> = { THEORY: "Teórico", PRACTICAL: "Prático" };
+    const examResultLabels: Record<string, string> = {
+      SCHEDULED: "Marcado",
+      PASSED: "Aprovado",
+      FAILED: "Reprovado",
+      NO_SHOW: "Faltou",
+      CANCELLED: "Cancelado",
+    };
+
+    autoTable(doc, {
+      startY: y + 4,
+      head: [["Data", "Tipo", "Resultado", "Local", "Instrutor"]],
+      body: course.exams
+        .slice()
+        .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
+        .map((exam) => {
+          const at = new Date(exam.scheduledAt);
+          return [
+            `${formatDate(at)} ${formatTime(at)}`,
+            examTypeLabels[exam.type] ?? exam.type,
+            examResultLabels[exam.result] ?? exam.result,
+            exam.location ?? "",
+            exam.instructor?.name ?? "",
+          ];
+        }),
+      headStyles: {
+        fillColor: PRIMARY_COLOR,
+        textColor: [255, 255, 255],
+        fontSize: 8,
+        fontStyle: "bold",
+      },
+      bodyStyles: { fontSize: 7, textColor: TEXT_COLOR },
+      columnStyles: {
+        0: { cellWidth: 30 },
+        1: { cellWidth: 20, halign: "center" },
+        2: { cellWidth: 25, halign: "center" },
+        3: { cellWidth: "auto" },
+        4: { cellWidth: 40 },
+      },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { left: 14, right: 14 },
+    });
+
+    // Read finalY back via the autoTable plugin's last-table state. jsPDF
+    // exposes it on `doc.lastAutoTable` after the table renders.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    y = (doc as any).lastAutoTable?.finalY ?? y + 10;
+  }
+
+  // Practical class history table — practical-only, matching category.
+  y += 8;
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("Histórico de aulas práticas", 14, y);
+
+  const statusLabels: Record<string, string> = {
+    ENROLLED: "Inscrito",
+    ATTENDED: "Presente",
+    NO_SHOW: "Faltou",
+    CANCELLED: "Cancelado",
+  };
+
+  const tableData = practical
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(a.session.startsAt).getTime() - new Date(b.session.startsAt).getTime(),
+    )
+    .map((e) => {
+      const startsAt = new Date(e.session.startsAt);
+      const endsAt = new Date(e.session.endsAt);
+      return [
+        formatDate(startsAt),
+        `${formatTime(startsAt)} - ${formatTime(endsAt)}`,
+        e.session.title,
+        e.session.instructor.name,
+        statusLabels[e.status] ?? e.status,
+      ];
+    });
+
+  if (tableData.length === 0) {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...MUTED_COLOR);
+    doc.text("Sem aulas práticas registadas para esta categoria.", 14, y + 6);
+  } else {
+    autoTable(doc, {
+      startY: y + 4,
+      head: [["Data", "Horário", "Aula", "Instrutor", "Estado"]],
+      body: tableData,
+      headStyles: {
+        fillColor: PRIMARY_COLOR,
+        textColor: [255, 255, 255],
+        fontSize: 8,
+        fontStyle: "bold",
+      },
+      bodyStyles: { fontSize: 7, textColor: TEXT_COLOR },
+      columnStyles: {
+        0: { cellWidth: 22 },
+        1: { cellWidth: 25 },
+        2: { cellWidth: "auto" },
+        3: { cellWidth: 35 },
+        4: { cellWidth: 22, halign: "center" },
+      },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { left: 14, right: 14 },
+    });
+  }
+
+  addFooter(doc);
+
+  const safeName = student.name.replace(/\s+/g, "_");
+  const fileName = `relatorio_${course.category}_${safeName}_${formatDate(new Date())}.pdf`;
+  doc.save(fileName);
+}
