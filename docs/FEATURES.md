@@ -181,6 +181,7 @@ Living document of everything the app can do, organized by area.
 - Stat cards: upcoming, completed, total, students taught
 - Theory/practical class breakdown
 - Full class history with enrollment counts and status — clickable rows link to class detail page
+- Progressive loading: header / stats / paginated history each have their own tRPC query (`user.instructorHeader`, `user.instructorOverview`, `user.instructorSessions`) and skeleton, so sections light up as their data arrives. `completedClasses` is derived from `endsAt < now AND status != CANCELLED` so the count stays accurate without an up-front `syncClassStatuses` write.
 
 ## Settings
 - Profile section: edit own name

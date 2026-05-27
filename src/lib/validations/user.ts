@@ -57,7 +57,15 @@ export const listStudentEnrollmentsSchema = z.object({
   pageSize: z.number().int().min(1).max(100).optional(),
 });
 
+// Paginated class history for the instructor detail page.
+export const listInstructorSessionsSchema = z.object({
+  id: z.string().uuid(),
+  page: z.number().int().min(1).optional(),
+  pageSize: z.number().int().min(1).max(100).optional(),
+});
+
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type ListUsersInput = z.infer<typeof listUsersSchema>;
 export type ListStudentEnrollmentsInput = z.infer<typeof listStudentEnrollmentsSchema>;
+export type ListInstructorSessionsInput = z.infer<typeof listInstructorSessionsSchema>;

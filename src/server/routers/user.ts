@@ -2,9 +2,8 @@ import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { createClient } from "@supabase/supabase-js";
 import { router, protectedProcedure, roleProtectedProcedure } from "../trpc";
-import { createUserSchema, updateUserSchema, listUsersSchema, listStudentEnrollmentsSchema } from "@/lib/validations/user";
+import { createUserSchema, updateUserSchema, listUsersSchema, listStudentEnrollmentsSchema, listInstructorSessionsSchema } from "@/lib/validations/user";
 import { createNotification } from "../lib/notifications";
-import { syncClassStatuses } from "../lib/class-status";
 import { logger } from "@/lib/logger";
 
 // Construction-time fallback: Supabase JS throws if URL/key are empty,
@@ -1019,12 +1018,14 @@ export const userRouter = router({
       return { ...student, stats, emailConfirmed, deletable, anonymized };
     }),
 
-  /** Instructor profile with class stats and schedule */
-  instructorProfile: roleProtectedProcedure(["ADMIN", "SECRETARY"])
+  /**
+   * Identity + status + flags for the instructor detail page header.
+   * Lean enough to land in ~50–100ms — overview/sessions fetch in
+   * parallel via dedicated procedures.
+   */
+  instructorHeader: roleProtectedProcedure(["ADMIN", "SECRETARY"])
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      await syncClassStatuses(ctx.db, ctx.tenantId);
-
       const instructor = await ctx.db.user.findFirst({
         where: { id: input.id, tenantId: ctx.tenantId, role: "INSTRUCTOR" },
         select: {
@@ -1036,37 +1037,12 @@ export const userRouter = router({
           qualifiedCategories: true,
           createdAt: true,
           school: { select: { id: true, name: true } },
-          instructedSessions: {
-            select: {
-              id: true,
-              title: true,
-              classType: true,
-              startsAt: true,
-              endsAt: true,
-              status: true,
-              capacity: true,
-              _count: { select: { enrollments: true } },
-            },
-            orderBy: { startsAt: "desc" },
-          },
         },
       });
 
       if (!instructor) {
         throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
       }
-
-      const sessions = instructor.instructedSessions;
-      const now = new Date();
-      const stats = {
-        totalClasses: sessions.length,
-        completedClasses: sessions.filter((s) => s.status === "COMPLETED").length,
-        upcomingClasses: sessions.filter((s) => s.status === "SCHEDULED" && new Date(s.startsAt) > now).length,
-        cancelledClasses: sessions.filter((s) => s.status === "CANCELLED").length,
-        theoryClasses: sessions.filter((s) => s.classType === "THEORY").length,
-        practicalClasses: sessions.filter((s) => s.classType === "PRACTICAL").length,
-        totalStudentsTaught: sessions.reduce((acc, s) => acc + s._count.enrollments, 0),
-      };
 
       let emailConfirmed = false;
       try {
@@ -1077,6 +1053,97 @@ export const userRouter = router({
       const { deletable } = await computeDeletability(ctx.db, ctx.tenantId, instructor.id, "INSTRUCTOR");
       const anonymized = isAnonymizedEmail(instructor.email);
 
-      return { ...instructor, stats, emailConfirmed, deletable, anonymized };
+      return { ...instructor, emailConfirmed, deletable, anonymized };
+    }),
+
+  /**
+   * Class stats for the instructor detail page. Computed from a lean
+   * session slice (`status` + `classType` + `startsAt` + `endsAt`)
+   * rather than syncing class statuses up-front — `completedClasses`
+   * is derived by `endsAt < now AND status != CANCELLED` so the count
+   * stays accurate regardless of whether the sync cron has run.
+   */
+  instructorOverview: roleProtectedProcedure(["ADMIN", "SECRETARY"])
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const instructorExists = await ctx.db.user.findFirst({
+        where: { id: input.id, tenantId: ctx.tenantId, role: "INSTRUCTOR" },
+        select: { id: true },
+      });
+      if (!instructorExists) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
+      }
+
+      const [sessionSlice, totalStudentsTaught] = await Promise.all([
+        ctx.db.classSession.findMany({
+          where: { instructorId: input.id, tenantId: ctx.tenantId },
+          select: { status: true, classType: true, startsAt: true, endsAt: true },
+        }),
+        ctx.db.enrollment.count({
+          where: { tenantId: ctx.tenantId, session: { instructorId: input.id } },
+        }),
+      ]);
+
+      const now = new Date();
+      const stats = {
+        totalClasses: sessionSlice.length,
+        completedClasses: sessionSlice.filter(
+          (s) => s.status !== "CANCELLED" && new Date(s.endsAt) < now,
+        ).length,
+        upcomingClasses: sessionSlice.filter(
+          (s) => s.status !== "CANCELLED" && new Date(s.startsAt) > now,
+        ).length,
+        cancelledClasses: sessionSlice.filter((s) => s.status === "CANCELLED").length,
+        theoryClasses: sessionSlice.filter((s) => s.classType === "THEORY").length,
+        practicalClasses: sessionSlice.filter((s) => s.classType === "PRACTICAL").length,
+        totalStudentsTaught,
+      };
+
+      return { stats };
+    }),
+
+  /** Paginated class history for the instructor detail page. */
+  instructorSessions: roleProtectedProcedure(["ADMIN", "SECRETARY"])
+    .input(listInstructorSessionsSchema)
+    .query(async ({ ctx, input }) => {
+      const { id, page, pageSize } = input;
+
+      const instructorExists = await ctx.db.user.findFirst({
+        where: { id, tenantId: ctx.tenantId, role: "INSTRUCTOR" },
+        select: { id: true },
+      });
+      if (!instructorExists) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
+      }
+
+      const where = { instructorId: id, tenantId: ctx.tenantId };
+      const select = {
+        id: true,
+        title: true,
+        classType: true,
+        startsAt: true,
+        endsAt: true,
+        status: true,
+        capacity: true,
+        _count: { select: { enrollments: true } },
+      } as const;
+      const orderBy = { startsAt: "desc" } as const;
+
+      if (page && pageSize) {
+        const [items, total] = await Promise.all([
+          ctx.db.classSession.findMany({
+            where,
+            select,
+            orderBy,
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+          }),
+          ctx.db.classSession.count({ where }),
+        ]);
+        return { items, total };
+      }
+
+      const items = await ctx.db.classSession.findMany({ where, select, orderBy });
+      return { items, total: items.length };
     }),
 });

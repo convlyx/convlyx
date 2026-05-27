@@ -79,7 +79,7 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
     onSuccess: () => {
       toast.success(t("users.userUpdated"));
       utils.user.list.invalidate();
-      utils.user.instructorProfile.invalidate({ id: userData.id });
+      utils.user.instructorHeader.invalidate({ id: userData.id });
       utils.user.studentHeader.invalidate({ id: userData.id });
       onClose();
     },
