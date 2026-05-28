@@ -1,5 +1,5 @@
 import webpush from "web-push";
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { DbClient } from "./tenant-scope";
 import { logger } from "@/lib/logger";
 
 // Configure web-push with VAPID keys
@@ -23,7 +23,7 @@ if (VAPID_PUBLIC && VAPID_PRIVATE) {
  * still receiving pushes from the old one (subscriptions are tenant-scoped).
  */
 export async function sendPushToUser(
-  db: PrismaClient,
+  db: DbClient,
   tenantId: string,
   userId: string,
   payload: { title: string; body: string; url?: string }
@@ -58,7 +58,7 @@ export async function sendPushToUser(
  * Send push notification to multiple users in the same tenant.
  */
 export async function sendPushToUsers(
-  db: PrismaClient,
+  db: DbClient,
   tenantId: string,
   userIds: string[],
   payload: { title: string; body: string; url?: string }

@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { DbClient } from "./tenant-scope";
 import { logger } from "@/lib/logger";
 
 /**
@@ -13,7 +13,7 @@ import { logger } from "@/lib/logger";
  *   - admin.create    → { email, schoolId, tenantId }
  */
 export async function audit(params: {
-  db: PrismaClient;
+  db: DbClient;
   actorEmail: string;
   action: string;
   targetType: string;

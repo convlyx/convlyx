@@ -383,7 +383,7 @@ export const classRouter = router({
       // Notify on instructor change
       if (instructorChanged) {
         const timeStr = formatClassTime(new Date(input.startsAt));
-        const newInstructor = await ctx.db.user.findUnique({
+        const newInstructor = await ctx.db.user.findFirst({
           where: { id: input.instructorId },
           select: { name: true },
         });
@@ -578,7 +578,7 @@ export const classRouter = router({
 
       // Notify admins/secretaries
       Promise.all([
-        ctx.db.user.findUnique({
+        ctx.db.user.findFirst({
           where: { id: ctx.user.id },
           select: { name: true },
         }),

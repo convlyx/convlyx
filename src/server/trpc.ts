@@ -1,6 +1,7 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { db } from "./db";
+import { withTenant } from "./lib/tenant-scope";
 import { createClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/generated/prisma/enums";
 
@@ -99,11 +100,15 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
     });
   }
 
+  // Replace ctx.db with a tenant-scoped client — every query against a
+  // tenant-scoped model automatically carries the request's tenantId,
+  // even if the procedure forgets to filter on it. See `tenant-scope.ts`.
   return next({
     ctx: {
       ...ctx,
       user: ctx.user,
       tenantId: ctx.tenantId,
+      db: withTenant(ctx.db, ctx.tenantId),
     },
   });
 });

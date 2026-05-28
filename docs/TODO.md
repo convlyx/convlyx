@@ -9,7 +9,7 @@ Last reviewed: 2026-05-11.
 ## 1. Security & correctness (do first)
 
 - [x] **Instructor authorization scoping** — `enrollment.markAttendance`, `enrollment.addNote`, `enrollment.bulkMarkAttendance` accept any class in the tenant. Add `session: { instructorId: ctx.user.id }` filter when `ctx.user.role === "INSTRUCTOR"`. (`src/server/routers/enrollment.ts`)
-- [ ] **Supabase RLS policies** — none currently exist. Add tenant-scoped policies on `enrollments`, `class_sessions`, `users`, `notifications`, `student_courses`, `exams` keyed on `tenant_id`. CLAUDE.md already documents this as the defence-in-depth layer; right now it's documentation only.
+- [x] **Tenant-scope defense in depth** — shipped as a Prisma client extension (`src/server/lib/tenant-scope.ts`) wired into `protectedProcedure`. Every authenticated tRPC query against a tenant-scoped model auto-injects `tenantId` into `where`/`data`, cross-tenant values supplied by callers are overridden, and `findUnique` on scoped models is forbidden (use `findFirst`). RLS was the original plan but Prisma connects as Postgres superuser, which bypasses RLS — so the extension is the actual defense layer for this architecture. If the Supabase JS client is ever wired to read app data from the browser, proper RLS policies must be added at that point. Covered by `tests/tenant-scope.test.ts`.
 - [ ] **Rotate Supabase + VAPID keys** — shared during dev, treat as compromised. Update Vercel + `.env.prod`.
 - [x] **Cap `enrollment.addNote` length** — currently unbounded `z.string()`. Add `.max(2000)`.
 - [x] **`PushSubscription` lacks `tenantId`** — schema change so a tenant-moved user can't be pushed to from the wrong tenant. Backfill existing rows during migration.

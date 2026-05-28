@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { DbClient } from "./tenant-scope";
 import { sendPushToUser, sendPushToUsers } from "./push";
 import { logger } from "@/lib/logger";
 import messages from "@/../messages/pt-PT.json";
@@ -45,7 +45,7 @@ export function formatClassTime(startsAt: Date): string {
 }
 
 type CreateNotificationParams = {
-  db: PrismaClient;
+  db: DbClient;
   tenantId: string;
   userId: string;
   type: string;

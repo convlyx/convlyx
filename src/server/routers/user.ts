@@ -47,7 +47,7 @@ function isAnonymizedEmail(email: string): boolean {
  * students with no exams) do not block.
  */
 async function computeDeletability(
-  db: typeof import("../db").db,
+  db: import("../lib/tenant-scope").DbClient,
   tenantId: string,
   userId: string,
   role: "STUDENT" | "INSTRUCTOR",
@@ -700,7 +700,7 @@ export const userRouter = router({
     }),
 
   me: protectedProcedure.query(async ({ ctx }) => {
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.db.user.findFirst({
         where: { id: ctx.user.id },
         select: {
           id: true,

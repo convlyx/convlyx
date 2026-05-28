@@ -26,11 +26,13 @@ See `docs/MVP_PLAN.md` for full architecture, data model, and roadmap.
 ## Architecture
 
 ### Multi-Tenancy & Security
-- Every table (except Tenant) has a `tenant_id` column. All queries scoped to current tenant — no exceptions.
+- Every table (except `Tenant` and `AuditLog`) has a `tenant_id` column. All queries scoped to current tenant — no exceptions.
 - Tenant resolved from subdomain via Next.js middleware. tRPC middleware injects `tenantId` automatically so procedures can't forget it.
-- Supabase RLS as defense in depth. Prisma for all queries — no raw SQL (if unavoidable, `prisma.$queryRaw` with parameterized inputs).
+- **Defense in depth via Prisma extension**, not RLS. `protectedProcedure` wraps `ctx.db` with a tenant-scope client (`src/server/lib/tenant-scope.ts`) that auto-merges `tenantId` into every query against a tenant-scoped model — even reads, writes, and creates. Cross-tenant `tenantId` values in calls are always overridden by the request's tenant. Forbidden: `findUnique` / `findUniqueOrThrow` on tenant-scoped models (use `findFirst` with `tenantId`; the extension throws a clear error otherwise). The raw `db` import is still available for cross-tenant code paths: `createTRPCContext` (initial auth lookup), platform-admin REST routes, and crons.
+- Prisma for all queries — no raw SQL (if unavoidable, `prisma.$queryRaw` with parameterized inputs; raw SQL bypasses the tenant-scope extension and must filter explicitly).
 - All inputs validated via Zod at the tRPC layer. Role checks enforced in tRPC middleware, not in components.
 - Never expose internals (stack traces, SQL errors, other tenants' data) to the client.
+- **Supabase RLS** is not currently used as defense-in-depth — Prisma connects via the Postgres superuser role which bypasses RLS. The tenant-scope extension above is the equivalent layer at the ORM level. If you ever wire the Supabase JS client to read app data from the browser, you must add proper RLS policies on those tables first (currently only used for auth + push subscriptions, which are tenant-isolated at the application layer).
 
 ### Data Model
 - Hierarchy: **Tenant → School → ClassSession / User**. Classes belong to Schools, not Users.

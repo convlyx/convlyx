@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { DbClient } from "./tenant-scope";
 import type { LicenseCategory } from "@/lib/license-categories";
 
 /**
@@ -13,7 +13,7 @@ import type { LicenseCategory } from "@/lib/license-categories";
  *     exam for their active category — afterwards they're irrelevant.
  */
 export async function getStudentClassAccess(
-  db: PrismaClient,
+  db: DbClient,
   tenantId: string,
   studentId: string,
 ): Promise<{

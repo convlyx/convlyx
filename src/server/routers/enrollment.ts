@@ -130,13 +130,13 @@ export const enrollmentRouter = router({
         });
       }
 
-      // Check student is not already enrolled
-      const existing = await ctx.db.enrollment.findUnique({
+      // Check student is not already enrolled. Uses findFirst (not
+      // findUnique) so the tenant-scope extension can merge tenantId
+      // into the where clause.
+      const existing = await ctx.db.enrollment.findFirst({
         where: {
-          sessionId_studentId: {
-            sessionId: input.sessionId,
-            studentId,
-          },
+          sessionId: input.sessionId,
+          studentId,
         },
         select: { id: true, status: true },
       });

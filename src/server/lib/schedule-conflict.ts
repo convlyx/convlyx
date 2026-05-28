@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { DbClient } from "./tenant-scope";
 
 // Exams have no end time in the DB — by UI convention they occupy a 60-min
 // slot starting at `scheduledAt`. The conflict check treats them that way.
@@ -26,7 +26,7 @@ export async function hasInstructorScheduleConflict({
   excludeClassId,
   excludeExamId,
 }: {
-  db: PrismaClient;
+  db: DbClient;
   tenantId: string;
   instructorId: string;
   windows: Window[];

@@ -21,7 +21,7 @@ Living document of everything the app can do, organized by area.
 ## Multi-Tenancy
 - Tenant resolved from subdomain (`demo.convlyx.com`)
 - All queries scoped by `tenant_id` — no cross-tenant data access
-- Supabase RLS as defense in depth
+- Defense-in-depth via a Prisma client extension (`src/server/lib/tenant-scope.ts`) wired into `protectedProcedure`. Every authenticated tRPC query against a tenant-scoped model auto-carries `tenantId` in its `where` / `data`, even if the procedure forgets to set it. Cross-tenant `tenantId` values supplied by callers are overridden. `findUnique` / `findUniqueOrThrow` are blocked on tenant-scoped models (must use `findFirst`). Cross-tenant code paths (initial auth lookup, platform-admin REST routes, crons) keep using the raw `db` import.
 - tRPC context validates subdomain matches user's tenant
 - Root domain (`convlyx.com`) blocked — shows landing page, requires subdomain
 - Tenant name editable in settings (admin only)
