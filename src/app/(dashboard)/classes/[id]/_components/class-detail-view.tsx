@@ -257,11 +257,34 @@ export function ClassDetailView({
         <div className="rounded-xl border bg-card p-4 card-shadow">
           {showAddStudent ? (
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              {/* Header keeps the submit + cancel buttons OUT of the
+                  picker dropdown's flight path (dropdown is absolute
+                  and extends downward). User can see the "Inscrever N"
+                  count grow as they select, click when ready. */}
+              <div className="flex items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold">{t("classes.addStudent")}</h3>
-                <Button variant="ghost" size="sm" onClick={() => { setShowAddStudent(false); setSelectedStudents([]); }}>
-                  {t("common.cancel")}
-                </Button>
+                <div className="flex items-center gap-2">
+                  {selectedStudents.length > 0 && (
+                    <Button
+                      size="sm"
+                      disabled={enrollMutation.isPending}
+                      onClick={() => {
+                        if (classDetail.status === "COMPLETED") {
+                          setConfirmCompletedEnroll(true);
+                        } else {
+                          selectedStudents.forEach((studentId) => {
+                            enrollMutation.mutate({ sessionId: classDetail.id, studentId });
+                          });
+                        }
+                      }}
+                    >
+                      {enrollMutation.isPending ? t("common.loading") : t("classes.enrollCount", { count: selectedStudents.length })}
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => { setShowAddStudent(false); setSelectedStudents([]); }}>
+                    {t("common.cancel")}
+                  </Button>
+                </div>
               </div>
               <StudentPicker
                 students={availableStudents}
@@ -269,23 +292,6 @@ export function ClassDetailView({
                 onChange={setSelectedStudents}
                 max={spotsLeft}
               />
-              {selectedStudents.length > 0 && (
-                <Button
-                  size="sm"
-                  disabled={enrollMutation.isPending}
-                  onClick={() => {
-                    if (classDetail.status === "COMPLETED") {
-                      setConfirmCompletedEnroll(true);
-                    } else {
-                      selectedStudents.forEach((studentId) => {
-                        enrollMutation.mutate({ sessionId: classDetail.id, studentId });
-                      });
-                    }
-                  }}
-                >
-                  {enrollMutation.isPending ? t("common.loading") : t("classes.enrollCount", { count: selectedStudents.length })}
-                </Button>
-              )}
             </div>
           ) : (
             <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowAddStudent(true)}>

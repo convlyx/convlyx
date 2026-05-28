@@ -17,18 +17,13 @@ test("staff can enrol a student in a class", async ({ page }) => {
     await page.getByRole("button", { name: "Adicionar aluno" }).click();
 
     // Pick the seeded student by typing into the search input
-    const search = page.getByPlaceholder("Pesquisar aluno...");
-    await search.fill("Ana");
+    await page.getByPlaceholder("Pesquisar aluno...").fill("Ana");
     // Click the row in the dropdown — its accessible name is the student's name
     await page.getByRole("button", { name: /Ana Costa/ }).first().click();
 
-    // Dismiss the picker dropdown — it's absolutely positioned (z-50) and
-    // overlays the "Inscrever" submit button below. The picker closes
-    // 150ms after the search input blurs.
-    await search.evaluate((el: HTMLInputElement) => el.blur());
-    await page.waitForTimeout(200);
-
-    // Submit the enrolment. Button label is `Inscrever 1 aluno`.
+    // Submit the enrolment. Clicking outside the picker (here, on the
+    // submit button below) dismisses the dropdown via the click-outside
+    // handler in StudentPicker, then fires the enrol mutation.
     await page.getByRole("button", { name: /Inscrever 1 aluno/ }).click();
 
     // The student row should now appear in the enrolled list. The picker

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Search, X, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,26 @@ export function StudentPicker({
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const blurTimeout = useRef<ReturnType<typeof setTimeout>>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close the dropdown when the user clicks anywhere outside the picker
+  // (the search input's blur handler only catches keyboard focus changes;
+  // mouse clicks on sibling elements like the submit button below the
+  // dropdown wouldn't otherwise dismiss it, which trapped users behind
+  // the absolute-positioned z-50 overlay).
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
 
   const filtered = students.filter(
     (s) =>
@@ -74,7 +94,7 @@ export function StudentPicker({
   }
 
   return (
-    <div className="space-y-2">
+    <div ref={containerRef} className="space-y-2">
       {/* Selected chips */}
       {selectedStudents.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
@@ -121,7 +141,12 @@ export function StudentPicker({
           </Button>
         )}
 
-        {/* Student checklist — shown on focus */}
+        {/* Student checklist — shown on focus. Absolute so it floats
+            over surrounding content without growing the page. The parent
+            layout (see ClassDetailView) keeps action buttons OUT of the
+            dropdown's downward path — clicking through an absolute
+            dropdown produces mousedown-on-row + mouseup-on-button click
+            misfires, so we deliberately don't rely on that. */}
         {open && (
         <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-lg border bg-popover shadow-md divide-y">
           {filtered.length === 0 ? (
