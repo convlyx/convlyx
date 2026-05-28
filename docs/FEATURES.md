@@ -273,10 +273,10 @@ Living document of everything the app can do, organized by area.
 - Download button on class detail page and student profile
 
 ## Cron Jobs
-- Daily class reminder: runs at 20:00 UTC via Vercel Cron, notifies students and instructors about tomorrow's classes
-- Daily exam reminder: same cron — notifies student + accompanying instructor about tomorrow's exams
-- Class status sync: runs every minute, sweeps every tenant in one SQL pass — `SCHEDULED→IN_PROGRESS` when `startsAt <= now`, `IN_PROGRESS→COMPLETED` when `endsAt <= now`. Centralised here so read paths (`class.list`, calendar, dashboard) stay pure SELECTs. Worst-case lag: a class that ended <1 min ago may briefly still show as IN_PROGRESS until the next sweep.
-- Secured via `CRON_SECRET` Bearer token
+- Daily class reminder (Vercel Cron, `0 20 * * *`): notifies students and instructors about tomorrow's classes.
+- Daily exam reminder (same cron path): notifies student + accompanying instructor about tomorrow's exams.
+- Vercel crons secured via `CRON_SECRET` Bearer token.
+- Class status sync runs **inside Postgres via Supabase `pg_cron`**, every minute — `SCHEDULED→IN_PROGRESS` when `starts_at <= now`, `IN_PROGRESS→COMPLETED` when `ends_at <= now`. Lives in the DB so read paths (`class.list`, calendar, dashboard) stay pure SELECTs without consuming Vercel function CPU. Setup SQL at `scripts/sync-class-statuses.cron.sql`. Worst-case lag: a class that ended <1 min ago briefly still shows as `IN_PROGRESS` until the next sweep.
 
 ## Infrastructure
 - Next.js 15 (App Router) deployed on Vercel
