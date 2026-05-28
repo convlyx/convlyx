@@ -78,7 +78,7 @@ export async function createNotification({
   pushBody,
 }: CreateNotificationParams) {
   try {
-    const user = await db.user.findUnique({
+    const user = await db.user.findFirst({
       where: { id: userId },
       select: { schoolId: true },
     });

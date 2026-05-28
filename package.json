@@ -10,6 +10,8 @@
         "type-check": "tsc --noEmit",
         "test": "vitest run",
         "test:watch": "vitest",
+        "e2e": "dotenv -e .env -- playwright test",
+        "e2e:ui": "dotenv -e .env -- playwright test --ui",
         "db:migrate": "dotenv -e .env -- prisma migrate dev",
         "db:migrate:deploy": "dotenv -e .env -- prisma migrate deploy",
         "db:migrate:deploy:prod": "dotenv -e .env.prod -- prisma migrate deploy",
@@ -75,6 +77,7 @@
         "zod": "^4.3.6"
     },
     "devDependencies": {
+        "@playwright/test": "^1.60.0",
         "@tailwindcss/postcss": "^4",
         "@types/node": "^20",
         "@types/pg": "^8.20.0",
