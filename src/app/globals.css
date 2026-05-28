@@ -84,6 +84,29 @@
   --sidebar-accent-foreground: oklch(0.95 0.01 155);
   --sidebar-border: oklch(0.30 0.025 155);
   --sidebar-ring: oklch(0.52 0.14 155);
+
+  /* Calendar event colors. Inline styles on FullCalendar events read
+     these via `var(--…)` so themes can override per mode. */
+  --calendar-theory-bg: #3b82f6;
+  --calendar-theory-border: #2563eb;
+  --calendar-practical-bg: #10b981;
+  --calendar-practical-border: #059669;
+  --calendar-theory-available-bg: #93c5fd;
+  --calendar-theory-available-border: #60a5fa;
+  --calendar-practical-available-bg: #6ee7b7;
+  --calendar-practical-available-border: #34d399;
+  --calendar-exam-scheduled-bg: #dc2626;
+  --calendar-exam-scheduled-border: #b91c1c;
+  --calendar-exam-passed-bg: #16a34a;
+  --calendar-exam-passed-border: #15803d;
+  --calendar-exam-failed-bg: #7f1d1d;
+  --calendar-exam-failed-border: #991b1b;
+  --calendar-exam-cancelled-bg: #9ca3af;
+  --calendar-exam-cancelled-border: #6b7280;
+  --calendar-cancelled-bg: #ef4444;
+  --calendar-cancelled-border: #dc2626;
+  --calendar-completed-bg: #9ca3af;
+  --calendar-completed-border: #6b7280;
 }
 
 .dark {
@@ -118,6 +141,31 @@
   --sidebar-accent-foreground: oklch(0.95 0.01 155);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.60 0.15 155);
+
+  /* Calendar event colors — dark mode. Vivid enrolled colors slightly
+     darkened so they don't glare; "available" pastels brought down to
+     deep tinted backgrounds so they remain readable against a dark
+     calendar grid without being washed out. */
+  --calendar-theory-bg: #2563eb;
+  --calendar-theory-border: #1d4ed8;
+  --calendar-practical-bg: #059669;
+  --calendar-practical-border: #047857;
+  --calendar-theory-available-bg: #1e3a8a;
+  --calendar-theory-available-border: #1e40af;
+  --calendar-practical-available-bg: #064e3b;
+  --calendar-practical-available-border: #065f46;
+  --calendar-exam-scheduled-bg: #b91c1c;
+  --calendar-exam-scheduled-border: #991b1b;
+  --calendar-exam-passed-bg: #15803d;
+  --calendar-exam-passed-border: #166534;
+  --calendar-exam-failed-bg: #991b1b;
+  --calendar-exam-failed-border: #7f1d1d;
+  --calendar-exam-cancelled-bg: #4b5563;
+  --calendar-exam-cancelled-border: #374151;
+  --calendar-cancelled-bg: #b91c1c;
+  --calendar-cancelled-border: #991b1b;
+  --calendar-completed-bg: #4b5563;
+  --calendar-completed-border: #374151;
 }
 
 @layer base {

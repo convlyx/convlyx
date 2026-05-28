@@ -21,30 +21,52 @@ type CalendarFilter = {
   instructorId?: string;
 };
 
-// Enrolled classes — vivid solid colors
+// Calendar event colors — themed via CSS variables defined in
+// `src/app/globals.css` (both light and dark variants live there).
+// Keeps FullCalendar inline-style props pointing at theme tokens so
+// the events flip with the user's mode.
 const enrolledColors: Record<string, { bg: string; border: string }> = {
-  THEORY: { bg: "#3b82f6", border: "#2563eb" },
-  PRACTICAL: { bg: "#10b981", border: "#059669" },
+  THEORY: { bg: "var(--calendar-theory-bg)", border: "var(--calendar-theory-border)" },
+  PRACTICAL: { bg: "var(--calendar-practical-bg)", border: "var(--calendar-practical-border)" },
 };
 
-// Available classes — lighter, more muted
 const availableColors: Record<string, { bg: string; border: string }> = {
-  THEORY: { bg: "#93c5fd", border: "#60a5fa" },
-  PRACTICAL: { bg: "#6ee7b7", border: "#34d399" },
+  THEORY: {
+    bg: "var(--calendar-theory-available-bg)",
+    border: "var(--calendar-theory-available-border)",
+  },
+  PRACTICAL: {
+    bg: "var(--calendar-practical-available-bg)",
+    border: "var(--calendar-practical-available-border)",
+  },
 };
 
-// Exams — red/amber palette to stand out
 const examColors: Record<string, { bg: string; border: string }> = {
-  SCHEDULED: { bg: "#dc2626", border: "#b91c1c" },
-  PASSED: { bg: "#16a34a", border: "#15803d" },
-  FAILED: { bg: "#7f1d1d", border: "#991b1b" },
-  NO_SHOW: { bg: "#7f1d1d", border: "#991b1b" },
-  CANCELLED: { bg: "#9ca3af", border: "#6b7280" },
+  SCHEDULED: {
+    bg: "var(--calendar-exam-scheduled-bg)",
+    border: "var(--calendar-exam-scheduled-border)",
+  },
+  PASSED: {
+    bg: "var(--calendar-exam-passed-bg)",
+    border: "var(--calendar-exam-passed-border)",
+  },
+  FAILED: {
+    bg: "var(--calendar-exam-failed-bg)",
+    border: "var(--calendar-exam-failed-border)",
+  },
+  NO_SHOW: {
+    bg: "var(--calendar-exam-failed-bg)",
+    border: "var(--calendar-exam-failed-border)",
+  },
+  CANCELLED: {
+    bg: "var(--calendar-exam-cancelled-bg)",
+    border: "var(--calendar-exam-cancelled-border)",
+  },
 };
 
 const statusColors: Record<string, { bg: string; border: string }> = {
-  CANCELLED: { bg: "#ef4444", border: "#dc2626" },
-  COMPLETED: { bg: "#9ca3af", border: "#6b7280" },
+  CANCELLED: { bg: "var(--calendar-cancelled-bg)", border: "var(--calendar-cancelled-border)" },
+  COMPLETED: { bg: "var(--calendar-completed-bg)", border: "var(--calendar-completed-border)" },
 };
 
 const EXAM_PREFIX = "exam:";

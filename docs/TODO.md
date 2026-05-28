@@ -42,13 +42,13 @@ Last reviewed: 2026-05-11.
 - [x] **Extract `useUrlParam` hook** — `useUrlParam` + `useUrlParamInt` in `src/hooks/use-url-param.ts`. URL is the source of truth (reads derive on every render); writes use `router.replace` with default-value elision (URL stays clean when value matches default). Applied across `students-page-client`, `instructors-page-client`, `users-table`, `classes-table`. `classes-table` keeps a custom `setTimeTab` that orchestrates the three URL updates for the tab+status+page reset.
 - [x] **`ITEMS_PER_PAGE = 10` duplicated in 7 components** — extract to `src/lib/constants/pagination.ts`.
 - [x] **Inconsistent error key namespacing** — all i18n keys now use the plural route-name convention. `enrollment.X` → `enrollments.X` across server messages, the `enrollment` block in pt-PT.json, and all UI callers. Notification `type:` values (e.g. `"enrollment.created"`) intentionally kept — they're data, not translations.
-- [ ] **Calendar event hex colors** (`class-calendar.tsx:21-33`) have no dark mode variants — events look identical in dark mode. Move to CSS variables.
+- [x] **Calendar event hex colors** — moved to CSS variables in `globals.css` (`--calendar-*` tokens) with light + dark variants. `class-calendar.tsx` passes `var(--…)` to FullCalendar's `backgroundColor`/`borderColor` inline-style props so events flip with the theme. Vivid enrolled colors slightly darkened in dark mode; "available" pastels brought down to deep tinted backgrounds for readability.
 - [x] **`roleColorMap` defined but unused** — either apply it on user/instructor lists for visual consistency or delete it.
 - [x] **`enrolledSessionIds` in `classes-table.tsx:68`** rebuilds a `Set` per render — wrap in `useMemo`.
 - [x] **Platform-admin admin-creation rollback is best-effort** — added pre-flight duplicate-email check so the rollback only fires on rare race/FK failures; orphan auth user id is now logged with `console.error` (not warn) so an operator can clean up via dashboard.
 - [x] **Hardcoded `themeColor: "#16a34a"` in `app/layout.tsx:23`** — doesn't match primary token. Replace with CSS-var lookup or define a single source.
 - [x] **English "Close" `sr-only` label** in `dialog.tsx:77` — translation key.
-- [ ] **Default Button size still below iOS HIG 44px** — bumped to h-9 (36px) but mobile primary actions should be `size="lg"` or the default should grow further.
+- [x] **Default Button size and iOS HIG** — fixed the `lg` variant (it was `h-9`, same as default — clearly a typo when the size ladder was last touched) to be properly `h-11` (44px, iOS HIG). Default stays `h-9` to avoid making every button on the site chunky on desktop. Pattern going forward: use `size="lg"` for any button that's a mobile primary CTA (login form already updated; landing-page CTAs already used `lg` so they got the bump for free).
 
 ## 5. Compliance follow-ups
 
