@@ -274,7 +274,7 @@ Living document of everything the app can do, organized by area.
 
 ## Testing
 - Unit + tenant-isolation tests via Vitest (`pnpm test`) — runs against a real Postgres (dev DB locally, service container in CI). Covers cross-tenant safety for `class.list`, `user.list`, `enrollment.listByStudent`, `user.studentProfile`, `exam.list`, `course.listByStudent`, `user.exportData`, `notification.list`, plus direct unit tests for the `withTenant` Prisma extension.
-- E2E suite via Playwright (`pnpm e2e`) — local-only for now. Auth happens once as the seeded admin and is reused via `storageState`. Each test creates ephemeral data via raw `pg` (Prisma 7 client is ESM-only and incompatible with Playwright's CJS loader) and cleans up after. Golden paths covered in v1: login (auth setup), enrol student, mark attendance, cancel class.
+- E2E suite via Playwright (`pnpm e2e`) — local-only for now. Auth happens once as the seeded admin and is reused via `storageState`. Each test creates ephemeral data via raw `pg` (Prisma 7 client is ESM-only and incompatible with Playwright's CJS loader) and cleans up after. Currently covers: admin login (auth setup), enrol student, mark attendance ("Presente"), mark attendance ("Faltou"), cancel class, remove enrolment, and instructor login + role-scoped nav.
 
 ## Cron Jobs
 - Daily class reminder (Vercel Cron, `0 20 * * *`): notifies students and instructors about tomorrow's classes.
