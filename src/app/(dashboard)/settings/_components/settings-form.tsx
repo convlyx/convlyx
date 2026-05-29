@@ -8,6 +8,7 @@ import { z } from "zod/v4";
 import { trpc } from "@/lib/trpc";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -233,9 +234,8 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
         <form onSubmit={handlePasswordChange} className="space-y-3">
           <div className="grid gap-2">
             <Label htmlFor="current-password">{t("currentPassword")}</Label>
-            <Input
+            <PasswordInput
               id="current-password"
-              type="password"
               required
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
@@ -243,9 +243,8 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="new-password">{t("newPassword")}</Label>
-            <Input
+            <PasswordInput
               id="new-password"
-              type="password"
               required
               minLength={6}
               value={newPassword}
@@ -254,9 +253,8 @@ export function SettingsForm({ user, school, tenant }: SettingsFormProps) {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="confirm-password">{t("confirmPassword")}</Label>
-            <Input
+            <PasswordInput
               id="confirm-password"
-              type="password"
               required
               minLength={6}
               value={confirmPassword}

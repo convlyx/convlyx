@@ -8,6 +8,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogBody,
@@ -325,7 +326,7 @@ export function PlatformDashboard({
               </div>
               <div className="grid gap-2">
                 <Label>Palavra-passe (mínimo 8 caracteres)</Label>
-                <Input type="password" value={adminData.password} onChange={(e) => setAdminData({ ...adminData, password: e.target.value })} />
+                <PasswordInput value={adminData.password} onChange={(e) => setAdminData({ ...adminData, password: e.target.value })} />
               </div>
             </div>
           </DialogBody>

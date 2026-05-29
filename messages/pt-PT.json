@@ -53,6 +53,8 @@
         "logout": "Terminar sessão",
         "email": "Email",
         "password": "Palavra-passe",
+        "showPassword": "Mostrar palavra-passe",
+        "hidePassword": "Ocultar palavra-passe",
         "forgotPassword": "Esqueceu a palavra-passe?",
         "notAuthenticated": "Não autenticado. Inicie sessão para continuar.",
         "insufficientPermissions": "Não tem permissões para realizar esta ação.",

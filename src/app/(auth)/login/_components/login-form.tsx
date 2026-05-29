@@ -6,6 +6,9 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import { Label } from "@/components/ui/label";
 import { AlertCircle } from "lucide-react";
 
 export function LoginForm() {
@@ -75,25 +78,20 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <label htmlFor="email" className="text-sm font-medium">
-          {t("email")}
-        </label>
-        <input
+        <Label htmlFor="email">{t("email")}</Label>
+        <Input
           id="email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           placeholder="email@exemplo.pt"
         />
       </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label htmlFor="password" className="text-sm font-medium">
-            {t("password")}
-          </label>
+          <Label htmlFor="password">{t("password")}</Label>
           <Link
             href="/reset-password"
             className="text-xs text-primary hover:underline"
@@ -101,13 +99,11 @@ export function LoginForm() {
             {t("forgotPassword")}
           </Link>
         </div>
-        <input
+        <PasswordInput
           id="password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </div>
 
