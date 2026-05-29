@@ -226,6 +226,73 @@ export const userRouter = router({
         });
       }
 
+      // Pre-flight: does a user already exist in this tenant with this email?
+      // `inviteUserByEmail` silently returns the existing auth user when the
+      // email is already registered, and our subsequent `user.create` then
+      // crashes on the `id` primary-key collision. Handle both branches
+      // here so the admin gets a clear outcome instead of "unexpected error":
+      //  - ACTIVE: refuse — the admin should use "Resend invite" instead.
+      //  - INACTIVE: reactivate in place (covers the deactivate-then-re-add
+      //    flow). Skip the invite — credentials already exist.
+      const existing = await ctx.db.user.findFirst({
+        where: { tenantId: ctx.tenantId, email: input.email },
+        select: { id: true, status: true },
+      });
+
+      if (existing) {
+        if (existing.status === "ACTIVE") {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "users.emailAlreadyRegistered",
+          });
+        }
+
+        const reactivated = await ctx.db.$transaction(async (tx) => {
+          const updated = await tx.user.update({
+            where: { id: existing.id },
+            data: {
+              status: "ACTIVE",
+              schoolId: input.schoolId,
+              role: input.role,
+              name: input.name,
+              phone: input.phone,
+              qualifiedCategories:
+                input.role === "INSTRUCTOR" ? input.qualifiedCategories ?? [] : [],
+            },
+            select: { id: true, name: true, email: true, role: true },
+          });
+
+          if (input.role === "STUDENT" && input.initialCategory) {
+            // Only start a fresh course if there isn't already an in-progress
+            // one for this category (the deactivated student may still have
+            // one from before).
+            const ongoing = await tx.studentCourse.findFirst({
+              where: {
+                tenantId: ctx.tenantId,
+                studentId: existing.id,
+                category: input.initialCategory,
+                status: "IN_PROGRESS",
+              },
+              select: { id: true },
+            });
+            if (!ongoing) {
+              await tx.studentCourse.create({
+                data: {
+                  tenantId: ctx.tenantId,
+                  schoolId: input.schoolId,
+                  studentId: existing.id,
+                  category: input.initialCategory,
+                },
+              });
+            }
+          }
+
+          return updated;
+        });
+
+        return reactivated;
+      }
+
       // Build redirect URL pointing at the school's subdomain
       const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
       const tenantHost = `${school.subdomain}.${siteUrl.host}`;
