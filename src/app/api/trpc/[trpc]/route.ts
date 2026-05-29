@@ -6,6 +6,15 @@ import { createTRPCContext } from "@/server/trpc";
 import { isSameOrigin } from "@/lib/csrf";
 import { logger } from "@/lib/logger";
 
+const BENIGN_TRPC_CODES = new Set([
+  "UNAUTHORIZED",
+  "FORBIDDEN",
+  "NOT_FOUND",
+  "BAD_REQUEST",
+  "CONFLICT",
+  "TOO_MANY_REQUESTS",
+]);
+
 const handler = (req: Request) =>
   fetchRequestHandler({
     endpoint: "/api/trpc",
@@ -26,6 +35,10 @@ const handler = (req: Request) =>
         message: error.message,
         cause: error.cause,
       });
+      // Expected client-side rejections (auth, validation, conflicts) are
+      // control flow, not bugs. Logging them above is enough — sending them
+      // to Sentry drowns real incidents in noise.
+      if (BENIGN_TRPC_CODES.has(error.code)) return;
       Sentry.captureException(error, {
         tags: { trpc_path: path ?? "unknown", trpc_type: type, trpc_code: error.code },
         extra: { input },
