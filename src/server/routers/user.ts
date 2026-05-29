@@ -5,6 +5,7 @@ import { router, protectedProcedure, roleProtectedProcedure } from "../trpc";
 import { createUserSchema, updateUserSchema, listUsersSchema, listStudentEnrollmentsSchema, listInstructorSessionsSchema } from "@/lib/validations/user";
 import { createNotification } from "../lib/notifications";
 import { logger } from "@/lib/logger";
+import { Prisma } from "@/generated/prisma/client";
 
 // Construction-time fallback: Supabase JS throws if URL/key are empty,
 // which would crash the module on import in environments where env vars
@@ -321,36 +322,51 @@ export const userRouter = router({
         });
       }
 
-      // Create Prisma user profile + initial student course (if applicable) atomically
-      const user = await ctx.db.$transaction(async (tx) => {
-        const created = await tx.user.create({
-          data: {
-            id: authData.user.id,
-            tenantId: ctx.tenantId,
-            schoolId: input.schoolId,
-            email: input.email,
-            name: input.name,
-            phone: input.phone,
-            role: input.role,
-            qualifiedCategories:
-              input.role === "INSTRUCTOR" ? input.qualifiedCategories ?? [] : [],
-          },
-          select: { id: true, name: true, email: true, role: true },
-        });
-
-        if (input.role === "STUDENT" && input.initialCategory) {
-          await tx.studentCourse.create({
+      // Create Prisma user profile + initial student course (if applicable) atomically.
+      // The pre-flight above catches in-tenant collisions; a P2002 on `id` here
+      // means the email is registered in a different tenant (Supabase auth users
+      // are global, so `inviteUserByEmail` returned an id already used by another
+      // tenant's User row). Translate to the same friendly error.
+      let user;
+      try {
+        user = await ctx.db.$transaction(async (tx) => {
+          const created = await tx.user.create({
             data: {
+              id: authData.user.id,
               tenantId: ctx.tenantId,
               schoolId: input.schoolId,
-              studentId: created.id,
-              category: input.initialCategory,
+              email: input.email,
+              name: input.name,
+              phone: input.phone,
+              role: input.role,
+              qualifiedCategories:
+                input.role === "INSTRUCTOR" ? input.qualifiedCategories ?? [] : [],
             },
+            select: { id: true, name: true, email: true, role: true },
+          });
+
+          if (input.role === "STUDENT" && input.initialCategory) {
+            await tx.studentCourse.create({
+              data: {
+                tenantId: ctx.tenantId,
+                schoolId: input.schoolId,
+                studentId: created.id,
+                category: input.initialCategory,
+              },
+            });
+          }
+
+          return created;
+        });
+      } catch (e) {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "users.emailAlreadyRegistered",
           });
         }
-
-        return created;
-      });
+        throw e;
+      }
 
       return user;
     }),
