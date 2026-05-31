@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Mail, Lock } from "lucide-react";
 
 export function LoginForm() {
   const t = useTranslations("auth");
@@ -79,32 +79,46 @@ export function LoginForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="email">{t("email")}</Label>
-        <Input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          placeholder="email@exemplo.pt"
-        />
+        <div className="relative">
+          <Mail className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+            className="pl-9"
+            placeholder="email@exemplo.pt"
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label htmlFor="password">{t("password")}</Label>
-          <Link
-            href="/reset-password"
-            className="text-xs text-primary hover:underline"
-          >
+          {/* Desktop keeps the forgot link inline with the label */}
+          <Link href="/reset-password" className="hidden text-xs text-primary hover:underline lg:inline">
             {t("forgotPassword")}
           </Link>
         </div>
-        <PasswordInput
-          id="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <div className="relative">
+          <Lock className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <PasswordInput
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+            className="pl-9"
+          />
+        </div>
+        {/* Mobile shows the forgot link below the field */}
+        <div className="flex justify-end lg:hidden">
+          <Link href="/reset-password" className="text-xs text-primary hover:underline">
+            {t("forgotPassword")}
+          </Link>
+        </div>
       </div>
 
       {error && (

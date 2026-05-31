@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Convlyx — Mobile login mockups</title>
+<style>
+  :root{
+    --primary: oklch(0.52 0.14 155);
+    --primary-deep: oklch(0.44 0.13 158);
+    --emerald-700:#047857;
+    --emerald-900:#064e3b;
+    --fg: oklch(0.20 0.01 260);
+    --muted: oklch(0.50 0.01 260);
+    --border: oklch(0.90 0.005 260);
+    --radius: 0.85rem;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:#0f1115; color:#e7e7ea; min-height:100vh;
+    padding:48px 24px 80px; -webkit-font-smoothing:antialiased;
+  }
+  .head{max-width:1200px; margin:0 auto 40px;}
+  .head h1{font-size:1.5rem; font-weight:700; letter-spacing:-0.02em;}
+  .head p{color:#9aa0aa; margin-top:6px; font-size:0.95rem;}
+  .row{
+    display:flex; flex-wrap:wrap; gap:48px 56px; justify-content:center;
+    max-width:1300px; margin:0 auto;
+  }
+  .col{display:flex; flex-direction:column; align-items:center; gap:18px;}
+  .tag{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:0.7rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+    color:#cdd2da; background:#1b1f27; border:1px solid #2a2f3a;
+    padding:5px 12px; border-radius:999px;
+  }
+  .tag b{color:#6ee7b7;}
+  .cap{color:#9aa0aa; font-size:0.82rem; max-width:320px; text-align:center; line-height:1.5;}
+
+  /* ---- phone frame ---- */
+  .phone{
+    width:340px; height:720px; border-radius:42px; padding:11px;
+    background:linear-gradient(160deg,#23272f,#14161b);
+    box-shadow:0 40px 80px -30px rgba(0,0,0,0.8), 0 0 0 2px #2c313b inset;
+  }
+  .screen{
+    position:relative; width:100%; height:100%; border-radius:32px; overflow:hidden;
+    background:#fff;
+  }
+  .notch{
+    position:absolute; top:10px; left:50%; transform:translateX(-50%);
+    width:120px; height:26px; background:#0c0e12; border-radius:999px; z-index:50;
+  }
+
+  /* shared bits */
+  .wheel,.ic{display:block;}
+  .field{position:relative;}
+  .field .lead{position:absolute; left:14px; top:50%; transform:translateY(-50%); opacity:.8;}
+  .field .eye{position:absolute; right:12px; top:50%; transform:translateY(-50%); opacity:.7;}
+  label{font-size:0.8rem; font-weight:500; display:block; margin-bottom:7px;}
+
+  /* =========================================================
+     MOCK 1 — IMMERSIVE GLASS (refined)
+     ========================================================= */
+  .m1{
+    height:100%; padding:54px 28px 34px;
+    display:flex; flex-direction:column; justify-content:center;
+    color:#fff; position:relative; overflow:hidden;
+    background:linear-gradient(157deg, var(--primary), var(--primary-deep) 52%, var(--emerald-700));
+  }
+  .m1 .glow{position:absolute; border-radius:50%; filter:blur(60px); pointer-events:none;}
+  .m1 .g1{width:300px;height:300px; top:-90px; left:-90px; background:rgba(255,255,255,.12);}
+  .m1 .g2{width:260px;height:260px; bottom:-80px; right:-90px; background:rgba(110,231,183,.14);}
+  .m1 .ring{position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); border-radius:50%; border:1px solid rgba(255,255,255,.14); pointer-events:none;}
+  .m1 .r1{width:230px;height:230px; border-color:rgba(255,255,255,.22);}
+  .m1 .r2{width:360px;height:360px;}
+  .m1 .r3{width:500px;height:500px; border-color:rgba(255,255,255,.07);}
+  .m1 .brand{position:relative; display:flex; flex-direction:column; align-items:center; gap:12px; margin-bottom:34px;}
+  .m1 .disc{
+    width:70px;height:70px; border-radius:20px; display:grid; place-items:center;
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.28);
+    backdrop-filter:blur(8px); box-shadow:0 8px 24px -8px rgba(0,0,0,.4);
+  }
+  .m1 .name{font-weight:700; font-size:1.15rem; letter-spacing:-0.01em;}
+  .m1 .head1{position:relative; text-align:center; margin-bottom:22px;}
+  .m1 .head1 h2{font-size:1.5rem; font-weight:700; letter-spacing:-0.02em;}
+  .m1 .head1 p{color:rgba(255,255,255,.66); font-size:0.85rem; margin-top:5px;}
+  .m1 form{position:relative; display:flex; flex-direction:column; gap:15px;}
+  .m1 label{color:rgba(255,255,255,.9);}
+  .m1 input{
+    width:100%; height:46px; border-radius:13px; padding:0 14px 0 40px; font-size:0.95rem;
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.28); color:#fff;
+    backdrop-filter:blur(8px); outline:none;
+  }
+  .m1 input::placeholder{color:rgba(255,255,255,.55);}
+  .m1 input:focus{border-color:rgba(255,255,255,.7); box-shadow:0 0 0 3px rgba(255,255,255,.18);}
+  .m1 .forgot{align-self:flex-end; font-size:0.78rem; color:rgba(255,255,255,.8); text-decoration:none; margin-top:-4px;}
+  .m1 .btn{
+    height:48px; border-radius:13px; border:none; cursor:pointer; margin-top:8px;
+    background:#fff; color:var(--primary); font-weight:600; font-size:0.98rem;
+    box-shadow:0 12px 30px -12px rgba(6,46,32,.6);
+  }
+
+  /* =========================================================
+     MOCK 2 — FLOATING WHITE CARD on brand field
+     ========================================================= */
+  .m2{
+    height:100%; position:relative; overflow:hidden; padding:0 24px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:26px;
+    background:linear-gradient(157deg, var(--primary), var(--primary-deep) 52%, var(--emerald-700));
+  }
+  .m2 .glow{position:absolute; border-radius:50%; filter:blur(60px);}
+  .m2 .g1{width:280px;height:280px; top:-80px; right:-80px; background:rgba(255,255,255,.12);}
+  .m2 .g2{width:240px;height:240px; bottom:-70px; left:-80px; background:rgba(110,231,183,.12);}
+  .m2 .ring{position:absolute; left:50%; top:24%; transform:translate(-50%,-50%); border-radius:50%; border:1px solid rgba(255,255,255,.12);}
+  .m2 .r1{width:200px;height:200px;border-color:rgba(255,255,255,.2);}
+  .m2 .r2{width:330px;height:330px;}
+  .m2 .brand{position:relative; display:flex; flex-direction:column; align-items:center; gap:10px; color:#fff;}
+  .m2 .disc{width:58px;height:58px;border-radius:17px; display:grid; place-items:center; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.3); backdrop-filter:blur(6px);}
+  .m2 .name{font-weight:700; font-size:1.05rem;}
+  .m2 .card{
+    position:relative; width:100%; background:#fff; border-radius:26px; padding:28px 24px;
+    box-shadow:0 30px 60px -20px rgba(6,46,32,.55); color:var(--fg);
+  }
+  .m2 .card h2{font-size:1.35rem; font-weight:700; letter-spacing:-0.02em; text-align:center;}
+  .m2 .card .sub{color:var(--muted); font-size:0.83rem; text-align:center; margin-top:4px; margin-bottom:20px;}
+  .m2 form{display:flex; flex-direction:column; gap:14px;}
+  .m2 label{color:var(--fg);}
+  .m2 input{
+    width:100%; height:44px; border-radius:11px; padding:0 14px 0 40px; font-size:0.93rem;
+    background:#fff; border:1px solid var(--border); color:var(--fg); outline:none;
+  }
+  .m2 input::placeholder{color:#9aa0aa;}
+  .m2 input:focus{border-color:var(--primary); box-shadow:0 0 0 3px color-mix(in oklch, var(--primary) 18%, transparent);}
+  .m2 .field .lead{color:var(--muted);}
+  .m2 .forgot{align-self:flex-end; font-size:0.78rem; color:var(--primary); text-decoration:none; margin-top:-3px;}
+  .m2 .btn{height:47px; border-radius:11px; border:none; cursor:pointer; margin-top:6px; background:var(--primary); color:#fff; font-weight:600; font-size:0.96rem;}
+
+  /* =========================================================
+     MOCK 3 — CURVED HERO + pill inputs (editorial)
+     ========================================================= */
+  .m3{height:100%; position:relative; overflow:hidden; background:#fff; color:var(--fg);}
+  .m3 .hero{
+    position:relative; height:300px; overflow:hidden; color:#fff;
+    background:linear-gradient(157deg, var(--primary), var(--primary-deep) 60%, var(--emerald-700));
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+  }
+  .m3 .glow{position:absolute; border-radius:50%; filter:blur(55px);}
+  .m3 .g1{width:240px;height:240px; top:-70px; left:-70px; background:rgba(255,255,255,.14);}
+  .m3 .ring{position:absolute; left:50%; top:46%; transform:translate(-50%,-50%); border-radius:50%; border:1px solid rgba(255,255,255,.16);}
+  .m3 .r1{width:180px;height:180px;border-color:rgba(255,255,255,.24);}
+  .m3 .r2{width:300px;height:300px;}
+  .m3 .disc{position:relative; width:64px;height:64px;border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.3); backdrop-filter:blur(6px);}
+  .m3 .name{position:relative; font-weight:700; font-size:1.15rem; letter-spacing:-0.01em;}
+  .m3 .welcome{position:relative; font-size:0.85rem; color:rgba(255,255,255,.75);}
+  .m3 .wave{position:absolute; bottom:-1px; left:0; width:100%; display:block;}
+  .m3 .body{padding:34px 28px 0; margin-top:-2px;}
+  .m3 .body h2{font-size:1.3rem; font-weight:700; letter-spacing:-0.02em;}
+  .m3 .body .sub{color:var(--muted); font-size:0.83rem; margin-top:4px; margin-bottom:22px;}
+  .m3 form{display:flex; flex-direction:column; gap:14px;}
+  .m3 input{
+    width:100%; height:50px; border-radius:999px; padding:0 18px 0 44px; font-size:0.93rem;
+    background:#f5f7f6; border:1px solid transparent; color:var(--fg); outline:none;
+  }
+  .m3 input::placeholder{color:#9aa0aa;}
+  .m3 input:focus{background:#fff; border-color:var(--primary); box-shadow:0 0 0 3px color-mix(in oklch, var(--primary) 16%, transparent);}
+  .m3 .field .lead{left:17px; color:var(--muted);}
+  .m3 .field .eye{right:16px;}
+  .m3 .forgot{align-self:flex-end; font-size:0.78rem; color:var(--primary); text-decoration:none; margin-top:-2px;}
+  .m3 .btn{height:50px; border-radius:999px; border:none; cursor:pointer; margin-top:8px; background:var(--primary); color:#fff; font-weight:600; font-size:0.96rem; box-shadow:0 14px 30px -14px color-mix(in oklch, var(--primary) 80%, black);}
+
+  /* ============================ APP SCREENS ============================ */
+  .appwrap{max-width:1300px; margin:84px auto 0;}
+  .ghead{text-align:center; margin-bottom:30px;}
+  .ghead .tag{margin-bottom:10px;}
+  .ghead h2{font-size:1.25rem; font-weight:700; letter-spacing:-0.02em;}
+  .ghead p{color:#9aa0aa; font-size:0.85rem; margin-top:5px;}
+  .divider{max-width:1300px; margin:70px auto 0; height:1px; background:#262b33;}
+
+  .app{height:100%; display:flex; flex-direction:column; background:#f4f5f6; color:var(--fg); position:relative; overflow:hidden; font-size:14px;}
+  .app .scroll{flex:1; overflow:hidden; padding:14px 14px 92px;}
+  .app .avatar{width:36px;height:36px;border-radius:50%; display:grid;place-items:center; font-weight:600; font-size:0.8rem;}
+  .app .sectitle{font-weight:700; font-size:0.92rem; margin:16px 2px 9px;}
+  .app .muted{color:var(--muted);}
+  .app svg{stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round;}
+
+  .stat-row{display:grid; grid-template-columns:1fr 1fr; gap:9px;}
+  .statc{background:#fff; border-radius:15px; padding:12px 13px; box-shadow:0 1px 3px rgba(0,0,0,.05);}
+  .statc.full{grid-column:1/-1;}
+  .statc .k{font-size:0.68rem; color:var(--muted); display:flex; align-items:center; gap:5px;}
+  .statc .k svg{width:14px;height:14px;}
+  .statc .v{font-size:1.08rem; font-weight:700; margin-top:5px;}
+  .statc .v small{font-size:0.7rem; font-weight:500; color:var(--muted);}
+
+  .litem{display:flex; align-items:center; gap:11px; background:#fff; border-radius:14px; padding:11px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,.05);}
+  .litem .ico{width:38px;height:38px;border-radius:11px; display:grid; place-items:center; flex:none; background:color-mix(in oklch,var(--primary) 12%,white); color:var(--primary);}
+  .litem .ico.blue{background:#e0edff; color:#2563eb;}
+  .litem .ico svg{width:18px;height:18px;}
+  .litem .ttl{font-weight:600; font-size:0.86rem;}
+  .litem .meta{font-size:0.73rem; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:5px;}
+  .litem .meta svg{width:12px;height:12px;}
+  .litem .right{margin-left:auto; text-align:right;}
+
+  .badge{font-size:0.64rem; font-weight:600; padding:3px 8px; border-radius:999px; white-space:nowrap;}
+  .badge.ok{background:color-mix(in oklch,var(--primary) 16%,white); color:var(--primary);}
+  .badge.blue{background:#e0edff; color:#2563eb;}
+  .badge.warn{background:#fef3c7; color:#92660c;}
+  .badge.mut{background:#eceef0; color:#6b7280;}
+
+  .chips{display:flex; gap:7px; margin-bottom:12px;}
+  .chip{font-size:0.76rem; padding:6px 13px; border-radius:999px; background:#fff; border:1px solid var(--border); color:var(--muted); white-space:nowrap;}
+  .chip.active{background:var(--primary); color:#fff; border-color:var(--primary);}
+
+  .search{display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px; color:#9aa0aa; font-size:0.84rem; margin-bottom:12px;}
+  .search svg{width:16px;height:16px;color:var(--muted);}
+
+  .nav{position:absolute; left:0; right:0; bottom:0; display:flex; justify-content:space-around; align-items:center; z-index:20;}
+  .nav a{display:flex; flex-direction:column; align-items:center; gap:3px; font-size:0.6rem; color:var(--muted); text-decoration:none; padding:7px 12px; border-radius:999px;}
+  .nav a svg{width:20px;height:20px;}
+  .nav a.active{color:var(--primary);}
+
+  .row2{display:flex; align-items:center; justify-content:space-between;}
+  .greet{font-size:0.78rem; opacity:.82;}
+
+  /* theme A — glass */
+  .t-a .header{background:linear-gradient(150deg,var(--primary),var(--emerald-700)); color:#fff; padding:16px 16px 30px; border-radius:0 0 26px 26px;}
+  .t-a .header h1{font-size:1.3rem; font-weight:700;}
+  .t-a .header .avatar{background:rgba(255,255,255,.18); color:#fff; border:1px solid rgba(255,255,255,.3);}
+  .t-a .scroll{padding-top:0;}
+  .t-a .lift{margin-top:-20px; position:relative;}
+  .t-a .nav{bottom:13px; left:13px; right:13px; border-radius:999px; background:rgba(255,255,255,.8); backdrop-filter:blur(16px); border:1px solid rgba(0,0,0,.05); box-shadow:0 12px 30px -12px rgba(0,0,0,.28); padding:5px 4px;}
+  .t-a .nav a.active{background:color-mix(in oklch,var(--primary) 14%,white);}
+
+  /* theme B — clean white */
+  .t-b .header{background:#fff; padding:16px; border-bottom:1px solid var(--border);}
+  .t-b .header h1{font-size:1.25rem; font-weight:700;}
+  .t-b .header .greet{color:var(--muted);}
+  .t-b .header .avatar{background:var(--primary); color:#fff;}
+  .t-b .scroll{padding-top:14px;}
+  .t-b .statc,.t-b .litem,.t-b .search{box-shadow:none; border:1px solid var(--border);}
+  .t-b .nav{background:#fff; border-top:1px solid var(--border); padding:9px 4px 11px;}
+  .t-b .nav a.active{position:relative;}
+  .t-b .nav a.active::before{content:""; position:absolute; top:-9px; left:50%; transform:translateX(-50%); width:24px; height:3px; border-radius:999px; background:var(--primary);}
+
+  /* theme C — curved + pills */
+  .t-c .header{position:relative; background:linear-gradient(150deg,var(--primary),var(--emerald-700)); color:#fff; padding:16px 18px 44px;}
+  .t-c .header h1{font-size:1.3rem; font-weight:700;}
+  .t-c .header .avatar{background:rgba(255,255,255,.18); color:#fff; border:1px solid rgba(255,255,255,.3);}
+  .t-c .header .wave{position:absolute; bottom:-1px; left:0; width:100%; display:block;}
+  .t-c .scroll{margin-top:-18px; position:relative; padding-top:0;}
+  .t-c .statc{border-radius:20px;}
+  .t-c .litem{border-radius:18px;}
+  .t-c .chip{padding:7px 15px;}
+  .t-c .search{border-radius:999px;}
+  .t-c .nav{bottom:14px; left:16px; right:16px; border-radius:999px; background:#fff; box-shadow:0 14px 34px -14px rgba(6,46,32,.42); padding:6px 6px;}
+  .t-c .nav a.active{background:color-mix(in oklch,var(--primary) 13%,white);}
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>Convlyx — small-screen login mockups</h1>
+    <p>Three directions for the mobile (&lt;lg) login. Desktop sidebar stays as-is. Pick one and I'll build it for real.</p>
+  </div>
+
+  <div class="row">
+
+    <!-- ============ MOCK 1 ============ -->
+    <div class="col">
+      <span class="tag"><b>A</b> Immersive glass</span>
+      <div class="phone"><div class="screen"><div class="notch"></div>
+        <div class="m1">
+          <div class="glow g1"></div><div class="glow g2"></div>
+          <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+          <div class="brand">
+            <div class="disc">
+              <svg class="wheel" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4"/><path d="M12 14.4V21"/><path d="M9.9 13.3 4.4 16.6"/><path d="M14.1 13.3 19.6 16.6"/></svg>
+            </div>
+            <div class="name">Convlyx</div>
+          </div>
+          <div class="head1"><h2>Iniciar sessão</h2><p>Introduza as suas credenciais</p></div>
+          <form onsubmit="return false">
+            <div>
+              <label>Email</label>
+              <div class="field">
+                <svg class="lead ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                <input type="email" placeholder="email@exemplo.pt" />
+              </div>
+            </div>
+            <div>
+              <label>Palavra-passe</label>
+              <div class="field">
+                <svg class="lead ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                <input type="password" value="········" />
+                <svg class="eye ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="2.6"/></svg>
+              </div>
+            </div>
+            <a class="forgot" href="#">Esqueceu a palavra-passe?</a>
+            <button class="btn">Iniciar sessão</button>
+          </form>
+        </div>
+      </div></div>
+      <div class="cap">The glassy one, leveled up: floating logo tile, layered rings, frosted inputs on the full emerald field. No container edge.</div>
+    </div>
+
+    <!-- ============ MOCK 2 ============ -->
+    <div class="col">
+      <span class="tag"><b>B</b> Floating white card</span>
+      <div class="phone"><div class="screen"><div class="notch"></div>
+        <div class="m2">
+          <div class="glow g1"></div><div class="glow g2"></div>
+          <div class="ring r1"></div><div class="ring r2"></div>
+          <div class="brand">
+            <div class="disc">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4"/><path d="M12 14.4V21"/><path d="M9.9 13.3 4.4 16.6"/><path d="M14.1 13.3 19.6 16.6"/></svg>
+            </div>
+            <div class="name">Convlyx</div>
+          </div>
+          <div class="card">
+            <h2>Iniciar sessão</h2>
+            <div class="sub">Introduza as suas credenciais</div>
+            <form onsubmit="return false">
+              <div>
+                <label>Email</label>
+                <div class="field">
+                  <svg class="lead ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                  <input type="email" placeholder="email@exemplo.pt" />
+                </div>
+              </div>
+              <div>
+                <label>Palavra-passe</label>
+                <div class="field">
+                  <svg class="lead ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                  <input type="password" value="········" />
+                </div>
+              </div>
+              <a class="forgot" href="#">Esqueceu a palavra-passe?</a>
+              <button class="btn">Iniciar sessão</button>
+            </form>
+          </div>
+        </div>
+      </div></div>
+      <div class="cap">Clean premium: brand on the green, a solid white card that clearly floats (all corners rounded, big shadow). No glass, no “phone ends” edge.</div>
+    </div>
+
+    <!-- ============ MOCK 3 ============ -->
+    <div class="col">
+      <span class="tag"><b>C</b> Curved hero + pills</span>
+      <div class="phone"><div class="screen"><div class="notch"></div>
+        <div class="m3">
+          <div class="hero">
+            <div class="glow g1"></div>
+            <div class="ring r1"></div><div class="ring r2"></div>
+            <div class="disc">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4"/><path d="M12 14.4V21"/><path d="M9.9 13.3 4.4 16.6"/><path d="M14.1 13.3 19.6 16.6"/></svg>
+            </div>
+            <div class="name">Convlyx</div>
+            <div class="welcome">Bem-vindo/a de volta</div>
+            <svg class="wave" viewBox="0 0 340 48" preserveAspectRatio="none" height="48"><path d="M0 48 L0 22 C 70 -8, 130 -8, 170 14 C 215 38, 280 38, 340 12 L340 48 Z" fill="#fff"/></svg>
+          </div>
+          <div class="body">
+            <h2>Iniciar sessão</h2>
+            <div class="sub">Introduza as suas credenciais</div>
+            <form onsubmit="return false">
+              <div class="field">
+                <svg class="lead ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                <input type="email" placeholder="Email" />
+              </div>
+              <div class="field">
+                <svg class="lead ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                <input type="password" value="········" />
+                <svg class="eye ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="2.6"/></svg>
+              </div>
+              <a class="forgot" href="#">Esqueceu a palavra-passe?</a>
+              <button class="btn">Iniciar sessão</button>
+            </form>
+          </div>
+        </div>
+      </div></div>
+      <div class="cap">Editorial & warm: emerald hero that swoops into white via a curve (clearly a flourish, not an edge), brand on top, friendly pill-shaped inputs.</div>
+    </div>
+
+  </div>
+
+  <!-- ===================== ICON SPRITE ===================== -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="ic-home" viewBox="0 0 24 24"><path d="M3 11 12 3l9 8"/><path d="M5 9.5V21h14V9.5"/></symbol>
+    <symbol id="ic-car" viewBox="0 0 24 24"><path d="M4 14l1.6-5A2 2 0 0 1 7.5 7.6h9A2 2 0 0 1 18.4 9L20 14"/><path d="M3.5 14h17v3.4a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1z"/><circle cx="7.5" cy="18.4" r="1.2"/><circle cx="16.5" cy="18.4" r="1.2"/></symbol>
+    <symbol id="ic-clip" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2.2"/><path d="M9.2 4V3.4A1.4 1.4 0 0 1 10.6 2h2.8A1.4 1.4 0 0 1 14.8 3.4V4"/><path d="M8.6 10.5h6.8M8.6 14.5h6.8"/></symbol>
+    <symbol id="ic-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5.6 20a6.4 6.4 0 0 1 12.8 0"/></symbol>
+    <symbol id="ic-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></symbol>
+    <symbol id="ic-wheel" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4"/><path d="M12 14.4V21M9.9 13.3 4.4 16.6M14.1 13.3 19.6 16.6"/></symbol>
+    <symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  </svg>
+
+  <!-- ===================== GROUP A — GLASS ===================== -->
+  <div class="divider"></div>
+  <div class="appwrap">
+    <div class="ghead">
+      <span class="tag"><b>A</b> Immersive glass — matching app</span>
+      <h2>Glass language across the app</h2>
+      <p>Emerald gradient headers, white content cards, and a frosted floating bottom nav.</p>
+    </div>
+    <div class="row">
+
+      <div class="col">
+        <div class="phone"><div class="screen"><div class="notch"></div>
+          <div class="app t-a">
+            <div class="header"><div class="row2"><div><div class="greet">Olá,</div><h1>João Martins</h1></div><div class="avatar">JM</div></div></div>
+            <div class="scroll">
+              <div class="stat-row lift">
+                <div class="statc"><div class="k"><svg><use href="#ic-cal"/></svg>Próxima aula</div><div class="v">Amanhã <small>14:00</small></div></div>
+                <div class="statc"><div class="k"><svg><use href="#ic-wheel"/></svg>Concluídas</div><div class="v">12 <small>aulas</small></div></div>
+                <div class="statc full"><div class="k"><svg><use href="#ic-clip"/></svg>Categoria B · Exame teórico</div><div class="v">Aprovado</div></div>
+              </div>
+              <div class="sectitle">Próximas aulas</div>
+              <div class="litem"><div class="ico"><svg><use href="#ic-wheel"/></svg></div><div><div class="ttl">Condução — Cat. B</div><div class="meta"><svg><use href="#ic-clock"/></svg>Amanhã · 14:00 · Ana Sousa</div></div></div>
+              <div class="litem"><div class="ico blue"><svg><use href="#ic-cal"/></svg></div><div><div class="ttl">Teórica — Sinalização</div><div class="meta"><svg><use href="#ic-clock"/></svg>Qui · 10:00 · Rui Dias</div></div></div>
+            </div>
+            <nav class="nav"><a class="active"><svg><use href="#ic-home"/></svg>Painel</a><a><svg><use href="#ic-car"/></svg>Aulas</a><a><svg><use href="#ic-clip"/></svg>Inscrições</a><a><svg><use href="#ic-user"/></svg>Perfil</a></nav>
+          </div>
+        </div></div>
+        <div class="cap">Painel</div>
+      </div>
+
+      <div class="col">
+        <div class="phone"><div class="screen"><div class="notch"></div>
+          <div class="app t-a">
+            <div class="header"><div class="row2"><h1>Aulas</h1><div class="avatar">JM</div></div></div>
+            <div class="scroll">
+              <div class="search" style="margin-top:14px"><svg><use href="#ic-search"/></svg>Pesquisar aulas</div>
+              <div class="chips"><span class="chip active">Todas</span><span class="chip">Teórica</span><span class="chip">Prática</span></div>
+              <div class="litem"><div class="ico"><svg><use href="#ic-wheel"/></svg></div><div><div class="ttl">Condução — Cat. B</div><div class="meta"><svg><use href="#ic-clock"/></svg>Seg · 14:00 · Ana Sousa</div></div><div class="right"><span class="badge ok">Agendada</span></div></div>
+              <div class="litem"><div class="ico blue"><svg><use href="#ic-cal"/></svg></div><div><div class="ttl">Teórica — Sinalização</div><div class="meta"><svg><use href="#ic-clock"/></svg>Ter · 10:00 · Rui Dias</div></div><div class="right"><span class="badge blue">Teórica</span></div></div>
+              <div class="litem"><div class="ico"><svg><use href="#ic-wheel"/></svg></div><div><div class="ttl">Condução — Manobras</div><div class="meta"><svg><use href="#ic-clock"/></svg>Qua · 16:30 · Ana Sousa</div></div><div class="right"><span class="badge mut">Concluída</span></div></div>
+            </div>
+            <nav class="nav"><a><svg><use href="#ic-home"/></svg>Painel</a><a class="active"><svg><use href="#ic-car"/></svg>Aulas</a><a><svg><use href="#ic-clip"/></svg>Inscrições</a><a><svg><use href="#ic-user"/></svg>Perfil</a></nav>
+          </div>
+        </div></div>
+        <div class="cap">Aulas</div>
+      </div>
+
+      <div class="col">
+        <div class="phone"><div class="screen"><div class="notch"></div>
+          <div class="app t-a">
+            <div class="header"><div class="row2"><h1>Inscrições</h1><div class="avatar">JM</div></div></div>
+            <div class="scroll">
+              <div class="chips" style="margin-top:14px"><span class="chip active">Ativas</span><span class="chip">Concluídas</span></div>
+              <div class="litem"><div class="ico"><svg><use href="#ic-wheel"/></svg></div><div><div class="ttl">Curso — Categoria B</div><div class="meta">18 aulas · 2 exames</div></div><div class="right"><span class="badge ok">Inscrito</span></div></div>
+              <div class="litem"><div class="ico blue"><svg><use href="#ic-cal"/></svg></div><div><div class="ttl">Teórica — Módulo 3</div><div class="meta">14 Mai · 10:00</div></div><div class="right"><span class="badge mut">Concluído</span></div></div>
+              <div class="litem"><div class="ico"><svg><use href="#ic-wheel"/></svg></div><div><div class="ttl">Condução — Aula 7</div><div class="meta">9 Mai · 15:00</div></div><div class="right"><span class="badge warn">Falta</span></div></div>
+            </div>
+            <nav class="nav"><a><svg><use href="#ic-home"/></svg>Painel</a><a><svg><use href="#ic-car"/></svg>Aulas</a><a class="active"><svg><use href="#ic-clip"/></svg>Inscrições</a><a><svg><use href="#ic-user"/></svg>Perfil</a></nav>
+          </div>
+        </div></div>
+        <div class="cap">Inscrições</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== GROUP B — WHITE CARD ===================== -->
+  <div class="divider"></div>
+  <div class="appwrap">
+    <div class="ghead">
+      <span class="tag"><b>B</b> Floating white card — matching app</span>
+      <h2>Clean &amp; calm across the app</h2>
+      <p>White headers with a green accent, bordered cards, and a solid bottom nav with an active indicator.</p>
+    </div>
+    <div class="row">
+
+      <div class="col">
+        <div class="phone"><div class="screen"><div class="notch"></div>
+          <div class="app t-b">
+            <div class="header"><div class="row2"><div><div class="greet">Olá,</div><h1>João Martins</h1></div><div class="avatar">JM</div></div></div>
+            <div class="scroll">
+              <div class="stat-row">
+                <div class="statc"><div class="k"><svg><use href="#ic-cal"/></svg>Próxima aula</div><div class="v">Amanhã <small>14:00</small></div></div>
+                <div class="statc"><div class="k"><svg><use href="#ic-wheel"/></svg>Concluídas</div><div class="v">12 <small>aulas</small></div></div>
+                <div class="statc full"><div class="k"><svg><use href="#ic-clip"/></svg>Categoria B · Exame teórico</div><div class="v">Aprovado</div></div>
+              </div>
+              <div class="sectitle">Próximas aulas</div>
+              <div class="litem"><div class="ico"><svg><use href="#ic-wheel"/></svg></div><div><div class="ttl">Condução — Cat. B</div><div class="meta"><svg><use href="#ic-clock"/></svg>Amanhã · 14:00 · Ana Sousa</div></div></div>
+              <div class="litem"><div class="ico blue"><svg><use href="#ic-cal"/></svg></div><div><div class="ttl">Teórica — Sinalização</div><div class="meta"><svg><use href="#ic-clock"/></svg>Qui · 10:00 · Rui Dias</div></div></div>
+            </div>
+            <nav class="nav"><a class="active"><svg><use href="#ic-home"/></svg>Painel</a><a><svg><use href="#ic-car"/></svg>Aulas</a><a><svg><use href="#ic-clip"/></svg>Inscrições</a><a><svg><use href="#ic-user"/></svg>Perfil</a></nav>
+          </div>
+        </div></div>
+        <div class="cap">Painel</div>
+      </div>
+
+      <div class="col">
+        <div class="phone"><div class="screen"><div class="notch"></div>
+          <div class="app t-b">
+            <div class="header"><div class="row2"><h1>Aulas</h1><div class="avatar">JM</div></div></div>
+            <div class="scroll">
+              <div class="search"><svg><use href="#ic-search"/></svg>Pesquisar aulas</div>
+              <div class="chips"><span class="chip active">Todas</span><span class="chip">Teórica</span><span class="chip">Prática</span></div>
+              <div class="litem"><div class="ico"><svg><use href="#ic-wheel"/></svg></div><div><div class="ttl">Condução — Cat. B</div><div class="meta"><svg><use href="#ic-clock"/></svg>Seg · 14:00 · Ana Sousa</div></div><div class="right"><span class="badge ok">Agendada</span></div></div>
+              <div class="litem"><div class="ico blue"><svg><use href="#ic-cal"/></svg></div><div><div class="ttl">Teórica — Sinalização</div><div class="meta"><svg><use href="#ic-clock"/></svg>Ter · 10:00 · Rui Dias</div></div><div class="right"><span class="badge blue">Teórica</span></div></div>
+              <div class="litem"><div class="ico"><svg><use href="#ic-wheel"/></svg></div><div><div class="ttl">Condução — Manobras</div><div class="meta"><svg><use href="#ic-clock"/></svg>Qua · 16:30 · Ana Sousa</div></div><div class="right"><span class="badge mut">Concluída</span></div></div>
+            </div>
+            <nav class="nav"><a><svg><use href="#ic-home"/></svg>Painel</a><a class="active"><svg><use href="#ic-car"/></svg>Aulas</a><a><svg><use href="#ic-clip"/></svg>Inscrições</a><a><svg><use href="#ic-user"/></svg>Perfil</a></nav>
+          </div>
+        </div></div>
+        <div class="cap">Aulas</div>
+      </div>
+
+      <div class="col">
+        <div class="phone"><div class="screen"><div class="notch"></div>
+          <div class="app t-b">
+            <div class="header"><div class="row2"><h1>Inscrições</h1><div class="avatar">JM</div></div></div>
+            <div class="scroll">
+              <div class="chips"><span class="chip active">Ativas</span><span class="chip">Concluídas</span></div>
+              <div class="litem"><div class="ico"><svg><use href="#ic-wheel"/></svg></div><div><div class="ttl">Curso — Categoria B</div><div class="meta">18 aulas · 2 exames</div></div><div class="right"><span class="badge ok">Inscrito</span></div></div>
+              <div class="litem"><div class="ico blue"><svg><use href="#ic-cal"/></svg></div><div><div class="ttl">Teórica — Módulo 3</div><div class="meta">14 Mai · 10:00</div></div><div class="right"><span class="badge mut">Concluído</span></div></div>
+              <div class="litem"><div class="ico"><svg><use href="#ic-wheel"/></svg></div><div><div class="ttl">Condução — Aula 7</div><div class="meta">9 Mai · 15:00</div></div><div class="right"><span class="badge warn">Falta</span></div></div>
+            </div>
+            <nav class="nav"><a><svg><use href="#ic-home"/></svg>Painel</a><a><svg><use href="#ic-car"/></svg>Aulas</a><a class="active"><svg><use href="#ic-clip"/></svg>Inscrições</a><a><svg><use href="#ic-user"/></svg>Perfil</a></nav>
+          </div>
+        </div></div>
+        <div class="cap">Inscrições</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== GROUP C — CURVED + PILLS ===================== -->
+  <div class="divider"></div>
+  <div class="appwrap">
+    <div class="ghead">
+      <span class="tag"><b>C</b> Curved hero + pills — matching app</span>
+      <h2>Warm &amp; rounded across the app</h2>
+      <p>Curved emerald headers, rounded cards, pill chips and a floating pill bottom nav.</p>
+    </div>
+    <div class="row">
+
+      <div class="col">
+        <div class="phone"><div class="screen"><div class="notch"></div>
+          <div class="app t-c">
+            <div class="header">
+              <div class="row2"><div><div class="greet">Olá,</div><h1>João Martins</h1></div><div class="avatar">JM</div></div>
+              <svg class="wave" viewBox="0 0 340 44" preserveAspectRatio="none" height="44"><path d="M0 44 V20 C70 -6 130 -6 175 14 C220 34 280 34 340 12 V44 Z" fill="#f4f5f6"/></svg>
+            </div>
+            <div class="scroll">
+              <div class="stat-row">
+                <div class="statc"><div class="k"><svg><use href="#ic-cal"/></svg>Próxima aula</div><div class="v">Amanhã <small>14:00</small></div></div>
+                <div class="statc"><div class="k"><svg><use href="#ic-wheel"/></svg>Concluídas</div><div class="v">12 <small>aulas</small></div></div>
+                <div class="statc full"><div class="k"><svg><use href="#ic-clip"/></svg>Categoria B · Exame teórico</div><div class="v">Aprovado</div></div>
+              </div>
+              <div class="sectitle">Próximas aulas</div>
+              <div class="litem"><div class="ico"><svg><use href="#ic-wheel"/></svg></div><div><div class="ttl">Condução — Cat. B</div><div class="meta"><svg><use href="#ic-clock"/></svg>Amanhã · 14:00 · Ana Sousa</div></div></div>
+              <div class="litem"><div class="ico blue"><svg><use href="#ic-cal"/></svg></div><div><div class="ttl">Teórica — Sinalização</div><div class="meta"><svg><use href="#ic-clock"/></svg>Qui · 10:00 · Rui Dias</div></div></div>
+            </div>
+            <nav class="nav"><a class="active"><svg><use href="#ic-home"/></svg>Painel</a><a><svg><use href="#ic-car"/></svg>Aulas</a><a><svg><use href="#ic-clip"/></svg>Inscrições</a><a><svg><use href="#ic-user"/></svg>Perfil</a></nav>
+          </div>
+        </div></div>
+        <div class="cap">Painel</div>
+      </div>
+
+      <div class="col">
+        <div class="phone"><div class="screen"><div class="notch"></div>
+          <div class="app t-c">
+            <div class="header">
+              <div class="row2"><h1>Aulas</h1><div class="avatar">JM</div></div>
+              <svg class="wave" viewBox="0 0 340 44" preserveAspectRatio="none" height="44"><path d="M0 44 V20 C70 -6 130 -6 175 14 C220 34 280 34 340 12 V44 Z" fill="#f4f5f6"/></svg>
+            </div>
+            <div class="scroll">
+              <div class="search"><svg><use href="#ic-search"/></svg>Pesquisar aulas</div>
+              <div class="chips"><span class="chip active">Todas</span><span class="chip">Teórica</span><span class="chip">Prática</span></div>
+              <div class="litem"><div class="ico"><svg><use href="#ic-wheel"/></svg></div><div><div class="ttl">Condução — Cat. B</div><div class="meta"><svg><use href="#ic-clock"/></svg>Seg · 14:00 · Ana Sousa</div></div><div class="right"><span class="badge ok">Agendada</span></div></div>
+              <div class="litem"><div class="ico blue"><svg><use href="#ic-cal"/></svg></div><div><div class="ttl">Teórica — Sinalização</div><div class="meta"><svg><use href="#ic-clock"/></svg>Ter · 10:00 · Rui Dias</div></div><div class="right"><span class="badge blue">Teórica</span></div></div>
+              <div class="litem"><div class="ico"><svg><use href="#ic-wheel"/></svg></div><div><div class="ttl">Condução — Manobras</div><div class="meta"><svg><use href="#ic-clock"/></svg>Qua · 16:30 · Ana Sousa</div></div><div class="right"><span class="badge mut">Concluída</span></div></div>
+            </div>
+            <nav class="nav"><a><svg><use href="#ic-home"/></svg>Painel</a><a class="active"><svg><use href="#ic-car"/></svg>Aulas</a><a><svg><use href="#ic-clip"/></svg>Inscrições</a><a><svg><use href="#ic-user"/></svg>Perfil</a></nav>
+          </div>
+        </div></div>
+        <div class="cap">Aulas</div>
+      </div>
+
+      <div class="col">
+        <div class="phone"><div class="screen"><div class="notch"></div>
+          <div class="app t-c">
+            <div class="header">
+              <div class="row2"><h1>Inscrições</h1><div class="avatar">JM</div></div>
+              <svg class="wave" viewBox="0 0 340 44" preserveAspectRatio="none" height="44"><path d="M0 44 V20 C70 -6 130 -6 175 14 C220 34 280 34 340 12 V44 Z" fill="#f4f5f6"/></svg>
+            </div>
+            <div class="scroll">
+              <div class="chips"><span class="chip active">Ativas</span><span class="chip">Concluídas</span></div>
+              <div class="litem"><div class="ico"><svg><use href="#ic-wheel"/></svg></div><div><div class="ttl">Curso — Categoria B</div><div class="meta">18 aulas · 2 exames</div></div><div class="right"><span class="badge ok">Inscrito</span></div></div>
+              <div class="litem"><div class="ico blue"><svg><use href="#ic-cal"/></svg></div><div><div class="ttl">Teórica — Módulo 3</div><div class="meta">14 Mai · 10:00</div></div><div class="right"><span class="badge mut">Concluído</span></div></div>
+              <div class="litem"><div class="ico"><svg><use href="#ic-wheel"/></svg></div><div><div class="ttl">Condução — Aula 7</div><div class="meta">9 Mai · 15:00</div></div><div class="right"><span class="badge warn">Falta</span></div></div>
+            </div>
+            <nav class="nav"><a><svg><use href="#ic-home"/></svg>Painel</a><a><svg><use href="#ic-car"/></svg>Aulas</a><a class="active"><svg><use href="#ic-clip"/></svg>Inscrições</a><a><svg><use href="#ic-user"/></svg>Perfil</a></nav>
+          </div>
+        </div></div>
+        <div class="cap">Inscrições</div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

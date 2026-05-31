@@ -10,10 +10,10 @@ export default function LoginPage() {
 
   return (
     <AuthLayout>
-      {/* Mobile header */}
-      <div className="text-center space-y-1 lg:hidden">
-        <img src="/favicon.png" alt="" width={56} height={56} className="mx-auto mb-3" />
-        <h1 className="text-xl font-bold">{t("common.appName")}</h1>
+      {/* Mobile header — brand lives in the hero, so just a concise title */}
+      <div className="space-y-1.5 text-center lg:hidden">
+        <h1 className="text-[1.7rem] font-bold tracking-tight">{t("auth.login")}</h1>
+        <p className="text-[0.95rem] text-muted-foreground">{t("auth.enterCredentials")}</p>
       </div>
 
       {/* Desktop header */}

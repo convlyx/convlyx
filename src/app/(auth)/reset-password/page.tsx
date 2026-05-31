@@ -9,10 +9,6 @@ export default function ResetPasswordPage() {
 
   return (
     <AuthLayout>
-      <div className="text-center space-y-1 lg:hidden">
-        <img src="/favicon.png" alt="" width={56} height={56} className="mx-auto mb-3" />
-      </div>
-
       <div className="space-y-2 lg:text-left text-center">
         <h1 className="text-xl lg:text-2xl font-bold">{t("auth.resetPassword")}</h1>
         <p className="text-sm text-muted-foreground">
