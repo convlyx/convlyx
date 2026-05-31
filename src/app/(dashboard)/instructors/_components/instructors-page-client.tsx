@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { useUrlParam, useUrlParamInt } from "@/hooks/use-url-param";
+import { useUrlParam, useUrlParamInt, useDebouncedUrlParam } from "@/hooks/use-url-param";
 import { trpc } from "@/lib/trpc";
 import Link from "next/link";
 import { Users, ChevronRight, Search, Pencil } from "lucide-react";
@@ -37,7 +37,7 @@ export function InstructorsPageClient() {
 
   const initialView = (searchParams.get("view") as "cards" | "table") ?? undefined;
   const [view, setView] = useViewMode("/instructors", initialView);
-  const [search, setSearch] = useUrlParam<string>("search", "");
+  const [searchInput, search, setSearch] = useDebouncedUrlParam("search", "");
   const [statusFilter, setStatusFilter] = useUrlParam<"ACTIVE" | "INACTIVE" | "ALL">("status", "ACTIVE");
   const [page, setPage] = useUrlParamInt("page", 1);
   const [deactivateUserId, setDeactivateUserId] = useState<string | null>(null);
@@ -90,7 +90,7 @@ export function InstructorsPageClient() {
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t("common.search") + "..."}
-              value={search}
+              value={searchInput}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 w-full sm:w-[200px]"
             />
