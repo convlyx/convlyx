@@ -100,6 +100,12 @@ export function CreateClassDialog({
     { enabled: isStaff },
   );
   const instructors = instructorsData?.items;
+  // Fetches ALL active students unbounded (no page/pageSize), then filters by
+  // category + search client-side in StudentPicker. Deliberate: instant UX with
+  // no per-keystroke round-trips at typical school size (dozens–low hundreds).
+  // SCALING CLIFF: payload grows with the tenant, and user.list's auth merge is
+  // capped at ~1000 (see user.ts). Move to server-side paginated/debounced
+  // search when a tenant approaches that range.
   const { data: studentsData, isLoading: studentsLoading } = trpc.user.list.useQuery(
     { role: "STUDENT", status: "ACTIVE" },
   );

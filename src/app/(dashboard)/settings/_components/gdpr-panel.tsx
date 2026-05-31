@@ -11,6 +11,7 @@ import { Loading } from "@/components/loading";
 import { EmptyState } from "@/components/empty-state";
 import { downloadJson } from "@/lib/download-json";
 import { useTranslatedError } from "@/hooks/use-translated-error";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 const MIN_SEARCH_CHARS = 1;
 
@@ -25,7 +26,9 @@ export function GdprPanel() {
   const { onError } = useTranslatedError();
   const utils = trpc.useUtils();
   const [search, setSearch] = useState("");
-  const trimmed = search.trim();
+  // Debounce the server query so typing doesn't fire a request per keystroke;
+  // the input stays bound to `search` so it remains instant.
+  const trimmed = useDebouncedValue(search.trim());
   const enabled = trimmed.length >= MIN_SEARCH_CHARS;
 
   const { data, isFetching } = trpc.user.list.useQuery(
