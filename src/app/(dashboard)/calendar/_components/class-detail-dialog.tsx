@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { InfoTooltip } from "@/components/info-tooltip";
 import { typeKeys, statusKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeBadgeClass, resolveEnrollmentDisplay } from "@/lib/constants/class";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
@@ -234,7 +235,7 @@ export function ClassDetailDialog({
           {userRole === "STUDENT" && classDetail.status === "SCHEDULED" && (
             <>
               {myEnrollment ? (
-                <div className="flex flex-col items-end gap-1">
+                <InfoTooltip content={isWithinNoticeWindow ? t("enrollments.cancellationLockedHint", { hours: noticeHours }) : undefined}>
                   <Button
                     variant="destructive"
                     disabled={cancelEnrollmentMutation.isPending || isWithinNoticeWindow}
@@ -242,12 +243,7 @@ export function ClassDetailDialog({
                   >
                     {cancelEnrollmentMutation.isPending ? t("common.loading") : t("enrollments.cancel")}
                   </Button>
-                  {isWithinNoticeWindow && (
-                    <p className="text-xs text-muted-foreground">
-                      {t("enrollments.cancellationLockedHint", { hours: noticeHours })}
-                    </p>
-                  )}
-                </div>
+                </InfoTooltip>
               ) : canEnroll ? (
                 <Button
                   disabled={enrollMutation.isPending}

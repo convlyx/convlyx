@@ -7,6 +7,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ClipboardList, BookOpen, CalendarDays, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { InfoTooltip } from "@/components/info-tooltip";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -64,12 +65,21 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
     return enrollment.session.startsAt.getTime() - nowMs < noticeHours * 3600_000;
   };
 
+  // When cancellation is locked, the reason shown as a tooltip on the (disabled)
+  // cancel button — hover on desktop, tap on mobile.
+  const lockedHint = (enrollment: {
+    session: { startsAt: Date; school: { cancellationNoticeHours: number } };
+  }) =>
+    isWithinNoticeWindow(enrollment)
+      ? t("enrollments.cancellationLockedHint", { hours: enrollment.session.school.cancellationNoticeHours })
+      : undefined;
+
   useEffect(() => setPage(1), [timeTab]);
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">{t("enrollments.myEnrollments")}</h1>
+      {/* Title is shown in the mobile shell's curved header */}
+      <div className="flex items-center justify-end">
         <ViewToggle view={view} onChange={setView} />
       </div>
 
@@ -100,7 +110,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
           {paginatedEnrollments.map((enrollment) => (
             <div
               key={enrollment.id}
-              className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
+              className="rounded-2xl bg-card p-4 card-shadow"
             >
               <div className="flex items-start gap-3">
                 <div className={`flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[enrollment.session.classType]}`}>
@@ -130,38 +140,32 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
                   </div>
                   {canCancel(enrollment) && (
                     <div className="mt-2 sm:hidden">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="w-full"
-                        disabled={cancelMutation.isPending || isWithinNoticeWindow(enrollment)}
-                        onClick={() => setConfirmCancelId(enrollment.id)}
-                      >
-                        {t("enrollments.cancel")}
-                      </Button>
-                      {isWithinNoticeWindow(enrollment) && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {t("enrollments.cancellationLockedHint", { hours: enrollment.session.school.cancellationNoticeHours })}
-                        </p>
-                      )}
+                      <InfoTooltip className="w-full" content={lockedHint(enrollment)}>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="w-full"
+                          disabled={cancelMutation.isPending || isWithinNoticeWindow(enrollment)}
+                          onClick={() => setConfirmCancelId(enrollment.id)}
+                        >
+                          {t("enrollments.cancel")}
+                        </Button>
+                      </InfoTooltip>
                     </div>
                   )}
                 </div>
                 {canCancel(enrollment) && (
                   <div className="hidden sm:flex sm:flex-col sm:items-end sm:gap-1 shrink-0">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      disabled={cancelMutation.isPending || isWithinNoticeWindow(enrollment)}
-                      onClick={() => setConfirmCancelId(enrollment.id)}
-                    >
-                      {t("enrollments.cancel")}
-                    </Button>
-                    {isWithinNoticeWindow(enrollment) && (
-                      <p className="text-xs text-muted-foreground text-right">
-                        {t("enrollments.cancellationLockedHint", { hours: enrollment.session.school.cancellationNoticeHours })}
-                      </p>
-                    )}
+                    <InfoTooltip content={lockedHint(enrollment)}>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={cancelMutation.isPending || isWithinNoticeWindow(enrollment)}
+                        onClick={() => setConfirmCancelId(enrollment.id)}
+                      >
+                        {t("enrollments.cancel")}
+                      </Button>
+                    </InfoTooltip>
                   </div>
                 )}
               </div>
@@ -205,7 +209,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
                   {userRole === "STUDENT" && (
                     <TableCell>
                       {canCancel(enrollment) && (
-                        <div className="flex flex-col gap-1">
+                        <InfoTooltip content={lockedHint(enrollment)}>
                           <Button
                             variant="destructive"
                             size="sm"
@@ -214,12 +218,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
                           >
                             {t("enrollments.cancel")}
                           </Button>
-                          {isWithinNoticeWindow(enrollment) && (
-                            <p className="text-xs text-muted-foreground">
-                              {t("enrollments.cancellationLockedHint", { hours: enrollment.session.school.cancellationNoticeHours })}
-                            </p>
-                          )}
-                        </div>
+                        </InfoTooltip>
                       )}
                     </TableCell>
                   )}

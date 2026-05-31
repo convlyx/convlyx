@@ -14,6 +14,9 @@ export function CalendarView({ userRole, userId }: { userRole: UserRole; userId:
   const [instructorFilter, setInstructorFilter] = useState("ALL");
 
   const showFilters = userRole === "ADMIN" || userRole === "SECRETARY";
+  // STUDENT/INSTRUCTOR get the mobile shell whose curved header already shows
+  // the screen title, so only render the in-content title for staff (desktop).
+  const showTitle = userRole === "ADMIN" || userRole === "SECRETARY";
   const canCreate = userRole === "ADMIN" || userRole === "SECRETARY" || userRole === "INSTRUCTOR";
   const { data: instructorsData } = trpc.user.list.useQuery(
     { role: "INSTRUCTOR", status: "ACTIVE" },
@@ -24,7 +27,7 @@ export function CalendarView({ userRole, userId }: { userRole: UserRole; userId:
   return (
     <div className="space-y-4 animate-in fade-in duration-300">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">{t("calendar")}</h1>
+        {showTitle && <h1 className="text-2xl font-bold">{t("calendar")}</h1>}
         <div className="flex flex-wrap items-center gap-2">
           {showFilters && (
             <CalendarFilters

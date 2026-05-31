@@ -15,6 +15,7 @@ import {
   CheckSquare,
 } from "lucide-react";
 import { NotificationBell } from "@/components/notification-bell";
+import { cn } from "@/lib/utils";
 import type { UserRole } from "@/generated/prisma/enums";
 import type { LucideIcon } from "lucide-react";
 
@@ -60,6 +61,25 @@ export function MobileLayout({
 
   const visibleTabs = tabs.filter((tab) => tab.roles.includes(userRole));
 
+  // The curved header shows a time-aware greeting on the dashboard and the
+  // screen title elsewhere (titles are suppressed in those pages' content for
+  // the mobile-shell roles so they're not duplicated).
+  const firstName = userName.split(" ")[0];
+  const isDashboard = activePath === "/";
+  function greeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return t("dashboard.greeting.morning");
+    if (hour < 18) return t("dashboard.greeting.afternoon");
+    return t("dashboard.greeting.evening");
+  }
+  function screenTitle() {
+    if (activePath.startsWith("/calendar")) return tNav("calendar");
+    if (activePath.startsWith("/classes")) return tNav("classes");
+    if (activePath.startsWith("/enrollments")) return t("enrollments.enrollmentsShort");
+    if (activePath.startsWith("/settings")) return t("common.profile");
+    return tenantName;
+  }
+
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -73,36 +93,50 @@ export function MobileLayout({
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      {/* Top bar — minimal, clean */}
-      <header className="flex items-center justify-between gap-2 px-4 h-14 border-b bg-card shrink-0">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <img src="/favicon.png" alt="" width={28} height={28} className="shrink-0" />
+      {/* Top bar — white, per-screen title / greeting + bell + logout */}
+      <header
+        className="shrink-0 border-b bg-card px-4 pb-3"
+        style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
+      >
+        <div className="flex items-start justify-between gap-3 pt-1">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold leading-tight truncate">{tenantName}</p>
-            <p className="text-xs text-muted-foreground truncate">{userName}</p>
+            {isDashboard ? (
+              <>
+                <p className="text-sm text-muted-foreground">{greeting()}</p>
+                <h1 className="text-2xl font-bold leading-tight">{firstName} 👋</h1>
+              </>
+            ) : (
+              <h1 className="text-2xl font-bold leading-tight">{screenTitle()}</h1>
+            )}
           </div>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <NotificationBell userId={userId} />
-          <button
-            onClick={handleLogout}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <NotificationBell userId={userId} />
+            <button
+              onClick={handleLogout}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <LogOut className="h-[18px] w-[18px]" />
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Content area */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="px-4 py-4 pb-20">
+        <div className="px-4 pt-4 pb-28">
           {children}
         </div>
       </main>
 
-      {/* Bottom tab bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-card/95 backdrop-blur-sm safe-area-bottom">
-        <div className="flex items-center justify-around h-16">
+      {/* Bottom tab bar — floating pill */}
+      <nav
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4"
+        style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+      >
+        <div
+          className="pointer-events-auto mx-auto flex max-w-md items-center justify-around rounded-full bg-card px-2 py-1.5 ring-1 ring-border/60"
+          style={{ boxShadow: "0 14px 34px -14px color-mix(in oklch, var(--primary) 55%, black)" }}
+        >
           {visibleTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive =
@@ -115,13 +149,12 @@ export function MobileLayout({
                 key={tab.key}
                 href={tab.href}
                 onClick={() => setPendingPath(tab.href)}
-                className={`flex flex-col items-center justify-center gap-0.5 w-full h-full transition-colors ${
-                  isActive
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                }`}
+                className={cn(
+                  "flex flex-col items-center gap-0.5 rounded-full px-3.5 py-2 transition-colors",
+                  isActive ? "bg-primary/15 text-primary" : "text-muted-foreground",
+                )}
               >
-                <Icon className={`h-5 w-5 ${isActive ? "stroke-[2.5px]" : ""}`} />
+                <Icon className={cn("h-5 w-5", isActive && "stroke-[2.5px]")} />
                 <span className="text-[10px] font-medium leading-tight">
                   {tab.key === "settings" ? t("common.profile") : tab.key === "enrollments" ? t("enrollments.enrollmentsShort") : tNav(tab.key)}
                 </span>

@@ -23,16 +23,9 @@ import { typeKeys, statusKeys, statusVariant, classTypeColorMap, classTypeBadgeC
 import { PushPrompt } from "@/components/push-prompt";
 import { PendingAttendanceModal } from "./pending-attendance-modal";
 
-export function InstructorHome({ userName, userId }: { userName: string; userId: string }) {
+export function InstructorHome({ userId }: { userId: string }) {
   const t = useTranslations();
   const format = useFormatter();
-
-  function getGreeting(): string {
-    const hour = new Date().getHours();
-    if (hour < 12) return t("dashboard.greeting.morning");
-    if (hour < 18) return t("dashboard.greeting.afternoon");
-    return t("dashboard.greeting.evening");
-  }
 
   const todayRange = useMemo(() => {
     const now = new Date();
@@ -56,7 +49,6 @@ export function InstructorHome({ userName, userId }: { userName: string; userId:
   const todayClasses = todayData?.items;
   const weekClasses = weekData?.items;
 
-  const firstName = userName.split(" ")[0];
   const now = new Date();
 
   const currentOrNextClass = todayClasses?.find(
@@ -73,12 +65,6 @@ export function InstructorHome({ userName, userId }: { userName: string; userId:
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Greeting */}
-      <div>
-        <p className="text-sm text-muted-foreground">{getGreeting()}</p>
-        <h1 className="text-2xl font-bold">{firstName} 👋</h1>
-      </div>
-
       <PushPrompt userId={userId} />
 
       <PendingAttendanceModal />
@@ -146,7 +132,7 @@ export function InstructorHome({ userName, userId }: { userName: string; userId:
 
       {/* Today's progress (driven by today query) */}
       {todayLoading ? (
-        <div className="rounded-xl border bg-card p-4 card-shadow animate-in fade-in duration-300 space-y-3">
+        <div className="rounded-2xl bg-card p-4 card-shadow animate-in fade-in duration-300 space-y-3">
           <div className="flex items-center justify-between">
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-4 w-10" />
@@ -162,7 +148,7 @@ export function InstructorHome({ userName, userId }: { userName: string; userId:
           </div>
         </div>
       ) : totalToday > 0 && (
-        <div className="rounded-xl border bg-card p-4 card-shadow">
+        <div className="rounded-2xl bg-card p-4 card-shadow">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-semibold">{t("dashboard.todaysProgress")}</p>
             <span className="text-sm text-muted-foreground">{completedToday}/{totalToday}</span>
@@ -218,7 +204,7 @@ export function InstructorHome({ userName, userId }: { userName: string; userId:
                 <Link
                   href={`/classes/${cls.id}`}
                   key={cls.id}
-                  className={`relative flex items-center gap-3 rounded-xl border p-3.5 transition-all hover:border-primary/20 ${
+                  className={`relative flex items-center gap-3 rounded-2xl border p-3.5 transition-all hover:border-primary/20 ${
                     isCurrent
                       ? "border-primary bg-primary/5 card-shadow-hover"
                       : isPast
@@ -295,7 +281,7 @@ export function InstructorHome({ userName, userId }: { userName: string; userId:
               <Link
                 key={cls.id}
                 href={`/classes/${cls.id}`}
-                className="flex items-center gap-3 rounded-xl border bg-card p-3.5 card-shadow hover:card-shadow-hover hover:border-primary/20 transition-all"
+                className="flex items-center gap-3 rounded-2xl bg-card p-3.5 card-shadow transition-all hover:card-shadow-hover"
               >
                 <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[cls.classType]}`}>
                   <BookOpen className="h-5 w-5" />

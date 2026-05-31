@@ -7,11 +7,11 @@ export default async function DashboardPage() {
   const user = await requireDashboardUser();
 
   if (user.role === "STUDENT") {
-    return <StudentHome userName={user.name} userId={user.id} />;
+    return <StudentHome userId={user.id} />;
   }
 
   if (user.role === "INSTRUCTOR") {
-    return <InstructorHome userName={user.name} userId={user.id} />;
+    return <InstructorHome userId={user.id} />;
   }
 
   return <DashboardView userName={user.name} userRole={user.role} />;

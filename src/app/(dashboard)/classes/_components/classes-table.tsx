@@ -189,74 +189,78 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
         </div>
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 sm:flex-none">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          {/* Search — full width on mobile, fixed inline on desktop */}
+          <div className="relative w-full sm:w-[220px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t("common.search") + "..."}
               value={searchInput}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 w-full sm:w-[200px]"
+              className="h-10 w-full pl-9"
             />
           </div>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-auto min-w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">{t("classes.allTypes")}</SelectItem>
-              <SelectItem value="THEORY">{t("classes.theory")}</SelectItem>
-              <SelectItem value="PRACTICAL">{t("classes.practical")}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-auto min-w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">{t("classes.allCategories")}</SelectItem>
-              {LICENSE_CATEGORIES.map((cat) => (
-                <SelectItem key={cat} value={cat}>{t(`categories.${cat}`)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {canManageStaff && (
-            <Select value={instructorFilter} onValueChange={setInstructorFilter}>
-              <SelectTrigger className="w-auto min-w-[140px]">
+          {/* Filters — share the row evenly on mobile, auto-width on desktop */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="h-10 flex-1 min-w-[130px] sm:w-auto sm:min-w-[140px] sm:flex-none">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">{t("classes.allInstructors")}</SelectItem>
-                {instructors?.map((i) => (
-                  <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                <SelectItem value="ALL">{t("classes.allTypes")}</SelectItem>
+                <SelectItem value="THEORY">{t("classes.theory")}</SelectItem>
+                <SelectItem value="PRACTICAL">{t("classes.practical")}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="h-10 flex-1 min-w-[130px] sm:w-auto sm:min-w-[140px] sm:flex-none">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{t("classes.allCategories")}</SelectItem>
+                {LICENSE_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>{t(`categories.${cat}`)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          )}
-          {!isStudent && (
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-auto min-w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {timeTab === "upcoming" ? (
-                  <>
-                    <SelectItem value="ALL">{t("classes.allStatuses")}</SelectItem>
-                    <SelectItem value="SCHEDULED">{t("classes.scheduled")}</SelectItem>
-                    <SelectItem value="IN_PROGRESS">{t("classes.inProgress")}</SelectItem>
-                    <SelectItem value="CANCELLED">{t("classes.cancelled")}</SelectItem>
-                  </>
-                ) : (
-                  <>
-                    <SelectItem value="ALL">{t("classes.allStatuses")}</SelectItem>
-                    <SelectItem value="COMPLETED">{t("classes.completed")}</SelectItem>
-                    <SelectItem value="CANCELLED">{t("classes.cancelled")}</SelectItem>
-                  </>
-                )}
-              </SelectContent>
-            </Select>
-          )}
+            {canManageStaff && (
+              <Select value={instructorFilter} onValueChange={setInstructorFilter}>
+                <SelectTrigger className="h-10 flex-1 min-w-[130px] sm:w-auto sm:min-w-[140px] sm:flex-none">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">{t("classes.allInstructors")}</SelectItem>
+                  {instructors?.map((i) => (
+                    <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {!isStudent && (
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="h-10 flex-1 min-w-[130px] sm:w-auto sm:min-w-[140px] sm:flex-none">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeTab === "upcoming" ? (
+                    <>
+                      <SelectItem value="ALL">{t("classes.allStatuses")}</SelectItem>
+                      <SelectItem value="SCHEDULED">{t("classes.scheduled")}</SelectItem>
+                      <SelectItem value="IN_PROGRESS">{t("classes.inProgress")}</SelectItem>
+                      <SelectItem value="CANCELLED">{t("classes.cancelled")}</SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem value="ALL">{t("classes.allStatuses")}</SelectItem>
+                      <SelectItem value="COMPLETED">{t("classes.completed")}</SelectItem>
+                      <SelectItem value="CANCELLED">{t("classes.cancelled")}</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <ViewToggle view={view} onChange={handleViewChange} />
@@ -285,7 +289,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
         <div className="grid gap-3 animate-in fade-in duration-300">
           {paginatedClasses.map((cls) => {
             const isClickable = canViewDetail(cls);
-            const cardClass = `rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all block ${isClickable ? "hover:border-primary/20 group" : ""}`;
+            const cardClass = `rounded-2xl bg-card p-4 card-shadow transition-all block ${isClickable ? "group hover:card-shadow-hover" : ""}`;
             const cardContent = (
                 <div className="flex items-start gap-3">
                   <div className={`flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[cls.classType]}`}>

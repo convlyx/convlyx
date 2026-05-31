@@ -27,17 +27,10 @@ import { useTranslatedError } from "@/hooks/use-translated-error";
 import { track } from "@/lib/posthog";
 import { PushPrompt } from "@/components/push-prompt";
 
-export function StudentHome({ userName, userId }: { userName: string; userId: string }) {
+export function StudentHome({ userId }: { userId: string }) {
   const t = useTranslations();
   const { onError } = useTranslatedError();
   const format = useFormatter();
-
-  function getGreeting(): string {
-    const hour = new Date().getHours();
-    if (hour < 12) return t("dashboard.greeting.morning");
-    if (hour < 18) return t("dashboard.greeting.afternoon");
-    return t("dashboard.greeting.evening");
-  }
 
   function getTimeUntil(date: Date): string {
     const now = new Date();
@@ -104,17 +97,10 @@ export function StudentHome({ userName, userId }: { userName: string; userId: st
     (cls) => cls.status === "SCHEDULED" && !enrolledSessionIds.has(cls.id) && cls._count.enrollments < cls.capacity
   ) ?? [];
 
-  const firstName = userName.split(" ")[0];
   const totalClasses = attendedCount + noShowCount;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Greeting */}
-      <div>
-        <p className="text-sm text-muted-foreground">{getGreeting()}</p>
-        <h1 className="text-2xl font-bold">{firstName} 👋</h1>
-      </div>
-
       <PushPrompt userId={userId} />
 
       {/* Hero — next class (driven by enrollments query) */}
@@ -169,7 +155,7 @@ export function StudentHome({ userName, userId }: { userName: string; userId: st
 
       {/* Stats — progress card (driven by enrollments query) */}
       {enrollmentsLoading ? (
-        <div className="rounded-xl border bg-card p-4 card-shadow animate-in fade-in duration-300 space-y-3">
+        <div className="rounded-2xl bg-card p-4 card-shadow animate-in fade-in duration-300 space-y-3">
           <Skeleton className="h-3 w-24" />
           <div className="flex items-center justify-around py-1">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -182,7 +168,7 @@ export function StudentHome({ userName, userId }: { userName: string; userId: st
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border bg-card p-4 card-shadow">
+        <div className="rounded-2xl bg-card p-4 card-shadow">
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-3">{t("dashboard.myProgress")}</p>
           <div className="flex items-center justify-around">
             <div className="flex flex-col items-center gap-1">
@@ -244,7 +230,7 @@ export function StudentHome({ userName, userId }: { userName: string; userId: st
             {upcomingEnrollments.slice(0, 4).map((enrollment) => (
               <div
                 key={enrollment.id}
-                className="flex items-start gap-3 rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
+                className="flex items-start gap-3 rounded-2xl bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
               >
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[enrollment.session.classType]}`}>
                   <BookOpen className="h-4 w-4" />
@@ -298,7 +284,7 @@ export function StudentHome({ userName, userId }: { userName: string; userId: st
             {availableClasses.slice(0, 5).map((cls) => (
               <div
                 key={cls.id}
-                className="flex items-start gap-3 rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
+                className="flex items-start gap-3 rounded-2xl bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
               >
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[cls.classType]}`}>
                   <BookOpen className="h-4 w-4" />

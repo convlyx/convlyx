@@ -10,18 +10,16 @@ import { CurvedHeader } from "@/components/curved-header";
  * form column on the right against the app background.
  *
  * Mobile (<lg): a curved emerald hero (brand mark + greeting) that swoops into
- * the form area via the shared `CurvedHeader`, with pill-shaped inputs. The
- * hero's top padding uses `env(safe-area-inset-top)` so the brand never sits
- * under a notch / punch-hole / Dynamic Island, regardless of camera position.
- * The pill input styling is scoped under `.auth-shell` + a max-width media
- * query, so it themes every auth form on small screens without affecting
- * desktop or the shared UI components.
+ * the form area via the shared `CurvedHeader`. The hero's top padding uses
+ * `env(safe-area-inset-top)` so the brand never sits under a notch /
+ * punch-hole / Dynamic Island, regardless of camera position. The form uses
+ * the default shared inputs/buttons so it matches the rest of the app.
  */
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations();
 
   return (
-    <main className="auth-shell flex min-h-screen flex-col lg:flex-row">
+    <main className="flex min-h-dvh flex-col lg:flex-row">
       {/* Left — branded panel (desktop only, unchanged) */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-emerald-700 text-primary-foreground">
         <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-white/5" />
@@ -48,7 +46,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
 
       {/* Curved emerald hero (mobile only) — uses the shared CurvedHeader */}
       <CurvedHeader
-        className="flex min-h-[42vh] flex-col items-center justify-center lg:hidden"
+        className="flex flex-1 flex-col items-center justify-center lg:hidden"
         style={{ paddingTop: "max(2rem, env(safe-area-inset-top))" }}
       >
         <div aria-hidden className="absolute -top-20 -left-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
@@ -69,37 +67,9 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
       {/* Form column — desktop right half, mobile below the hero (top-aligned
           under the curve so the white area isn't oversized). The -mt-px tucks
           it 1px under the hero to avoid a sub-pixel seam at the wave. */}
-      <div className="-mt-px flex w-full flex-1 flex-col items-center justify-start bg-background px-6 pb-12 pt-9 lg:mt-0 lg:w-1/2 lg:flex-none lg:justify-center lg:px-4 lg:py-0">
+      <div className="-mt-px flex w-full flex-col items-center justify-start bg-background px-6 pb-12 pt-9 lg:mt-0 lg:w-1/2 lg:flex-none lg:justify-center lg:px-4 lg:py-0">
         <div className="w-full max-w-sm space-y-7">{children}</div>
       </div>
-
-      {/* Mobile-only pill styling for the auth forms — scoped so desktop and
-          the shared UI components are untouched. Padding is left to each
-          field (icon spacing) so we don't clobber the leading-icon padding. */}
-      <style>{`
-        @media (max-width: 1023px) {
-          .auth-shell [data-slot="input"] {
-            height: 3.25rem;
-            border-radius: 9999px;
-            background-color: var(--muted);
-            border-color: transparent;
-            font-size: 1.05rem;
-          }
-          .auth-shell [data-slot="input"]:focus-visible {
-            background-color: var(--background);
-            border-color: var(--primary);
-          }
-          .auth-shell label {
-            font-size: 0.95rem;
-          }
-          .auth-shell button[type="submit"] {
-            height: 3.25rem;
-            border-radius: 9999px;
-            font-size: 1.05rem;
-            box-shadow: 0 14px 30px -14px color-mix(in oklch, var(--primary) 75%, black);
-          }
-        }
-      `}</style>
     </main>
   );
 }
