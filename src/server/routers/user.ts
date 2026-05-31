@@ -156,17 +156,19 @@ export const userRouter = router({
 
       // Merge email-confirmation status from Supabase Auth so the UI can
       // hide the "resend invite" button for users who already set a password.
-      // NOTE: bounded at 1000 by Supabase Auth's `listUsers` — at scale this
-      // will under-report. Acceptable for now; revisit when a tenant has
-      // more than ~1000 auth users.
+      // This is an external `listUsers` call (bounded at 1000), so it only
+      // runs when the caller opts in — most call sites (filters, pickers,
+      // dropdowns, dashboards) don't render the indicator and skip it.
       const confirmedById = new Map<string, boolean>();
-      try {
-        const { data } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
-        for (const u of data?.users ?? []) {
-          confirmedById.set(u.id, !!u.email_confirmed_at);
+      if (input?.includeAuthStatus) {
+        try {
+          const { data } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+          for (const u of data?.users ?? []) {
+            confirmedById.set(u.id, !!u.email_confirmed_at);
+          }
+        } catch (e) {
+          logger.error("user.list: failed to fetch auth users", { error: e });
         }
-      } catch (e) {
-        logger.error("user.list: failed to fetch auth users", { error: e });
       }
 
       const items = usersRaw.map(({ studentCourses, ...u }) => ({
@@ -177,6 +179,29 @@ export const userRouter = router({
       }));
 
       return { items, total };
+    }),
+
+  /**
+   * Lightweight head-count by role/status — a single COUNT query. Unlike
+   * `list`, it doesn't fetch every row or run the Supabase auth-status merge,
+   * so dashboard stats (e.g. active students) load fast and independently.
+   */
+  countByRole: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
+    .input(
+      z.object({
+        role: z.enum(["ADMIN", "SECRETARY", "INSTRUCTOR", "STUDENT"]),
+        status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const count = await ctx.db.user.count({
+        where: {
+          tenantId: ctx.tenantId,
+          role: input.role,
+          ...(input.status && { status: input.status }),
+        },
+      });
+      return { count };
     }),
 
   getById: roleProtectedProcedure(["ADMIN", "SECRETARY"])

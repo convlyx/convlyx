@@ -46,6 +46,11 @@ export const listUsersSchema = z
     // Only meaningful when `role: "STUDENT"`. Filters by the student's
     // currently in-progress course category.
     category: z.enum(LICENSE_CATEGORIES).optional(),
+    // Merge each user's email-confirmation status from Supabase Auth. This is
+    // an external `listUsers` call, so it's opt-in — only the management list
+    // pages that render the "confirmed/pending" indicator need it; filters,
+    // pickers and dropdowns leave it off.
+    includeAuthStatus: z.boolean().optional(),
   })
   .optional();
 

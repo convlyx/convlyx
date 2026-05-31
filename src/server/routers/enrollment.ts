@@ -494,4 +494,29 @@ export const enrollmentRouter = router({
       });
       return { items, total: items.length };
     }),
+
+  /**
+   * Lightweight counts for the student dashboard progress card — three COUNT
+   * queries instead of loading every enrollment row, so the card loads
+   * independently of (and faster than) the upcoming-enrollments list.
+   */
+  studentStats: protectedProcedure
+    .input(listByStudentSchema)
+    .query(async ({ ctx, input }) => {
+      const studentId =
+        ctx.user.role === "STUDENT" ? ctx.user.id : input?.studentId;
+      const base = { tenantId: ctx.tenantId, ...(studentId && { studentId }) };
+      const [scheduled, attended, noShow] = await ctx.db.$transaction([
+        ctx.db.enrollment.count({
+          where: {
+            ...base,
+            status: "ENROLLED",
+            session: { startsAt: { gte: new Date() }, status: "SCHEDULED" },
+          },
+        }),
+        ctx.db.enrollment.count({ where: { ...base, status: "ATTENDED" } }),
+        ctx.db.enrollment.count({ where: { ...base, status: "NO_SHOW" } }),
+      ]);
+      return { scheduled, attended, noShow };
+    }),
 });

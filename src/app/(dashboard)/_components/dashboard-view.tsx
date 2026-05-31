@@ -40,11 +40,14 @@ export function DashboardView({
   const { data: upcomingData, isLoading } = trpc.class.list.useQuery(dateRange);
   const upcomingClasses = upcomingData?.items;
 
-  const { data: studentsData, isLoading: studentsLoading } = trpc.user.list.useQuery(
+  // Head-count only — avoids fetching every student row (and the Supabase
+  // auth-status merge) just to show a number, so this stat loads fast and
+  // independently of the class list.
+  const { data: studentsData, isLoading: studentsLoading } = trpc.user.countByRole.useQuery(
     { role: "STUDENT", status: "ACTIVE" },
     { enabled: userRole === "ADMIN" || userRole === "SECRETARY" }
   );
-  const activeStudentCount = studentsData?.total ?? 0;
+  const activeStudentCount = studentsData?.count ?? 0;
 
   const { data: enrollmentsData, isLoading: enrollmentsLoading } = trpc.enrollment.listByStudent.useQuery(
     undefined,

@@ -53,10 +53,16 @@ export function StudentHome({ userId }: { userId: string }) {
     return { from: now.toISOString(), to: weekFromNow.toISOString() };
   }, []);
 
+  // Three independent queries so each section streams in on its own instead of
+  // all blocking on one heavy "fetch every enrollment" call:
+  //  - available classes (this week)
+  //  - upcoming enrolments only (drives the hero + "my classes")
+  //  - lightweight counts (drives the progress card)
   const { data: classesData, isLoading: classesLoading } = trpc.class.list.useQuery(dateRange);
   const classes = classesData?.items;
-  const { data: enrollmentsData, isLoading: enrollmentsLoading } = trpc.enrollment.listByStudent.useQuery();
+  const { data: enrollmentsData, isLoading: enrollmentsLoading } = trpc.enrollment.listByStudent.useQuery({ time: "current" });
   const enrollments = enrollmentsData?.items;
+  const { data: stats, isLoading: statsLoading } = trpc.enrollment.studentStats.useQuery();
 
   const utils = trpc.useUtils();
   const enrollMutation = trpc.enrollment.enroll.useMutation({
@@ -64,15 +70,16 @@ export function StudentHome({ userId }: { userId: string }) {
       toast.success(t("toast.enrollmentSuccess"));
       utils.class.list.invalidate();
       utils.enrollment.listByStudent.invalidate();
+      utils.enrollment.studentStats.invalidate();
       track("student_self_enrolled", { source: "home" });
     },
     onError,
   });
 
-  const allEnrollments = enrollments ?? [];
-  const activeEnrollments = allEnrollments.filter((e) => e.status === "ENROLLED");
-  const attendedCount = allEnrollments.filter((e) => e.status === "ATTENDED").length;
-  const noShowCount = allEnrollments.filter((e) => e.status === "NO_SHOW").length;
+  const activeEnrollments = (enrollments ?? []).filter((e) => e.status === "ENROLLED");
+  const scheduledCount = stats?.scheduled ?? 0;
+  const attendedCount = stats?.attended ?? 0;
+  const noShowCount = stats?.noShow ?? 0;
   const enrolledSessionIds = new Set(activeEnrollments.map((e) => e.session.id));
 
   // Only future, still-scheduled enrollments are relevant on the dashboard
@@ -153,8 +160,8 @@ export function StudentHome({ userId }: { userId: string }) {
         </div>
       )}
 
-      {/* Stats — progress card (driven by enrollments query) */}
-      {enrollmentsLoading ? (
+      {/* Stats — progress card (driven by the lightweight counts query) */}
+      {statsLoading ? (
         <div className="rounded-2xl bg-card p-4 card-shadow animate-in fade-in duration-300 space-y-3">
           <Skeleton className="h-3 w-24" />
           <div className="flex items-center justify-around py-1">
@@ -175,7 +182,7 @@ export function StudentHome({ userId }: { userId: string }) {
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
                 <CalendarDays className="h-4 w-4 text-primary" />
               </div>
-              <span className="text-lg font-bold">{upcomingEnrollments.length}</span>
+              <span className="text-lg font-bold">{scheduledCount}</span>
               <span className="text-[10px] text-muted-foreground">{t("dashboard.scheduled")}</span>
             </div>
             <div className="w-px h-10 bg-border" />

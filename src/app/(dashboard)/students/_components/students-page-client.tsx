@@ -52,6 +52,7 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
     ...(search.trim() && { search: search.trim() }),
     page,
     pageSize: ITEMS_PER_PAGE,
+    includeAuthStatus: true,
   });
 
   const paginatedUsers = usersData?.items ?? [];

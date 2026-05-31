@@ -85,8 +85,11 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
     ...(categoryFilter !== "ALL" && { category: categoryFilter as LicenseCategory }),
     ...(instructorFilter !== "ALL" && { instructorId: instructorFilter }),
     status: statusFilter as "ALL" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED",
-    ...(!isStudent && search.trim() && { search: search.trim() }),
-    ...(!isStudent && { time: timeTab as "upcoming" | "past" }),
+    // Students get search + future filtering server-side too (much smaller
+    // payload). Only the "not full" check and pagination stay client-side —
+    // Prisma can't compare the enrolment count to `capacity` in a WHERE.
+    ...(search.trim() && { search: search.trim() }),
+    time: isStudent ? "upcoming" : (timeTab as "upcoming" | "past"),
     ...(!isStudent && { page, pageSize: ITEMS_PER_PAGE }),
   });
   const { data: instructorsData } = trpc.user.list.useQuery(
@@ -94,7 +97,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
     { enabled: canManageStaff },
   );
   const instructors = instructorsData?.items;
-  const { data: myEnrollmentsData } = trpc.enrollment.listByStudent.useQuery(undefined, { enabled: isStudent });
+  const { data: myEnrollmentsData } = trpc.enrollment.listByStudent.useQuery({ time: "current" }, { enabled: isStudent });
   const myEnrollments = myEnrollmentsData?.items;
   const enrolledSessionIds = useMemo(
     () => new Set(myEnrollments?.map((e) => e.session.id) ?? []),
@@ -133,22 +136,16 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   type ClassRow = NonNullable<typeof classesData>["items"][number];
   const [editClass, setEditClass] = useState<ClassRow | null>(null);
 
-  // Staff path: server already paginated + filtered. Student path: take the
-  // full filtered set the server returned and apply the in-list-only filters
-  // (title search, time tab, "not full / not enrolled") client-side, then slice.
+  // Staff path: server already paginated + filtered. Student path: the server
+  // now also applies search + future (time:"upcoming") + status, so only the
+  // "not full / not enrolled" checks remain client-side, then slice.
   const serverItems = classesData?.items ?? [];
   const serverTotal = classesData?.total ?? 0;
 
-  const now = new Date();
   const studentVisibleClasses = isStudent
-    ? serverItems.filter((cls) => {
-        if (search.trim() && !cls.title.toLowerCase().includes(search.toLowerCase())) return false;
-        const isFuture = new Date(cls.startsAt) >= now;
-        return isFuture
-          && cls.status === "SCHEDULED"
-          && !enrolledSessionIds.has(cls.id)
-          && cls._count.enrollments < cls.capacity;
-      })
+    ? serverItems.filter(
+        (cls) => !enrolledSessionIds.has(cls.id) && cls._count.enrollments < cls.capacity,
+      )
     : serverItems;
 
   const totalCount = isStudent ? studentVisibleClasses.length : serverTotal;

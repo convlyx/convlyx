@@ -224,6 +224,10 @@ model Enrollment {
   @@index([schoolId])
   @@index([sessionId])
   @@index([studentId])
+  // Composite indexes for the analytics range scans (enrolments-over-time and
+  // the attendance snapshot), which filter by tenant + date (+ status).
+  @@index([tenantId, enrolledAt])
+  @@index([tenantId, status, enrolledAt])
   @@map("enrollments")
 }
 

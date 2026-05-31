@@ -49,6 +49,7 @@ export function StaffPageClient() {
     ...(search.trim() && { search: search.trim() }),
     page,
     pageSize: ITEMS_PER_PAGE,
+    includeAuthStatus: true,
   });
   const users = usersData?.items ?? [];
   const total = usersData?.total ?? 0;
