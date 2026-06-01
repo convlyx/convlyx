@@ -64,6 +64,13 @@ See `docs/MVP_PLAN.md` for full architecture, data model, and roadmap.
 - Translation files: `messages/pt-PT.json`. Locale from cookie, not URL path (subdomains are for tenants).
 - Dates/times use locale-aware formatters from next-intl.
 
+### Performance
+See `docs/decisions/2026-06-01-performance-optimization.md` for full context.
+- **Region:** Vercel functions run in Dublin (`dub1`) to co-locate with Supabase (`eu-west-1`). Set globally in Vercel project settings **and** pinned via `export const preferredRegion = "dub1"` in every API route handler + the root layout — keep new API routes pinned.
+- **DB connections:** `DATABASE_URL` = Supabase transaction pooler (`6543`, `?pgbouncer=true`) for the app (`src/server/db.ts`, pool `max: 5`); `DIRECT_URL` = session pooler (`5432`) for migrations (`prisma.config.ts` reads it). Never point `DATABASE_URL` at `6543` without also setting `DIRECT_URL`, or migrations break.
+- **SSR-prefetch list pages:** the Server Component prefetches the page's main query so the HTML ships with data (no skeleton flash, no extra client round-trip). Use `getSsrHelpers()` + `dehydrateSsr()` from `src/server/ssr.ts` inside `<HydrationBoundary>`. The prefetch input **must exactly match** the client `useQuery` input (including URL-param defaults) or the query key won't match and the client refetches. Don't SSR-prefetch queries whose input depends on `new Date()` (home, calendar) — server/client "now" diverge.
+- **Heavy/click-only libs are lazy-loaded** via dynamic `import()` (jspdf in `src/lib/pdf-export.ts`, posthog-js in `src/lib/posthog.ts`) to keep them out of route bundles. Follow this for any large dependency only used behind an interaction.
+
 ## Code Conventions
 
 ### Structure & Components
@@ -152,6 +159,7 @@ Preview deployments still have a separate unresolved issue: their `*.vercel.app`
 1. Create route in `src/app/(dashboard)/`
 2. `useTranslations()` for all strings, add keys to `messages/pt-PT.json`
 3. Fetch data via `trpc.router.procedure.useQuery()`
+4. For list/detail pages, SSR-prefetch the main query in the Server Component (`getSsrHelpers()` + `dehydrateSsr()` + `<HydrationBoundary>`) — mirror the client's exact query input. See the Performance section.
 
 ### Recurring class creation
 - Business logic only — no database tables for recurrence

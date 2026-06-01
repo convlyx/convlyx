@@ -286,7 +286,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
         <div className="grid gap-3 animate-in fade-in duration-300">
           {paginatedClasses.map((cls) => {
             const isClickable = canViewDetail(cls);
-            const cardClass = `rounded-2xl bg-card p-4 card-shadow transition-all block ${isClickable ? "group hover:card-shadow-hover" : ""}`;
+            const cardClass = `rounded-2xl border bg-card p-4 card-shadow transition-all block ${isClickable ? "group hover:card-shadow-hover hover:border-primary/20" : ""}`;
             const cardContent = (
                 <div className="flex items-start gap-3">
                   <div className={`flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[cls.classType]}`}>

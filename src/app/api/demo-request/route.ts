@@ -4,6 +4,9 @@ import { z } from "zod/v4";
 import { isSameOrigin } from "@/lib/csrf";
 import { logger } from "@/lib/logger";
 
+// Pin to Dublin (eu-west-1) to co-locate with Supabase — avoids transatlantic DB latency.
+export const preferredRegion = "dub1";
+
 /**
  * Public, unauthenticated endpoint for the "Pedir demonstração" form on the
  * marketing site. Sends a notification email via Resend's REST API (no SDK,

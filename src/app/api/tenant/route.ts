@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
 
+// Pin to Dublin (eu-west-1) to co-locate with Supabase — avoids transatlantic DB latency.
+export const preferredRegion = "dub1";
+
 function extractSubdomain(hostname: string): string | null {
   if (hostname.startsWith("localhost") || hostname.startsWith("127.0.0.1")) {
     return null;

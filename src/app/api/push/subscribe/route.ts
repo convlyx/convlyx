@@ -5,6 +5,9 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/csrf";
 import { logger } from "@/lib/logger";
 
+// Pin to Dublin (eu-west-1) to co-locate with Supabase — avoids transatlantic DB latency.
+export const preferredRegion = "dub1";
+
 export async function POST(request: NextRequest) {
   if (!isSameOrigin(request.headers)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

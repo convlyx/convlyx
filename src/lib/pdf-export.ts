@@ -1,7 +1,19 @@
 "use client";
 
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import type jsPDF from "jspdf";
+
+/**
+ * Lazily load jspdf + the autotable plugin so the ~300KB of PDF code stays out
+ * of the route bundle — it's fetched only when the user actually exports a PDF.
+ * These functions run on a button click, so the extra import latency is fine.
+ */
+async function loadPdf() {
+  const [{ default: JsPDFCtor }, { default: autoTable }] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+  ]);
+  return { JsPDFCtor, autoTable };
+}
 
 const PRIMARY_COLOR: [number, number, number] = [22, 163, 74]; // emerald-600
 const HEADER_COLOR: [number, number, number] = [21, 128, 61]; // emerald-700
@@ -108,7 +120,8 @@ export async function exportClassAttendancePDF(classData: {
     student: { name: string; email: string };
   }>;
 }) {
-  const doc = new jsPDF();
+  const { JsPDFCtor, autoTable } = await loadPdf();
+  const doc = new JsPDFCtor();
   const logo = await getLogoBase64();
   const startsAt = new Date(classData.startsAt);
   const endsAt = new Date(classData.endsAt);
@@ -215,7 +228,8 @@ export async function exportStudentProgressPDF(student: {
     };
   }>;
 }) {
-  const doc = new jsPDF();
+  const { JsPDFCtor, autoTable } = await loadPdf();
+  const doc = new JsPDFCtor();
   const logo = await getLogoBase64();
 
   addHeader(doc, `Relatório · ${student.name}`, student.school.name, logo);
@@ -383,7 +397,8 @@ export async function exportCourseProgressPDF({
     };
   }>;
 }) {
-  const doc = new jsPDF();
+  const { JsPDFCtor, autoTable } = await loadPdf();
+  const doc = new JsPDFCtor();
   const logo = await getLogoBase64();
 
   const courseStatusLabel: Record<typeof course.status, string> = {

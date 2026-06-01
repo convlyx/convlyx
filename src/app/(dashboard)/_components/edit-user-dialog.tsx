@@ -46,7 +46,12 @@ export function EditUserDialog({ userData, open, onClose }: EditUserDialogProps)
   const { onError } = useTranslatedError();
   const utils = trpc.useUtils();
 
-  const { data: schools, isLoading: schoolsLoading } = trpc.school.list.useQuery();
+  // Only fetch the school list while the dialog is open — keeps school.list off
+  // every page that renders an edit dialog.
+  const { data: schools, isLoading: schoolsLoading } = trpc.school.list.useQuery(
+    undefined,
+    { enabled: open },
+  );
 
   const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<UpdateUserInput>({
     resolver: zodResolver(updateUserSchema),

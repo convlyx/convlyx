@@ -6,6 +6,9 @@ import { createTRPCContext } from "@/server/trpc";
 import { isSameOrigin } from "@/lib/csrf";
 import { logger } from "@/lib/logger";
 
+// Pin to Dublin (eu-west-1) to co-locate with Supabase — avoids transatlantic DB latency.
+export const preferredRegion = "dub1";
+
 const BENIGN_TRPC_CODES = new Set([
   "UNAUTHORIZED",
   "FORBIDDEN",

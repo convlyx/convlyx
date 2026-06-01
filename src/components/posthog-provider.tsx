@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { initPostHog, posthog } from "@/lib/posthog";
+import { initPostHog, capturePageview } from "@/lib/posthog";
 
 /**
  * PostHog is split into two leaf components so it never wraps `children`.
@@ -21,7 +21,15 @@ import { initPostHog, posthog } from "@/lib/posthog";
 
 export function PostHogInit() {
   useEffect(() => {
-    initPostHog();
+    // Defer the lazy import to idle so analytics never competes with first
+    // paint or hydration. Falls back to a timeout where requestIdleCallback
+    // isn't available (Safari).
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(() => initPostHog());
+      return () => window.cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(() => initPostHog(), 2000);
+    return () => clearTimeout(t);
   }, []);
   return null;
 }
@@ -37,7 +45,7 @@ export function PostHogPageviews() {
       window.location.origin +
       pathname +
       (searchParams?.toString() ? `?${searchParams.toString()}` : "");
-    posthog.capture("$pageview", { $current_url: url });
+    capturePageview(url);
   }, [pathname, searchParams]);
 
   return null;

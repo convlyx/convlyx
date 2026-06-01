@@ -1,6 +1,10 @@
 "use client";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  defaultShouldDehydrateQuery,
+} from "@tanstack/react-query";
 import { httpBatchStreamLink } from "@trpc/client";
 import { useState } from "react";
 import superjson from "superjson";
@@ -31,6 +35,19 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
             // a page (which happens on every navigation back) hit the
             // server again even if the cache was fresh.
             refetchOnMount: true,
+          },
+          // superjson transforms data (Dates etc.) across the server→client
+          // boundary. Without matching (de)serializers here, SSR-prefetched
+          // queries (HydrationBoundary) fail to rehydrate and the client
+          // refetches them, defeating the prefetch.
+          dehydrate: {
+            serializeData: superjson.serialize,
+            shouldDehydrateQuery: (query) =>
+              defaultShouldDehydrateQuery(query) ||
+              query.state.status === "pending",
+          },
+          hydrate: {
+            deserializeData: superjson.deserialize,
           },
         },
       })

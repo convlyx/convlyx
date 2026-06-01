@@ -38,7 +38,12 @@ export function CreateUserDialog({ fixedRole, allowedRoles, buttonLabel }: Creat
   const [open, setOpen] = useState(false);
   const utils = trpc.useUtils();
 
-  const { data: schools, isLoading: schoolsLoading } = trpc.school.list.useQuery();
+  // Only fetch the school list once the dialog is open — keeps school.list off
+  // every page that merely renders a "create" button.
+  const { data: schools, isLoading: schoolsLoading } = trpc.school.list.useQuery(
+    undefined,
+    { enabled: open },
+  );
 
   const visibleRoles = allowedRoles && allowedRoles.length > 0 ? allowedRoles : ROLES;
   const defaultRole = fixedRole ?? visibleRoles[0];

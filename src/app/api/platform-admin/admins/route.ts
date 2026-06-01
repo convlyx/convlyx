@@ -6,6 +6,9 @@ import { isSameOrigin } from "@/lib/csrf";
 import { logger } from "@/lib/logger";
 import { audit } from "@/server/lib/audit";
 
+// Pin to Dublin (eu-west-1) to co-locate with Supabase — avoids transatlantic DB latency.
+export const preferredRegion = "dub1";
+
 const ADMIN_EMAILS = (process.env.PLATFORM_ADMIN_EMAILS ?? "")
   .split(",")
   .map((e) => e.trim().toLowerCase())

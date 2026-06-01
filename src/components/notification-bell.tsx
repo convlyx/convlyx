@@ -45,7 +45,10 @@ export function NotificationBell({ userId }: { userId: string }) {
   const utils = trpc.useUtils();
 
   const { data: unreadCount } = trpc.notification.unreadCount.useQuery(undefined, {
-    refetchInterval: 30000,
+    // Live updates come from the Supabase Realtime subscription below, so we no
+    // longer poll every 30s. Refetch on tab focus as a safety net in case a
+    // realtime event was missed while the tab was backgrounded.
+    refetchOnWindowFocus: true,
   });
 
   const { data: notifications, isLoading: notificationsLoading } = trpc.notification.list.useQuery(

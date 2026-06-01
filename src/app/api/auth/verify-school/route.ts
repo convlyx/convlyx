@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
+// Pin to Dublin (eu-west-1) to co-locate with Supabase — avoids transatlantic DB latency.
+export const preferredRegion = "dub1";
+
 export async function GET(request: NextRequest) {
   // Rate limit: 20 requests per minute per IP
   const ip = getClientIp(request.headers);

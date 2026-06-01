@@ -13,7 +13,11 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient(): PrismaClient {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    max: 1,
+    // Runtime connects via Supabase's transaction pooler (port 6543) on Vercel.
+    // With Fluid Compute a single warm instance serves concurrent requests, so
+    // max:1 would serialize their queries. Allow a few per instance — the
+    // transaction pooler multiplexes them onto shared server connections safely.
+    max: 5,
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 15000,
   });

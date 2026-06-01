@@ -9,6 +9,10 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { BRAND_THEME_COLOR_HEX } from "@/lib/constants/brand";
 import "./globals.css";
 
+// Pin SSR rendering to Dublin (eu-west-1) to co-locate with Supabase — avoids
+// transatlantic DB latency. Applies to all routes under the root layout.
+export const preferredRegion = "dub1";
+
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],

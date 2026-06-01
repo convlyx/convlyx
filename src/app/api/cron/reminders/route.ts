@@ -3,6 +3,9 @@ import { db } from "@/server/db";
 import { createNotification, createNotifications, formatClassTime } from "@/server/lib/notifications";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
+// Pin to Dublin (eu-west-1) to co-locate with Supabase — avoids transatlantic DB latency.
+export const preferredRegion = "dub1";
+
 export async function GET(request: NextRequest) {
   // Rate limit: 2 requests per minute
   const ip = getClientIp(request.headers);
