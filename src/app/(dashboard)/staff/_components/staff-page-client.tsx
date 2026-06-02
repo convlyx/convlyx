@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useUrlParam, useUrlParamInt, useDebouncedUrlParam } from "@/hooks/use-url-param";
 import { trpc } from "@/lib/trpc";
+import { keepPreviousData } from "@tanstack/react-query";
 import { UserCog, Search, Pencil, Phone, BadgeCheck, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -42,15 +43,20 @@ export function StaffPageClient() {
   const [page, setPage] = useUrlParamInt("page", 1);
   const [deactivateUserId, setDeactivateUserId] = useState<string | null>(null);
 
-  const { data: usersData, isLoading } = trpc.user.list.useQuery({
-    ...(roleFilter !== "ALL"
-      ? { role: roleFilter as typeof STAFF_ROLES[number] }
-      : { roles: [...STAFF_ROLES] }),
-    ...(search.trim() && { search: search.trim() }),
-    page,
-    pageSize: ITEMS_PER_PAGE,
-    includeAuthStatus: true,
-  });
+  const { data: usersData, isLoading, isFetching } = trpc.user.list.useQuery(
+    {
+      ...(roleFilter !== "ALL"
+        ? { role: roleFilter as typeof STAFF_ROLES[number] }
+        : { roles: [...STAFF_ROLES] }),
+      ...(search.trim() && { search: search.trim() }),
+      page,
+      pageSize: ITEMS_PER_PAGE,
+      includeAuthStatus: true,
+    },
+    // Keep current rows on screen (dimmed) while the next page loads, instead
+    // of blanking to a skeleton.
+    { placeholderData: keepPreviousData },
+  );
   const users = usersData?.items ?? [];
   const total = usersData?.total ?? 0;
 
@@ -122,7 +128,7 @@ export function StaffPageClient() {
       ) : total === 0 ? (
         <EmptyState icon={UserCog} message={t("staff.noStaff")} />
       ) : view === "cards" ? (
-        <div className="grid gap-3 animate-in fade-in duration-300">
+        <div className={`grid gap-3 animate-in fade-in duration-300 ${isFetching ? "opacity-60 transition-opacity" : ""}`}>
           {users.map((user) => (
             <div key={user.id} className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all">
               <div className="flex items-center gap-3">
@@ -178,7 +184,7 @@ export function StaffPageClient() {
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border card-shadow overflow-hidden animate-in fade-in duration-300">
+        <div className={`rounded-xl border card-shadow overflow-hidden animate-in fade-in duration-300 ${isFetching ? "opacity-60 transition-opacity" : ""}`}>
           <Table>
             <TableHeader>
               <TableRow>

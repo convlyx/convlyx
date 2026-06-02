@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
@@ -23,25 +22,17 @@ import { typeKeys, statusKeys, statusVariant, classTypeColorMap, classTypeBadgeC
 import { PushPrompt } from "@/components/push-prompt";
 import { PendingAttendanceModal } from "./pending-attendance-modal";
 
-export function InstructorHome({ userId }: { userId: string }) {
+export function InstructorHome({
+  userId,
+  todayRange,
+  weekRange,
+}: {
+  userId: string;
+  todayRange: { from: string; to: string };
+  weekRange: { from: string; to: string };
+}) {
   const t = useTranslations();
   const format = useFormatter();
-
-  const todayRange = useMemo(() => {
-    const now = new Date();
-    const startOfDay = new Date(now);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(now);
-    endOfDay.setHours(23, 59, 59, 999);
-    return { from: startOfDay.toISOString(), to: endOfDay.toISOString() };
-  }, []);
-
-  const weekRange = useMemo(() => {
-    const now = new Date();
-    const weekFromNow = new Date(now);
-    weekFromNow.setDate(weekFromNow.getDate() + 7);
-    return { from: now.toISOString(), to: weekFromNow.toISOString() };
-  }, []);
 
   const { data: todayData, isLoading: todayLoading } = trpc.class.list.useQuery(todayRange);
   const { data: weekData, isLoading: weekLoading } = trpc.class.list.useQuery(weekRange);

@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
@@ -22,22 +21,16 @@ import type { UserRole } from "@/generated/prisma/enums";
 export function DashboardView({
   userName,
   userRole,
+  weekRange,
 }: {
   userName: string;
   userRole: UserRole;
+  weekRange: { from: string; to: string };
 }) {
   const t = useTranslations();
   const format = useFormatter();
 
-  // Memoize the date range so it doesn't change on every render
-  const dateRange = useMemo(() => {
-    const now = new Date();
-    const weekFromNow = new Date(now);
-    weekFromNow.setDate(weekFromNow.getDate() + 7);
-    return { from: now.toISOString(), to: weekFromNow.toISOString() };
-  }, []);
-
-  const { data: upcomingData, isLoading } = trpc.class.list.useQuery(dateRange);
+  const { data: upcomingData, isLoading } = trpc.class.list.useQuery(weekRange);
   const upcomingClasses = upcomingData?.items;
 
   // Head-count only — avoids fetching every student row (and the Supabase

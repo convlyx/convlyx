@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
@@ -27,7 +26,13 @@ import { useTranslatedError } from "@/hooks/use-translated-error";
 import { track } from "@/lib/posthog";
 import { PushPrompt } from "@/components/push-prompt";
 
-export function StudentHome({ userId }: { userId: string }) {
+export function StudentHome({
+  userId,
+  weekRange,
+}: {
+  userId: string;
+  weekRange: { from: string; to: string };
+}) {
   const t = useTranslations();
   const { onError } = useTranslatedError();
   const format = useFormatter();
@@ -46,19 +51,12 @@ export function StudentHome({ userId }: { userId: string }) {
     return t("dashboard.timeInMinutes", { minutes });
   }
 
-  const dateRange = useMemo(() => {
-    const now = new Date();
-    const weekFromNow = new Date(now);
-    weekFromNow.setDate(weekFromNow.getDate() + 7);
-    return { from: now.toISOString(), to: weekFromNow.toISOString() };
-  }, []);
-
   // Three independent queries so each section streams in on its own instead of
   // all blocking on one heavy "fetch every enrollment" call:
-  //  - available classes (this week)
+  //  - available classes (this week, from the server-computed weekRange prop)
   //  - upcoming enrolments only (drives the hero + "my classes")
   //  - lightweight counts (drives the progress card)
-  const { data: classesData, isLoading: classesLoading } = trpc.class.list.useQuery(dateRange);
+  const { data: classesData, isLoading: classesLoading } = trpc.class.list.useQuery(weekRange);
   const classes = classesData?.items;
   const { data: enrollmentsData, isLoading: enrollmentsLoading } = trpc.enrollment.listByStudent.useQuery({ time: "current" });
   const enrollments = enrollmentsData?.items;

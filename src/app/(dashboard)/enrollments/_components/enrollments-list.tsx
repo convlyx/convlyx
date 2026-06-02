@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import { trpc } from "@/lib/trpc";
+import { keepPreviousData } from "@tanstack/react-query";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ClipboardList, BookOpen, CalendarDays, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -32,11 +33,12 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
   const [page, setPage] = useState(1);
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
 
-  const { data: enrollmentsData, isLoading } = trpc.enrollment.listByStudent.useQuery({
-    time: timeTab,
-    page,
-    pageSize: ITEMS_PER_PAGE,
-  });
+  const { data: enrollmentsData, isLoading, isFetching } = trpc.enrollment.listByStudent.useQuery(
+    { time: timeTab, page, pageSize: ITEMS_PER_PAGE },
+    // Keep the current rows on screen (dimmed) while the next tab/page loads
+    // instead of blanking to a skeleton — makes tab switches feel instant.
+    { placeholderData: keepPreviousData },
+  );
   const paginatedEnrollments = enrollmentsData?.items ?? [];
   const total = enrollmentsData?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
@@ -76,6 +78,12 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
 
   useEffect(() => setPage(1), [timeTab]);
 
+  // Warm the inactive tab so switching to it is instant (only two tabs, both cheap).
+  const otherTab = timeTab === "current" ? "past" : "current";
+  useEffect(() => {
+    utils.enrollment.listByStudent.prefetch({ time: otherTab, page: 1, pageSize: ITEMS_PER_PAGE });
+  }, [otherTab, utils]);
+
   return (
     <div className="space-y-4">
       {/* Title is shown in the mobile shell's curved header */}
@@ -106,7 +114,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
       ) : total === 0 ? (
         <EmptyState icon={ClipboardList} message={t("common.noResults")} />
       ) : view === "cards" ? (
-        <div className="grid gap-3 animate-in fade-in duration-300">
+        <div className={`grid gap-3 animate-in fade-in duration-300 ${isFetching ? "opacity-60 transition-opacity" : ""}`}>
           {paginatedEnrollments.map((enrollment) => (
             <div
               key={enrollment.id}
@@ -173,7 +181,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border card-shadow overflow-hidden animate-in fade-in duration-300">
+        <div className={`rounded-xl border card-shadow overflow-hidden animate-in fade-in duration-300 ${isFetching ? "opacity-60 transition-opacity" : ""}`}>
           <Table>
             <TableHeader>
               <TableRow>

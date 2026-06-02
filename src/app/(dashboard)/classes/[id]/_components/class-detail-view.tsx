@@ -55,11 +55,15 @@ export function ClassDetailView({
   );
   const staffRole = userRole === "ADMIN" || userRole === "SECRETARY" || userRole === "INSTRUCTOR";
   // Fetches ALL active students unbounded, then filters by category + search
-  // client-side in StudentPicker. Deliberate for instant UX at typical school
-  // size. SCALING CLIFF: payload grows with the tenant and user.list's auth
-  // merge caps at ~1000 (see user.ts) — switch to server-side paginated search
-  // when a tenant approaches that range.
-  const { data: allStudentsData } = trpc.user.list.useQuery({ role: "STUDENT", status: "ACTIVE" }, { enabled: staffRole });
+  // client-side in StudentPicker. Gated to `showAddStudent` so it only loads
+  // when staff actually open the picker — not on every detail view.
+  // SCALING CLIFF: payload grows with the tenant and user.list's auth merge
+  // caps at ~1000 (see user.ts) — switch to server-side paginated search when
+  // a tenant approaches that range.
+  const { data: allStudentsData } = trpc.user.list.useQuery(
+    { role: "STUDENT", status: "ACTIVE" },
+    { enabled: staffRole && showAddStudent },
+  );
   const allStudents = allStudentsData?.items;
 
   const enrollMutation = trpc.enrollment.enroll.useMutation({

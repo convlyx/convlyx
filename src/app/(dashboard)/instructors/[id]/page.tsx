@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
+import { HydrationBoundary } from "@tanstack/react-query";
 import { requireDashboardUser } from "@/server/dashboard-user";
+import { getSsrHelpers, dehydrateSsr } from "@/server/ssr";
 import { db } from "@/server/db";
 import { InstructorDetailPage } from "./_components/instructor-detail-page";
 
@@ -21,5 +23,17 @@ export default async function InstructorPage({
   });
   if (!instructorExists) notFound();
 
-  return <InstructorDetailPage id={id} userRole={user.role} />;
+  // Prefetch the header + overview (the visible detail content). The paginated
+  // session history stays client-fetched.
+  const helpers = await getSsrHelpers();
+  await Promise.all([
+    helpers.user.instructorHeader.prefetch({ id }),
+    helpers.user.instructorOverview.prefetch({ id }),
+  ]);
+
+  return (
+    <HydrationBoundary state={dehydrateSsr(helpers)}>
+      <InstructorDetailPage id={id} userRole={user.role} />
+    </HydrationBoundary>
+  );
 }

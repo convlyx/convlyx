@@ -1,5 +1,7 @@
 import { notFound, redirect } from "next/navigation";
+import { HydrationBoundary } from "@tanstack/react-query";
 import { requireDashboardUser } from "@/server/dashboard-user";
+import { getSsrHelpers, dehydrateSsr } from "@/server/ssr";
 import { db } from "@/server/db";
 import { ClassDetailView } from "./_components/class-detail-view";
 
@@ -28,5 +30,14 @@ export default async function ClassDetailPage({
   });
   if (!classExists) notFound();
 
-  return <ClassDetailView classId={id} userRole={user.role} />;
+  // SSR-prefetch the class (info + enrolled students) so the detail renders
+  // with data on first paint. Matches ClassDetailView's getById useQuery input.
+  const helpers = await getSsrHelpers();
+  await helpers.class.getById.prefetch({ id });
+
+  return (
+    <HydrationBoundary state={dehydrateSsr(helpers)}>
+      <ClassDetailView classId={id} userRole={user.role} />
+    </HydrationBoundary>
+  );
 }

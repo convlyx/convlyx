@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
+import { HydrationBoundary } from "@tanstack/react-query";
 import { requireDashboardUser } from "@/server/dashboard-user";
+import { getSsrHelpers, dehydrateSsr } from "@/server/ssr";
 import { db } from "@/server/db";
 import { StudentDetailPage } from "./_components/student-detail-page";
 
@@ -21,5 +23,17 @@ export default async function StudentPage({
   });
   if (!studentExists) notFound();
 
-  return <StudentDetailPage id={id} userRole={user.role} />;
+  // Prefetch the header + overview (the visible detail content). The paginated
+  // history section stays client-fetched.
+  const helpers = await getSsrHelpers();
+  await Promise.all([
+    helpers.user.studentHeader.prefetch({ id }),
+    helpers.user.studentOverview.prefetch({ id }),
+  ]);
+
+  return (
+    <HydrationBoundary state={dehydrateSsr(helpers)}>
+      <StudentDetailPage id={id} userRole={user.role} />
+    </HydrationBoundary>
+  );
 }
