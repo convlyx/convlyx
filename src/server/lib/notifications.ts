@@ -35,13 +35,27 @@ function resolveTranslation(key: string, params?: Record<string, string>): strin
   );
 }
 
-/** Format a date for notification params: "20/04 às 09:00" */
+/**
+ * Format a date for notification params: "20/04 às 09:00".
+ *
+ * Class times are stored in UTC; this renders them in Portugal wall-clock
+ * (Europe/Lisbon), DST-aware. Never use the Date's local getters here — the
+ * server runs in UTC on Vercel, so a 10:00 Lisbon class (09:00 UTC in summer)
+ * would otherwise show as 09:00.
+ */
 export function formatClassTime(startsAt: Date): string {
-  const day = String(startsAt.getDate()).padStart(2, "0");
-  const month = String(startsAt.getMonth() + 1).padStart(2, "0");
-  const hours = String(startsAt.getHours()).padStart(2, "0");
-  const mins = String(startsAt.getMinutes()).padStart(2, "0");
-  return `${day}/${month} às ${hours}:${mins}`;
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Lisbon",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(startsAt);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  // hourCycle h23 via hour12:false; guard "24" → "00" just in case.
+  const hours = get("hour") === "24" ? "00" : get("hour");
+  return `${get("day")}/${get("month")} às ${hours}:${get("minute")}`;
 }
 
 type CreateNotificationParams = {
