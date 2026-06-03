@@ -8,7 +8,7 @@ import {
   cancelExamSchema,
 } from "@/lib/validations/exam";
 import { createNotification, formatClassTime } from "../lib/notifications";
-import { hasInstructorScheduleConflict } from "../lib/schedule-conflict";
+import { hasInstructorScheduleConflict, hasStudentScheduleConflict } from "../lib/schedule-conflict";
 import { logger } from "@/lib/logger";
 
 // Exams occupy a 60-min slot starting at `scheduledAt` (UI convention).
@@ -212,6 +212,22 @@ export const examRouter = router({
         }
       }
 
+      // The student can't be double-booked either: reject if they already have
+      // a class or another scheduled exam overlapping this exam's 60-min slot.
+      const examStartsAt = new Date(input.scheduledAt);
+      const studentConflict = await hasStudentScheduleConflict({
+        db: ctx.db,
+        tenantId: ctx.tenantId,
+        studentIds: [course.student.id],
+        windows: [{ startsAt: examStartsAt, endsAt: new Date(examStartsAt.getTime() + EXAM_DURATION_MS) }],
+      });
+      if (studentConflict) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "exams.studentScheduleConflict",
+        });
+      }
+
       const exam = await ctx.db.exam.create({
         data: {
           tenantId: ctx.tenantId,
@@ -274,7 +290,7 @@ export const examRouter = router({
     .mutation(async ({ ctx, input }) => {
       const exam = await ctx.db.exam.findFirst({
         where: { id: input.id, tenantId: ctx.tenantId },
-        select: { id: true, result: true },
+        select: { id: true, result: true, course: { select: { studentId: true } } },
       });
 
       if (!exam) {
@@ -323,6 +339,22 @@ export const examRouter = router({
             message: "exams.scheduleConflict",
           });
         }
+      }
+
+      // Keep the student free at the new time too, excluding this exam.
+      const examStartsAt = new Date(input.scheduledAt);
+      const studentConflict = await hasStudentScheduleConflict({
+        db: ctx.db,
+        tenantId: ctx.tenantId,
+        studentIds: [exam.course.studentId],
+        windows: [{ startsAt: examStartsAt, endsAt: new Date(examStartsAt.getTime() + EXAM_DURATION_MS) }],
+        excludeExamId: input.id,
+      });
+      if (studentConflict) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "exams.studentScheduleConflict",
+        });
       }
 
       return ctx.db.exam.update({

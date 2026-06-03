@@ -89,7 +89,7 @@ Living document of everything the app can do, organized by area.
 - Practical classes: capacity limited to 1-4 students, assign students on creation via searchable picker
 - Theory classes: configurable capacity, students self-enroll
 - Edit class (instructor, title, capacity, date/time) with confirmation
-- Schedule conflict detection: prevents creating/editing classes when instructor already has a class at that time
+- Schedule conflict detection: prevents double-booking either the instructor or any assigned/enrolled student — a class or exam can't overlap another class or scheduled exam for the same person (enforced on class create/edit, enrollment, and exam schedule/edit)
 - Cancel class with confirmation dialog (cascades to all enrollments)
 - Class detail page (`/classes/[id]`) for secretary/admin: full class info, student list, add/remove students, attendance, cancel class
 - Instructor access to own class detail pages: view class info, mark attendance, bulk mark, edit notes (no add/remove students or cancel)

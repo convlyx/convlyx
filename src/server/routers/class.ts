@@ -9,7 +9,7 @@ import {
 } from "@/lib/validations/class";
 import { createNotification, createNotifications, formatClassTime } from "../lib/notifications";
 import { getStudentClassAccess } from "../lib/student-access";
-import { hasInstructorScheduleConflict } from "../lib/schedule-conflict";
+import { hasInstructorScheduleConflict, hasStudentScheduleConflict } from "../lib/schedule-conflict";
 import { logger } from "@/lib/logger";
 
 export const classRouter = router({
@@ -253,6 +253,23 @@ export const classRouter = router({
         });
       }
 
+      // None of the students being assigned may already have a class or
+      // scheduled exam overlapping this window.
+      if (input.studentIds && input.studentIds.length > 0) {
+        const studentConflict = await hasStudentScheduleConflict({
+          db: ctx.db,
+          tenantId: ctx.tenantId,
+          studentIds: input.studentIds,
+          windows: [{ startsAt: new Date(input.startsAt), endsAt: new Date(input.endsAt) }],
+        });
+        if (studentConflict) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "classes.studentScheduleConflict",
+          });
+        }
+      }
+
       // One-off creation
       const session = await ctx.db.classSession.create({
         data: {
@@ -359,6 +376,26 @@ export const classRouter = router({
           code: "BAD_REQUEST",
           message: "classes.scheduleConflict",
         });
+      }
+
+      // If the class moved, make sure none of the already-enrolled students
+      // end up double-booked at the new time. Exclude this class so its own
+      // enrollments don't count as a conflict against itself.
+      const enrolledStudentIds = session.enrollments.map((e) => e.studentId);
+      if (enrolledStudentIds.length > 0) {
+        const studentConflict = await hasStudentScheduleConflict({
+          db: ctx.db,
+          tenantId: ctx.tenantId,
+          studentIds: enrolledStudentIds,
+          windows: [{ startsAt: new Date(input.startsAt), endsAt: new Date(input.endsAt) }],
+          excludeSessionId: input.id,
+        });
+        if (studentConflict) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "classes.studentScheduleConflict",
+          });
+        }
       }
 
       const instructorChanged = session.instructorId !== input.instructorId;

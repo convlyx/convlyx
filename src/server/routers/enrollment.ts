@@ -10,6 +10,7 @@ import {
   listByStudentSchema,
 } from "@/lib/validations/enrollment";
 import { createNotification, formatClassTime } from "../lib/notifications";
+import { hasStudentScheduleConflict } from "../lib/schedule-conflict";
 import { getStudentClassAccess } from "../lib/student-access";
 import { logger } from "@/lib/logger";
 
@@ -36,6 +37,7 @@ export const enrollmentRouter = router({
           id: true,
           title: true,
           startsAt: true,
+          endsAt: true,
           capacity: true,
           status: true,
           instructorId: true,
@@ -146,6 +148,25 @@ export const enrollmentRouter = router({
           code: "BAD_REQUEST",
           message: "enrollments.alreadyEnrolled",
         });
+      }
+
+      // A student can't be in two places at once: reject if they already have
+      // a class or scheduled exam overlapping this session's window. (Skipped
+      // for COMPLETED sessions, which are recorded retroactively, not booked.)
+      if (session.status !== "COMPLETED") {
+        const conflict = await hasStudentScheduleConflict({
+          db: ctx.db,
+          tenantId: ctx.tenantId,
+          studentIds: [studentId],
+          windows: [{ startsAt: session.startsAt, endsAt: session.endsAt }],
+          excludeSessionId: session.id,
+        });
+        if (conflict) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "enrollments.studentScheduleConflict",
+          });
+        }
       }
 
       const enrollStatus = session.status === "COMPLETED" ? "ATTENDED" : "ENROLLED";
