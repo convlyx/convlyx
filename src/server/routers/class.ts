@@ -10,6 +10,7 @@ import {
 import { createNotification, createNotifications, formatClassTime } from "../lib/notifications";
 import { getStudentClassAccess } from "../lib/student-access";
 import { hasInstructorScheduleConflict, hasStudentScheduleConflict } from "../lib/schedule-conflict";
+import { wallClockToUTC } from "@/lib/dates";
 import { logger } from "@/lib/logger";
 
 export const classRouter = router({
@@ -89,7 +90,7 @@ export const classRouter = router({
         capacity: true,
         status: true,
         instructor: { select: { id: true, name: true } },
-        school: { select: { id: true, name: true } },
+        school: { select: { id: true, name: true, timeZone: true } },
         _count: { select: { enrollments: true } },
       } as const;
 
@@ -134,7 +135,7 @@ export const classRouter = router({
           status: true,
           createdAt: true,
           instructor: { select: { id: true, name: true } },
-          school: { select: { id: true, name: true, cancellationNoticeHours: true } },
+          school: { select: { id: true, name: true, cancellationNoticeHours: true, timeZone: true } },
           createdBy: { select: { id: true, name: true } },
           enrollments: {
             select: {
@@ -176,7 +177,7 @@ export const classRouter = router({
       const [school, instructor] = await Promise.all([
         ctx.db.school.findFirst({
           where: { id: input.schoolId, tenantId: ctx.tenantId },
-          select: { id: true },
+          select: { id: true, timeZone: true },
         }),
         ctx.db.user.findFirst({
           where: {
@@ -206,7 +207,12 @@ export const classRouter = router({
       // Recurring creation: generate sessions then check conflicts per occurrence
       if (input.recurrence) {
         const recurrenceInput = { ...input, recurrence: input.recurrence };
-        const sessions = generateRecurringSessions(recurrenceInput, ctx.tenantId, ctx.user.id);
+        const sessions = generateRecurringSessions(
+          recurrenceInput,
+          ctx.tenantId,
+          ctx.user.id,
+          school.timeZone,
+        );
 
         if (sessions.length === 0) {
           throw new TRPCError({
@@ -288,7 +294,7 @@ export const classRouter = router({
         select: { id: true, title: true, startsAt: true },
       });
 
-      const timeStr = formatClassTime(new Date(input.startsAt));
+      const timeStr = formatClassTime(new Date(input.startsAt), school.timeZone);
 
       // Notify instructor about new class
       createNotification({
@@ -338,6 +344,7 @@ export const classRouter = router({
           startsAt: true,
           endsAt: true,
           instructorId: true,
+          school: { select: { timeZone: true } },
           enrollments: { select: { studentId: true } },
         },
       });
@@ -419,7 +426,7 @@ export const classRouter = router({
 
       // Notify on instructor change
       if (instructorChanged) {
-        const timeStr = formatClassTime(new Date(input.startsAt));
+        const timeStr = formatClassTime(new Date(input.startsAt), session.school.timeZone);
         const newInstructor = await ctx.db.user.findFirst({
           where: { id: input.instructorId },
           select: { name: true },
@@ -466,7 +473,7 @@ export const classRouter = router({
       // Notify on schedule change (only students not already notified about instructor change)
       if (scheduleChanged && !instructorChanged) {
         const studentIds = session.enrollments.map((e) => e.studentId);
-        const newTimeStr = formatClassTime(new Date(input.startsAt));
+        const newTimeStr = formatClassTime(new Date(input.startsAt), session.school.timeZone);
         if (studentIds.length > 0) {
           createNotifications({
             db: ctx.db,
@@ -503,6 +510,7 @@ export const classRouter = router({
           startsAt: true,
           status: true,
           instructorId: true,
+          school: { select: { timeZone: true } },
           enrollments: {
             where: { status: "ENROLLED" },
             select: { studentId: true },
@@ -522,7 +530,7 @@ export const classRouter = router({
       }
 
       const enrolledStudentIds = session.enrollments.map((e) => e.studentId);
-      const timeStr = formatClassTime(new Date(session.startsAt));
+      const timeStr = formatClassTime(new Date(session.startsAt), session.school.timeZone);
 
       await ctx.db.$transaction([
         ctx.db.classSession.updateMany({
@@ -574,6 +582,7 @@ export const classRouter = router({
           id: true,
           title: true,
           startsAt: true,
+          school: { select: { timeZone: true } },
           enrollments: {
             where: { status: "ENROLLED" },
             select: { studentId: true },
@@ -589,7 +598,7 @@ export const classRouter = router({
       }
 
       const enrolledStudentIds = session.enrollments.map((e) => e.studentId);
-      const timeStr = formatClassTime(new Date(session.startsAt));
+      const timeStr = formatClassTime(new Date(session.startsAt), session.school.timeZone);
 
       await ctx.db.$transaction([
         ctx.db.classSession.updateMany({
@@ -670,7 +679,8 @@ function generateRecurringSessions(
     };
   },
   tenantId: string,
-  userId: string
+  userId: string,
+  timeZone: string,
 ) {
   const { recurrence } = input;
   const category = input.classType === "THEORY" ? null : (input.category ?? null);
@@ -706,8 +716,8 @@ function generateRecurringSessions(
       const month = current.getUTCMonth();
       const day = current.getUTCDate();
 
-      const startsAt = lisbonWallClockToUTC(year, month, day, startHour, startMin);
-      const endsAt = lisbonWallClockToUTC(year, month, day, endHour, endMin);
+      const startsAt = wallClockToUTC(year, month, day, startHour, startMin, timeZone);
+      const endsAt = wallClockToUTC(year, month, day, endHour, endMin, timeZone);
 
       sessions.push({
         tenantId,
@@ -728,41 +738,4 @@ function generateRecurringSessions(
   }
 
   return sessions;
-}
-
-/**
- * Convert a Lisbon wall-clock time to its absolute UTC Date.
- * Handles DST transitions by querying Intl for the actual offset on that date.
- */
-function lisbonWallClockToUTC(
-  year: number,
-  month: number,
-  day: number,
-  hour: number,
-  minute: number,
-): Date {
-  // Naïve UTC date with the wall-clock components
-  const naive = new Date(Date.UTC(year, month, day, hour, minute, 0, 0));
-  // Find the offset Lisbon has FROM UTC at that moment
-  const dtf = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Europe/Lisbon",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  const parts = dtf.formatToParts(naive);
-  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
-  const lisbonAsUTC = Date.UTC(
-    get("year"),
-    get("month") - 1,
-    get("day"),
-    get("hour") % 24,
-    get("minute"),
-  );
-  // Difference between what Lisbon shows and the naive UTC = offset (in ms)
-  const offsetMs = lisbonAsUTC - naive.getTime();
-  return new Date(naive.getTime() - offsetMs);
 }

@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
       tenantId: true,
       startsAt: true,
       instructorId: true,
+      school: { select: { timeZone: true } },
       enrollments: {
         where: { status: "ENROLLED" },
         select: { studentId: true },
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
   let notificationCount = 0;
 
   for (const cls of tomorrowClasses) {
-    const timeStr = formatClassTime(new Date(cls.startsAt));
+    const timeStr = formatClassTime(new Date(cls.startsAt), cls.school.timeZone);
     const studentIds = cls.enrollments.map((e) => e.studentId);
 
     // Notify students
@@ -96,7 +97,7 @@ export async function GET(request: NextRequest) {
       scheduledAt: true,
       instructorId: true,
       course: {
-        select: { student: { select: { id: true, name: true } } },
+        select: { student: { select: { id: true, name: true, school: { select: { timeZone: true } } } } },
       },
     },
   });
@@ -104,7 +105,7 @@ export async function GET(request: NextRequest) {
   let examNotificationCount = 0;
 
   for (const exam of tomorrowExams) {
-    const timeStr = formatClassTime(new Date(exam.scheduledAt));
+    const timeStr = formatClassTime(new Date(exam.scheduledAt), exam.course.student.school.timeZone);
     const examTypeLabel = exam.type === "THEORY" ? "teórico" : "prático";
 
     // Notify student

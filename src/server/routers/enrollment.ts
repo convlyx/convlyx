@@ -44,7 +44,7 @@ export const enrollmentRouter = router({
           schoolId: true,
           classType: true,
           category: true,
-          school: { select: { practicalSelfEnrollEnabled: true } },
+          school: { select: { practicalSelfEnrollEnabled: true, timeZone: true } },
           _count: {
             select: {
               enrollments: true,
@@ -191,7 +191,7 @@ export const enrollmentRouter = router({
           type: "enrollment.created",
           titleKey: "notifications.enrollmentWasConfirmed",
           messageKey: "notifications.classAssigned",
-          params: { title: session.title, time: formatClassTime(new Date(session.startsAt)) },
+          params: { title: session.title, time: formatClassTime(new Date(session.startsAt), session.school.timeZone) },
         }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
       }
 
@@ -217,7 +217,7 @@ export const enrollmentRouter = router({
               title: true,
               startsAt: true,
               instructorId: true,
-              school: { select: { cancellationNoticeHours: true } },
+              school: { select: { cancellationNoticeHours: true, timeZone: true } },
             },
           },
         },
@@ -275,7 +275,7 @@ export const enrollmentRouter = router({
           type: "enrollment.cancelled",
           titleKey: "notifications.enrollmentWasCancelled",
           messageKey: "notifications.enrollmentCancelled",
-          params: { title: enrollment.session.title, time: formatClassTime(new Date(enrollment.session.startsAt)) },
+          params: { title: enrollment.session.title, time: formatClassTime(new Date(enrollment.session.startsAt), enrollment.session.school.timeZone) },
         }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
       }
 

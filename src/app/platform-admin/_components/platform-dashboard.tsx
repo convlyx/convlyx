@@ -14,6 +14,14 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogBody,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { SCHOOL_TIME_ZONES } from "@/lib/validations/school";
+
+// Plain-text labels for the (operator-only, non-i18n) platform admin page.
+const TIME_ZONE_LABELS: Record<(typeof SCHOOL_TIME_ZONES)[number], string> = {
+  "Europe/Lisbon": "Continente (Lisboa)",
+  "Atlantic/Madeira": "Madeira",
+  "Atlantic/Azores": "Açores",
+};
 
 type Tenant = {
   id: string;
@@ -47,7 +55,7 @@ export function PlatformDashboard({
   const [showCreateSchool, setShowCreateSchool] = useState(false);
   const [createAdminFor, setCreateAdminFor] = useState<School | null>(null);
   const [tenantName, setTenantName] = useState("");
-  const [schoolData, setSchoolData] = useState({ name: "", subdomain: "", tenantId: "", address: "", phone: "" });
+  const [schoolData, setSchoolData] = useState({ name: "", subdomain: "", tenantId: "", address: "", phone: "", timeZone: "Europe/Lisbon" });
   const [adminData, setAdminData] = useState({ name: "", email: "", phone: "", password: "" });
   const [loading, setLoading] = useState(false);
 
@@ -106,7 +114,7 @@ export function PlatformDashboard({
     if (res.ok) {
       toast.success("Escola criada com sucesso");
       setShowCreateSchool(false);
-      setSchoolData({ name: "", subdomain: "", tenantId: "", address: "", phone: "" });
+      setSchoolData({ name: "", subdomain: "", tenantId: "", address: "", phone: "", timeZone: "Europe/Lisbon" });
       window.location.reload();
     } else {
       const data = await res.json();
@@ -289,6 +297,19 @@ export function PlatformDashboard({
               <div className="grid gap-2">
                 <Label>Telefone</Label>
                 <Input value={schoolData.phone} onChange={(e) => setSchoolData({ ...schoolData, phone: e.target.value })} />
+              </div>
+              <div className="grid gap-2">
+                <Label>Fuso horário</Label>
+                <select
+                  value={schoolData.timeZone}
+                  onChange={(e) => setSchoolData({ ...schoolData, timeZone: e.target.value })}
+                  className="flex h-9 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm cursor-pointer"
+                >
+                  {SCHOOL_TIME_ZONES.map((zone) => (
+                    <option key={zone} value={zone}>{TIME_ZONE_LABELS[zone]}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">Definido na criação e não editável depois — altera a conversão de horas das aulas/exames.</p>
               </div>
             </div>
           </DialogBody>

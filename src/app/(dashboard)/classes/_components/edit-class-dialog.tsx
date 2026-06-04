@@ -20,7 +20,7 @@ import { CategorySelect } from "@/components/category-select";
 import { LICENSE_CATEGORIES, type LicenseCategory } from "@/lib/license-categories";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
-import { lisbonWallClockToISO } from "@/lib/dates";
+import { wallClockToISO } from "@/lib/dates";
 
 type ClassData = {
   id: string;
@@ -32,7 +32,7 @@ type ClassData = {
   capacity: number;
   status: string;
   instructor: { id: string; name: string };
-  school: { id: string; name: string };
+  school: { id: string; name: string; timeZone: string };
 };
 
 const editClassFormSchema = z.object({
@@ -49,10 +49,12 @@ const editClassFormSchema = z.object({
 
 type EditClassFormData = z.infer<typeof editClassFormSchema>;
 
-function lisbonParts(d: string | Date) {
+// Split a stored UTC instant into the school-zone wall-clock date/time strings
+// used to pre-fill the form fields.
+function zonedParts(d: string | Date, timeZone: string) {
   const date = new Date(d);
   const dtf = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Lisbon",
+    timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -68,12 +70,12 @@ function lisbonParts(d: string | Date) {
   };
 }
 
-function toDateValue(d: string | Date): string {
-  return lisbonParts(d).date;
+function toDateValue(d: string | Date, timeZone: string): string {
+  return zonedParts(d, timeZone).date;
 }
 
-function toTimeValue(d: string | Date): string {
-  return lisbonParts(d).time;
+function toTimeValue(d: string | Date, timeZone: string): string {
+  return zonedParts(d, timeZone).time;
 }
 
 export function EditClassDialog({
@@ -92,6 +94,9 @@ export function EditClassDialog({
   const { data: instructorsData } = trpc.user.list.useQuery({ role: "INSTRUCTOR", status: "ACTIVE" });
   const instructors = instructorsData?.items;
 
+  // Class times are stored in UTC; interpret/display them in the school's zone.
+  const tz = classData.school.timeZone;
+
   const { register, handleSubmit, reset, control, watch, setValue, formState: { errors } } = useForm<EditClassFormData>({
     resolver: zodResolver(editClassFormSchema),
     defaultValues: {
@@ -100,9 +105,9 @@ export function EditClassDialog({
       category: classData.category ?? undefined,
       title: classData.title,
       capacity: classData.capacity,
-      date: toDateValue(classData.startsAt),
-      startTime: toTimeValue(classData.startsAt),
-      endTime: toTimeValue(classData.endsAt),
+      date: toDateValue(classData.startsAt, tz),
+      startTime: toTimeValue(classData.startsAt, tz),
+      endTime: toTimeValue(classData.endsAt, tz),
     },
   });
 
@@ -114,12 +119,12 @@ export function EditClassDialog({
         category: classData.category ?? undefined,
         title: classData.title,
         capacity: classData.capacity,
-        date: toDateValue(classData.startsAt),
-        startTime: toTimeValue(classData.startsAt),
-        endTime: toTimeValue(classData.endsAt),
+        date: toDateValue(classData.startsAt, tz),
+        startTime: toTimeValue(classData.startsAt, tz),
+        endTime: toTimeValue(classData.endsAt, tz),
       });
     }
-  }, [open, classData, reset]);
+  }, [open, classData, reset, tz]);
 
   const category = watch("category");
   const instructorId = watch("instructorId");
@@ -157,8 +162,8 @@ export function EditClassDialog({
       category: data.category,
       title: data.title,
       capacity: data.capacity,
-      startsAt: lisbonWallClockToISO(data.date, data.startTime),
-      endsAt: lisbonWallClockToISO(data.date, data.endTime),
+      startsAt: wallClockToISO(data.date, data.startTime, tz),
+      endsAt: wallClockToISO(data.date, data.endTime, tz),
     });
   }
 

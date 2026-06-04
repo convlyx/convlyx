@@ -8,7 +8,15 @@ import { CalendarFilters } from "./calendar-filters";
 import { CreateClassDialog } from "@/app/(dashboard)/classes/_components/create-class-dialog";
 import type { UserRole } from "@/generated/prisma/enums";
 
-export function CalendarView({ userRole, userId }: { userRole: UserRole; userId: string }) {
+export function CalendarView({
+  userRole,
+  userId,
+  schoolTimeZone,
+}: {
+  userRole: UserRole;
+  userId: string;
+  schoolTimeZone: string;
+}) {
   const t = useTranslations("nav");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [instructorFilter, setInstructorFilter] = useState("ALL");
@@ -61,6 +69,7 @@ export function CalendarView({ userRole, userId }: { userRole: UserRole; userId:
         }}
         userRole={userRole}
         userId={userId}
+        schoolTimeZone={schoolTimeZone}
       />
     </div>
   );

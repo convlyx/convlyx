@@ -115,6 +115,10 @@ model School {
   // match the most common driving-school workflow where practical classes
   // are 1-on-1 and staff-assigned at creation time.
   practicalSelfEnrollEnabled Boolean @default(false) @map("practical_self_enroll_enabled")
+  // IANA timezone the school operates in. Drives wall-clock <-> UTC conversion
+  // for class/exam times and how times are displayed. Default covers mainland
+  // Portugal + Madeira; Azores schools use "Atlantic/Azores".
+  timeZone  String   @default("Europe/Lisbon") @map("time_zone")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

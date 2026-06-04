@@ -120,7 +120,7 @@ export const examRouter = router({
           id: true,
           status: true,
           student: {
-            select: { id: true, schoolId: true },
+            select: { id: true, schoolId: true, school: { select: { timeZone: true } } },
           },
         },
       });
@@ -250,7 +250,7 @@ export const examRouter = router({
         },
       });
 
-      const timeStr = formatClassTime(exam.scheduledAt);
+      const timeStr = formatClassTime(exam.scheduledAt, course.student.school.timeZone);
 
       // Notify student
       createNotification({
@@ -466,7 +466,7 @@ export const examRouter = router({
           type: true,
           scheduledAt: true,
           instructorId: true,
-          course: { select: { student: { select: { id: true } } } },
+          course: { select: { student: { select: { id: true, school: { select: { timeZone: true } } } } } },
         },
       });
 
@@ -487,7 +487,7 @@ export const examRouter = router({
         select: { id: true },
       });
 
-      const timeStr = formatClassTime(exam.scheduledAt);
+      const timeStr = formatClassTime(exam.scheduledAt, exam.course.student.school.timeZone);
 
       createNotification({
         db: ctx.db,

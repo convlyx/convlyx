@@ -376,6 +376,7 @@ export function CoursesAndExamsSection({
           studentId={studentId}
           courseId={scheduleForCourse.id}
           category={scheduleForCourse.category}
+          timeZone={header?.school.timeZone ?? "Europe/Lisbon"}
           open={scheduleForCourse !== null}
           onClose={() => setScheduleForCourse(null)}
         />

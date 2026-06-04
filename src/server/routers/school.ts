@@ -12,6 +12,7 @@ export const schoolRouter = router({
         subdomain: true,
         address: true,
         phone: true,
+        timeZone: true,
         createdAt: true,
         _count: { select: { users: true, sessions: true } },
       },
@@ -47,6 +48,7 @@ export const schoolRouter = router({
           subdomain: input.subdomain,
           address: input.address,
           phone: input.phone,
+          timeZone: input.timeZone,
         },
         select: { id: true, name: true },
       });

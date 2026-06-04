@@ -21,7 +21,7 @@ import { CategorySelect } from "@/components/category-select";
 import { LICENSE_CATEGORIES } from "@/lib/license-categories";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
-import { lisbonWallClockToISO } from "@/lib/dates";
+import { wallClockToISO } from "@/lib/dates";
 import { track } from "@/lib/posthog";
 
 const createClassFormSchema = z
@@ -259,6 +259,10 @@ export function CreateClassDialog({
       ? selectedStudents
       : undefined;
 
+    // Interpret the entered wall-clock time in the target school's timezone.
+    const timeZone =
+      schools?.find((s) => s.id === data.schoolId)?.timeZone ?? "Europe/Lisbon";
+
     if (scheduleMode === "recurring") {
       createMutation.mutate({
         classType: data.classType,
@@ -268,8 +272,8 @@ export function CreateClassDialog({
         title: data.title,
         capacity: data.capacity,
         studentIds,
-        startsAt: lisbonWallClockToISO(data.validFrom, data.startTime),
-        endsAt: lisbonWallClockToISO(data.validFrom, data.endTime),
+        startsAt: wallClockToISO(data.validFrom, data.startTime, timeZone),
+        endsAt: wallClockToISO(data.validFrom, data.endTime, timeZone),
         recurrence: {
           daysOfWeek: selectedDays,
           startTime: data.startTime,
@@ -287,8 +291,8 @@ export function CreateClassDialog({
         title: data.title,
         capacity: data.capacity,
         studentIds,
-        startsAt: lisbonWallClockToISO(data.date, data.startTime),
-        endsAt: lisbonWallClockToISO(data.date, data.endTime),
+        startsAt: wallClockToISO(data.date, data.startTime, timeZone),
+        endsAt: wallClockToISO(data.date, data.endTime, timeZone),
       });
     }
   }

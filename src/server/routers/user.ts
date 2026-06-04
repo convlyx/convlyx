@@ -850,7 +850,7 @@ export const userRouter = router({
           phone: true,
           status: true,
           createdAt: true,
-          school: { select: { id: true, name: true } },
+          school: { select: { id: true, name: true, timeZone: true } },
         },
       });
 

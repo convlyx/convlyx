@@ -7,6 +7,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
+import luxonPlugin from "@fullcalendar/luxon3";
 import type { DateSelectArg, EventClickArg } from "@fullcalendar/core";
 import { trpc } from "@/lib/trpc";
 import { ClassDetailDialog } from "./class-detail-dialog";
@@ -71,24 +72,41 @@ const statusColors: Record<string, { bg: string; border: string }> = {
 
 const EXAM_PREFIX = "exam:";
 
-function pad(n: number) {
-  return String(n).padStart(2, "0");
+// The calendar renders in the school's timezone, so the create-dialog prefill
+// must read the selected slot's wall-clock in that same zone — never the
+// browser's local time.
+function formatZonedDate(d: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
 }
-function formatLocalDate(d: Date) {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-function formatLocalTime(d: Date) {
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function formatZonedTime(d: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("hour") === "24" ? "00" : get("hour")}:${get("minute")}`;
 }
 
 export function ClassCalendar({
   filter,
   userRole,
   userId,
+  schoolTimeZone,
 }: {
   filter?: CalendarFilter;
   userRole: UserRole;
   userId: string;
+  /** Timezone events are rendered in — the viewing user's school zone. */
+  schoolTimeZone: string;
 }) {
   const t = useTranslations();
   const [dateRange, setDateRange] = useState<{ from: string; to: string } | null>(null);
@@ -233,14 +251,12 @@ export function ClassCalendar({
     // Month view → all-day click. Pre-fill 09:00–10:00 since the slot has
     // no time component.
     if (arg.allDay) {
-      const start = new Date(arg.start);
-      start.setHours(9, 0, 0, 0);
-      const end = new Date(start);
-      end.setHours(10, 0, 0, 0);
+      // No time component on a month-view click — default to 09:00–10:00 in
+      // the school's zone on the clicked day.
       setCreatePrefill({
-        date: formatLocalDate(start),
-        startTime: formatLocalTime(start),
-        endTime: formatLocalTime(end),
+        date: formatZonedDate(arg.start, schoolTimeZone),
+        startTime: "09:00",
+        endTime: "10:00",
         instructorId: filter?.instructorId,
         classType: filter?.classType,
       });
@@ -256,9 +272,9 @@ export function ClassCalendar({
       arg.view.calendar.select({ start: startsAt, end: endsAt });
     }
     setCreatePrefill({
-      date: formatLocalDate(startsAt),
-      startTime: formatLocalTime(startsAt),
-      endTime: formatLocalTime(endsAt),
+      date: formatZonedDate(startsAt, schoolTimeZone),
+      startTime: formatZonedTime(startsAt, schoolTimeZone),
+      endTime: formatZonedTime(endsAt, schoolTimeZone),
       instructorId: filter?.instructorId,
       classType: filter?.classType,
     });
@@ -269,7 +285,8 @@ export function ClassCalendar({
     <div className="space-y-4">
       <div className="fc-wrapper">
           <FullCalendar
-            plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
+            plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin, luxonPlugin]}
+            timeZone={schoolTimeZone}
             initialView="timeGridWeek"
             headerToolbar={{
               left: "prev,next today",

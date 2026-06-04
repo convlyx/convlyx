@@ -14,7 +14,7 @@ export type DashboardUser = {
   tenantId: string;
   schoolId: string;
   tenant: { name: string };
-  school: { name: string; subdomain: string };
+  school: { name: string; subdomain: string; timeZone: string };
 };
 
 async function loadDashboardUser(): Promise<DashboardUser | null> {
@@ -34,7 +34,7 @@ async function loadDashboardUser(): Promise<DashboardUser | null> {
           tenantId: true,
           schoolId: true,
           tenant: { select: { name: true } },
-          school: { select: { name: true, subdomain: true } },
+          school: { select: { name: true, subdomain: true, timeZone: true } },
         },
       });
       if (!user) {

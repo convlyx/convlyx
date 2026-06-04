@@ -38,14 +38,14 @@ function resolveTranslation(key: string, params?: Record<string, string>): strin
 /**
  * Format a date for notification params: "20/04 às 09:00".
  *
- * Class times are stored in UTC; this renders them in Portugal wall-clock
- * (Europe/Lisbon), DST-aware. Never use the Date's local getters here — the
- * server runs in UTC on Vercel, so a 10:00 Lisbon class (09:00 UTC in summer)
+ * Class times are stored in UTC; this renders them in the class's school
+ * wall-clock (`timeZone`), DST-aware. Never use the Date's local getters here
+ * — the server runs in UTC on Vercel, so a 10:00 class (09:00 UTC in summer)
  * would otherwise show as 09:00.
  */
-export function formatClassTime(startsAt: Date): string {
+export function formatClassTime(startsAt: Date, timeZone: string): string {
   const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/Lisbon",
+    timeZone,
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",

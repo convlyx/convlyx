@@ -13,7 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
 import { DatePicker, TimePicker } from "@/components/date-picker";
-import { lisbonWallClockToISO } from "@/lib/dates";
+import { wallClockToISO } from "@/lib/dates";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import type { LicenseCategory } from "@/lib/license-categories";
@@ -22,11 +22,13 @@ type Props = {
   studentId: string;
   courseId: string;
   category: LicenseCategory;
+  /** The student's school timezone — the entered time is interpreted in it. */
+  timeZone: string;
   open: boolean;
   onClose: () => void;
 };
 
-export function ScheduleExamDialog({ studentId, courseId, category, open, onClose }: Props) {
+export function ScheduleExamDialog({ studentId, courseId, category, timeZone, open, onClose }: Props) {
   const t = useTranslations();
   const { onError } = useTranslatedError();
   const utils = trpc.useUtils();
@@ -72,7 +74,7 @@ export function ScheduleExamDialog({ studentId, courseId, category, open, onClos
     scheduleMutation.mutate({
       courseId,
       type,
-      scheduledAt: lisbonWallClockToISO(date, time),
+      scheduledAt: wallClockToISO(date, time, timeZone),
       location: location || undefined,
       instructorId: instructorId || undefined,
     });

@@ -189,6 +189,7 @@ Living document of everything the app can do, organized by area.
 - School info section: edit name, address, phone (admin, secretary)
 - Per-school cancellation notice window (hours) — students can't self-cancel within X hours of class start (default 24, range 0-168, configurable by admin/secretary; staff bypass)
 - Per-school practical self-enrollment toggle — when off (default), students cannot self-enrol in PRACTICAL classes (only staff can assign them); theory self-enrolment unaffected. Configurable by admin/secretary
+- Per-school timezone (Continente/Lisboa default, Madeira, Açores) — class/exam times are stored in UTC and interpreted/displayed in the school's zone, DST-aware. Drives input conversion, all displayed times (lists, calendar, notifications, reminders), and time-relative jobs. **Set when the school is created** (platform-admin "Criar escola" + in-tenant school creation) and intentionally **not editable afterwards** — changing it would shift the wall-clock of every already-stored class/exam
 - Tenant/group section: edit group name (admin only)
 
 ## Notifications

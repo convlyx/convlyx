@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
 import { isSameOrigin } from "@/lib/csrf";
 import { audit } from "@/server/lib/audit";
+import { SCHOOL_TIME_ZONES } from "@/lib/validations/school";
 
 // Pin to Dublin (eu-west-1) to co-locate with Supabase — avoids transatlantic DB latency.
 export const preferredRegion = "dub1";
@@ -27,11 +28,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { name, subdomain, tenantId, address, phone } = await request.json();
+  const { name, subdomain, tenantId, address, phone, timeZone } = await request.json();
 
   if (!name || !subdomain || !tenantId) {
     return NextResponse.json({ error: "Nome, subdomínio e grupo são obrigatórios" }, { status: 400 });
   }
+
+  // Timezone is fixed at creation. Validate against the allowed set; default
+  // to mainland/Lisbon when omitted.
+  const resolvedTimeZone = SCHOOL_TIME_ZONES.includes(timeZone) ? timeZone : "Europe/Lisbon";
 
   // Check subdomain isn't taken
   const existing = await db.school.findUnique({ where: { subdomain } });
@@ -52,6 +57,7 @@ export async function POST(request: NextRequest) {
       tenantId,
       address: address || null,
       phone: phone || null,
+      timeZone: resolvedTimeZone,
     },
   });
 
@@ -61,7 +67,7 @@ export async function POST(request: NextRequest) {
     action: "school.create",
     targetType: "school",
     targetId: school.id,
-    metadata: { name: school.name, subdomain: school.subdomain, tenantId },
+    metadata: { name: school.name, subdomain: school.subdomain, tenantId, timeZone: resolvedTimeZone },
   });
 
   return NextResponse.json(school);

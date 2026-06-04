@@ -262,6 +262,11 @@
         "edit": "Editar escola",
         "allSchools": "Todas as escolas",
         "noSchools": "Nenhuma escola registada",
+        "timeZoneLabel": "Fuso horário",
+        "timeZoneHelp": "Definido na criação e não editável depois.",
+        "timeZoneContinente": "Continente (Lisboa)",
+        "timeZoneMadeira": "Madeira",
+        "timeZoneAcores": "Açores",
         "studentsCount": "{count, plural, =0 {Sem alunos} one {# aluno} other {# alunos}}",
         "classesCount": "{count, plural, =0 {Sem aulas} one {# aula} other {# aulas}}"
     },
