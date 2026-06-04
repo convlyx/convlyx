@@ -118,7 +118,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
           {paginatedEnrollments.map((enrollment) => (
             <div
               key={enrollment.id}
-              className="rounded-2xl bg-card p-4 card-shadow"
+              className="rounded-2xl border bg-card p-4 card-shadow"
             >
               <div className="flex items-start gap-3">
                 <div className={`flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[enrollment.session.classType]}`}>
