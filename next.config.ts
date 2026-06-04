@@ -20,6 +20,10 @@ const withNextIntl = createNextIntlPlugin("./src/lib/i18n.ts");
 const cspDirectives = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.vercel-insights.com https://*.i.posthog.com https://*.sentry.io",
+  // Sentry session-replay (and similar tooling) spawn workers from blob: URLs.
+  // Without an explicit worker-src, the browser falls back to script-src, which
+  // doesn't allow blob: — so the worker is blocked. Same-origin + blob only.
+  "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",

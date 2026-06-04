@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <LegalPage title="Política de Privacidade" lastUpdated="2026-05-08">
+    <LegalPage title="Política de Privacidade" lastUpdated="2026-06-04">
       <Section title="1. Quem somos">
         <p>
           O {COMPANY.brandName} é um software de gestão para escolas de condução

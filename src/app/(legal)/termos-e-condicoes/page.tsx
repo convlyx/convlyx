@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <LegalPage title="Termos e Condições" lastUpdated="2026-05-08">
+    <LegalPage title="Termos e Condições" lastUpdated="2026-06-04">
       <Section title="1. Aceitação dos termos">
         <p>
           Ao criar uma conta no Convlyx ou ao utilizar a plataforma de qualquer
