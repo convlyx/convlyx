@@ -9,6 +9,26 @@ const ROOT_DOMAINS = ["convlyx.com"];
 // Reserved subdomains that are not real schools
 const RESERVED_SUBDOMAINS = ["admin", "www", "api"];
 
+// Public marketing/SEO/legal/blog pages that live ONLY on the root domain.
+// Single source of truth: the root domain serves them, and a tenant subdomain
+// asking for one is 308-redirected to the canonical root URL (so they never
+// appear under a tenant host, which would break footer links + duplicate SEO).
+const MARKETING_EXACT_PATHS = [
+  "/software-escola-conducao",
+  "/calendario-aulas-conducao",
+  "/gestao-alunos-conducao",
+  "/politica-de-privacidade",
+  "/termos-e-condicoes",
+  "/politica-de-cookies",
+];
+function isMarketingPath(pathname: string): boolean {
+  return (
+    MARKETING_EXACT_PATHS.includes(pathname) ||
+    pathname === "/novidades" ||
+    pathname.startsWith("/novidades/")
+  );
+}
+
 // Common bot scan paths (WordPress, .env, php-myadmin, etc.) — return 404 fast
 const BOT_PATH_PATTERNS = [
   /^\/wp-/i,
@@ -55,28 +75,10 @@ export async function middleware(request: NextRequest) {
     if (pathname === "/") {
       return NextResponse.rewrite(new URL("/no-tenant", request.url));
     }
-    // Dedicated SEO landing pages — keyword-targeted alternate entry points
-    // for searches like "software escola condução", etc.
-    const SEO_PAGES = [
-      "/software-escola-conducao",
-      "/calendario-aulas-conducao",
-      "/gestao-alunos-conducao",
-    ];
-    if (SEO_PAGES.includes(pathname)) {
-      return response;
-    }
-    // Legal pages — required for GDPR and PT consumer law compliance.
-    const LEGAL_PAGES = [
-      "/politica-de-privacidade",
-      "/termos-e-condicoes",
-      "/politica-de-cookies",
-    ];
-    if (LEGAL_PAGES.includes(pathname)) {
-      return response;
-    }
-    // Public "Novidades" blog — changelog index + individual posts. Served on
-    // the apex for SEO; the in-app popover (on tenant subdomains) links here too.
-    if (pathname === "/novidades" || pathname.startsWith("/novidades/")) {
+    // Dedicated SEO landing pages, legal pages, and the Novidades blog —
+    // keyword-targeted entry points + compliance + changelog. See
+    // isMarketingPath (the same set is redirected off tenant subdomains below).
+    if (isMarketingPath(pathname)) {
       return response;
     }
     // Allow SEO/PWA files served from public/ and Next.js internals
@@ -92,6 +94,24 @@ export async function middleware(request: NextRequest) {
     if (!pathname.startsWith("/platform-admin") && !pathname.startsWith("/login") && !pathname.startsWith("/api/")) {
       return NextResponse.rewrite(new URL(`/platform-admin${pathname === "/" ? "" : pathname}`, request.url));
     }
+  }
+
+  // Marketing/SEO/legal/blog pages live only on the root domain. A tenant
+  // subdomain asking for one (bookmark, shared link, crawler) is sent to the
+  // canonical root URL — prevents broken footer links and duplicate content.
+  // Runs before auth so logged-out visitors redirect too. 308 keeps the method
+  // and is cacheable. (localhost dev resolves subdomain to null, so this never
+  // fires there.)
+  if (
+    subdomain &&
+    !RESERVED_SUBDOMAINS.includes(subdomain) &&
+    isMarketingPath(pathname)
+  ) {
+    const rootHost = hostname.split(".").slice(1).join(".");
+    return NextResponse.redirect(
+      `https://${rootHost}${pathname}${request.nextUrl.search}`,
+      308
+    );
   }
 
   if (subdomain && !RESERVED_SUBDOMAINS.includes(subdomain)) {

@@ -123,7 +123,11 @@ export function NovidadesButton({ userRole }: { userRole: UserRole }) {
                             {post.summary}
                           </p>
                           <p className="text-[10px] text-muted-foreground mt-1">
-                            {format.relativeTime(new Date(`${post.date}T00:00:00`), new Date())}
+                            {format.dateTime(new Date(`${post.date}T00:00:00`), {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
                           </p>
                         </div>
                       </div>
