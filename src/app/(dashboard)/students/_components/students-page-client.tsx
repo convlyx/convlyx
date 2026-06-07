@@ -23,6 +23,7 @@ import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
 import { Pagination } from "@/components/pagination";
 import { CreateUserDialog } from "@/app/(dashboard)/_components/create-user-dialog";
+import { BulkImportDialog } from "./bulk-import/bulk-import-dialog";
 import { EditUserDialog } from "@/app/(dashboard)/_components/edit-user-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CategoryBadge } from "@/components/category-badge";
@@ -105,7 +106,7 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
               placeholder={t("common.search") + "..."}
               value={searchInput}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 w-full sm:w-[200px]"
+              className="h-9 pl-9 w-full sm:w-[200px]"
             />
           </div>
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "ACTIVE" | "INACTIVE" | "ALL")}>
@@ -119,6 +120,7 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
             </SelectContent>
           </Select>
           <ViewToggle view={view} onChange={handleViewChange} />
+          {canManage && <BulkImportDialog />}
           {canManage && <CreateUserDialog fixedRole="STUDENT" buttonLabel={t("users.createStudent")} />}
         </div>
       </div>

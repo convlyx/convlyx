@@ -2,10 +2,11 @@ import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { createClient } from "@supabase/supabase-js";
 import { router, protectedProcedure, roleProtectedProcedure } from "../trpc";
-import { createUserSchema, updateUserSchema, listUsersSchema, listStudentEnrollmentsSchema, listInstructorSessionsSchema } from "@/lib/validations/user";
+import { createUserSchema, updateUserSchema, listUsersSchema, listStudentEnrollmentsSchema, listInstructorSessionsSchema, bulkCreateStudentsSchema, checkExistingEmailsSchema } from "@/lib/validations/user";
 import { createNotification } from "../lib/notifications";
 import { logger } from "@/lib/logger";
 import { Prisma } from "@/generated/prisma/client";
+import { createUserAccount, mapSupabaseAuthError } from "../lib/create-user";
 
 // Construction-time fallback: Supabase JS throws if URL/key are empty,
 // which would crash the module on import in environments where env vars
@@ -82,19 +83,6 @@ async function computeDeletability(
  * can translate via `useTranslatedError`. Falls back to a generic key for
  * unknown errors — the raw message is logged server-side for debugging.
  */
-function mapSupabaseAuthError(message: string | undefined): string {
-  if (!message) return "users.inviteFailed";
-  const lower = message.toLowerCase();
-  if (lower.includes("already been registered") || lower.includes("already exists")) {
-    return "users.emailAlreadyRegistered";
-  }
-  if (lower.includes("invalid email")) {
-    return "users.invalidEmail";
-  }
-  logger.warn("unmapped Supabase auth error", { message });
-  return "users.inviteFailed";
-}
-
 export const userRouter = router({
   list: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
     .input(listUsersSchema)
@@ -252,148 +240,113 @@ export const userRouter = router({
         });
       }
 
-      // Pre-flight: does a user already exist in this tenant with this email?
-      // `inviteUserByEmail` silently returns the existing auth user when the
-      // email is already registered, and our subsequent `user.create` then
-      // crashes on the `id` primary-key collision. Handle both branches
-      // here so the admin gets a clear outcome instead of "unexpected error":
-      //  - ACTIVE: refuse — the admin should use "Resend invite" instead.
-      //  - INACTIVE: reactivate in place (covers the deactivate-then-re-add
-      //    flow). Skip the invite — credentials already exist.
-      const existing = await ctx.db.user.findFirst({
-        where: { tenantId: ctx.tenantId, email: input.email },
-        select: { id: true, status: true },
+      // Invite + insert (or reactivate) — see `createUserAccount` for the
+      // ACTIVE / INACTIVE / new-email branches.
+      const { user } = await createUserAccount({
+        db: ctx.db,
+        supabaseAdmin,
+        tenantId: ctx.tenantId,
+        school,
+        input,
       });
 
-      if (existing) {
-        if (existing.status === "ACTIVE") {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "users.emailAlreadyRegistered",
-          });
-        }
+      return user;
+    }),
 
-        const reactivated = await ctx.db.$transaction(async (tx) => {
-          const updated = await tx.user.update({
-            where: { id: existing.id },
-            data: {
-              status: "ACTIVE",
-              schoolId: input.schoolId,
-              role: input.role,
-              name: input.name,
-              phone: input.phone,
-              qualifiedCategories:
-                input.role === "INSTRUCTOR" ? input.qualifiedCategories ?? [] : [],
-            },
-            select: { id: true, name: true, email: true, role: true },
-          });
+  /**
+   * Bulk-import a roster of students from a parsed spreadsheet. The client
+   * parses the file, maps columns, and resolves each row's category before
+   * calling this — so the input is already a clean list of students.
+   *
+   * Rows are processed sequentially (not in parallel) to avoid hammering
+   * Supabase Auth's invite endpoint, and one bad row never aborts the batch:
+   * every row gets its own result entry so the UI can show a per-row outcome.
+   */
+  bulkCreate: roleProtectedProcedure(["ADMIN", "SECRETARY"])
+    .input(bulkCreateStudentsSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the school belongs to this tenant once, up front.
+      const school = await ctx.db.school.findFirst({
+        where: { id: input.schoolId, tenantId: ctx.tenantId },
+        select: { id: true, subdomain: true },
+      });
 
-          if (input.role === "STUDENT" && input.initialCategory) {
-            // Only start a fresh course if there isn't already an in-progress
-            // one for this category (the deactivated student may still have
-            // one from before).
-            const ongoing = await tx.studentCourse.findFirst({
-              where: {
-                tenantId: ctx.tenantId,
-                studentId: existing.id,
-                category: input.initialCategory,
-                status: "IN_PROGRESS",
-              },
-              select: { id: true },
-            });
-            if (!ongoing) {
-              await tx.studentCourse.create({
-                data: {
-                  tenantId: ctx.tenantId,
-                  schoolId: input.schoolId,
-                  studentId: existing.id,
-                  category: input.initialCategory,
-                },
-              });
-            }
-          }
-
-          return updated;
-        });
-
-        return reactivated;
-      }
-
-      // Build redirect URL pointing at the school's subdomain
-      const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
-      const tenantHost = `${school.subdomain}.${siteUrl.host}`;
-      const redirectTo = `${siteUrl.protocol}//${tenantHost}/update-password`;
-
-      // Invite user via email — they'll set their own password
-      const { data: authData, error: authError } =
-        await supabaseAdmin.auth.admin.inviteUserByEmail(input.email, {
-          redirectTo,
-        });
-
-      if (authError) {
-        // Log the raw Supabase error before mapping — `mapSupabaseAuthError`
-        // collapses unknown failures into `users.inviteFailed`, which hides
-        // the actual SMTP / auth-service reason from the Vercel logs.
-        logger.error("user.create: supabase invite failed", {
-          email: input.email,
-          status: authError.status,
-          name: authError.name,
-          code: authError.code,
-          message: authError.message,
-        });
+      if (!school) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: mapSupabaseAuthError(authError.message),
+          message: "classes.schoolNotFound",
         });
       }
 
-      // Create Prisma user profile + initial student course (if applicable) atomically.
-      // The pre-flight above catches in-tenant collisions; a P2002 on `id` here
-      // means the email is registered in a different tenant (Supabase auth users
-      // are global, so `inviteUserByEmail` returned an id already used by another
-      // tenant's User row). Translate to the same friendly error.
-      let user;
-      try {
-        user = await ctx.db.$transaction(async (tx) => {
-          const created = await tx.user.create({
-            data: {
-              id: authData.user.id,
-              tenantId: ctx.tenantId,
-              schoolId: input.schoolId,
-              email: input.email,
-              name: input.name,
-              phone: input.phone,
-              role: input.role,
-              qualifiedCategories:
-                input.role === "INSTRUCTOR" ? input.qualifiedCategories ?? [] : [],
-            },
-            select: { id: true, name: true, email: true, role: true },
-          });
+      const results: Array<{
+        email: string;
+        status: "created" | "reactivated" | "skipped" | "failed";
+        reason?: string;
+      }> = [];
 
-          if (input.role === "STUDENT" && input.initialCategory) {
-            await tx.studentCourse.create({
-              data: {
-                tenantId: ctx.tenantId,
-                schoolId: input.schoolId,
-                studentId: created.id,
-                category: input.initialCategory,
-              },
+      for (const student of input.students) {
+        try {
+          const { outcome } = await createUserAccount({
+            db: ctx.db,
+            supabaseAdmin,
+            tenantId: ctx.tenantId,
+            school,
+            input: {
+              email: student.email,
+              name: student.name,
+              phone: student.phone,
+              role: "STUDENT",
+              schoolId: input.schoolId,
+              initialCategory: student.category,
+            },
+          });
+          results.push({ email: student.email, status: outcome });
+        } catch (e) {
+          // An ACTIVE-duplicate email surfaces as CONFLICT. The preview step
+          // already excludes known-ACTIVE rows, so reaching here means the
+          // email became active between preview and import — treat as skipped
+          // rather than a hard failure. Everything else is a genuine failure.
+          if (e instanceof TRPCError && e.code === "CONFLICT") {
+            results.push({
+              email: student.email,
+              status: "skipped",
+              reason: e.message,
+            });
+          } else {
+            logger.error("user.bulkCreate: row failed", {
+              email: student.email,
+              error: e instanceof Error ? e.message : String(e),
+            });
+            results.push({
+              email: student.email,
+              status: "failed",
+              reason: e instanceof TRPCError ? e.message : "users.inviteFailed",
             });
           }
-
-          return created;
-        });
-      } catch (e) {
-        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "users.emailAlreadyRegistered",
-          });
         }
-        throw e;
       }
 
-      return user;
+      return { results };
+    }),
+
+  /**
+   * Given a list of emails, report which already exist in this tenant and
+   * their status. Powers the bulk-import preview's existing-student flagging
+   * (ACTIVE → skip, INACTIVE → will reactivate). Emails not returned are new.
+   */
+  checkExistingEmails: roleProtectedProcedure(["ADMIN", "SECRETARY"])
+    .input(checkExistingEmailsSchema)
+    .query(async ({ ctx, input }) => {
+      if (input.emails.length === 0) return { existing: [] };
+
+      const rows = await ctx.db.user.findMany({
+        where: { tenantId: ctx.tenantId, email: { in: input.emails } },
+        select: { email: true, status: true },
+      });
+
+      return {
+        existing: rows.map((r) => ({ email: r.email, status: r.status })),
+      };
     }),
 
   resendInvite: roleProtectedProcedure(["ADMIN", "SECRETARY"])
