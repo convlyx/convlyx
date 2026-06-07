@@ -18,6 +18,27 @@ export const createUserSchema = z
     { message: "students.categoryRequired", path: ["initialCategory"] }
   );
 
+// Bulk student import. The client parses the spreadsheet, maps columns, and
+// resolves each row's category (mapped value or batch default) before sending
+// — so every row arrives as a clean student record. Role is implicitly STUDENT
+// (set server-side). The 200-row cap guards against abuse / runaway imports; a
+// real roster is tens of rows.
+export const bulkStudentRowSchema = z.object({
+  name: z.string().min(1, "O nome é obrigatório"),
+  email: z.email("Email inválido"),
+  phone: z.string().optional(),
+  category: z.enum(LICENSE_CATEGORIES),
+});
+
+export const bulkCreateStudentsSchema = z.object({
+  schoolId: z.string().uuid(),
+  students: z.array(bulkStudentRowSchema).min(1).max(200),
+});
+
+export const checkExistingEmailsSchema = z.object({
+  emails: z.array(z.email()).max(200),
+});
+
 export const updateUserSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, "O nome é obrigatório"),
@@ -70,6 +91,8 @@ export const listInstructorSessionsSchema = z.object({
 });
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
+export type BulkStudentRow = z.infer<typeof bulkStudentRowSchema>;
+export type BulkCreateStudentsInput = z.infer<typeof bulkCreateStudentsSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type ListUsersInput = z.infer<typeof listUsersSchema>;
 export type ListStudentEnrollmentsInput = z.infer<typeof listStudentEnrollmentsSchema>;

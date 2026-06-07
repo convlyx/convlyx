@@ -527,7 +527,78 @@
         "categoryRequired": "Selecione a categoria da carta de condução inicial",
         "currentCategory": "Categoria atual",
         "noCurrentCategory": "Sem categoria",
-        "initialCategory": "Categoria inicial"
+        "initialCategory": "Categoria inicial",
+        "import": {
+            "button": "Importar alunos",
+            "title": "Importar alunos",
+            "steps": {
+                "upload": "Carregar ficheiro",
+                "mapping": "Associar colunas",
+                "preview": "Rever e corrigir",
+                "results": "Resultado"
+            },
+            "upload": {
+                "title": "Carregue a folha de cálculo da escola",
+                "hint": "Aceita ficheiros Excel (.xlsx, .xls) ou CSV. Cada linha deve corresponder a um aluno.",
+                "dropzone": "Arraste o ficheiro para aqui ou clique para selecionar",
+                "parsing": "A ler o ficheiro...",
+                "infoTitle": "Como funciona",
+                "info": "Os alunos importados recebem um email de convite para definirem a palavra-passe e usarem a aplicação."
+            },
+            "errors": {
+                "parseFailed": "Não foi possível ler o ficheiro. Verifique se é um Excel ou CSV válido.",
+                "noHeaders": "O ficheiro não tem uma linha de cabeçalhos reconhecível.",
+                "noRows": "O ficheiro não tem linhas de dados."
+            },
+            "mapping": {
+                "title": "Associe as colunas do seu ficheiro aos campos",
+                "hint": "Detetámos as colunas automaticamente. Confirme ou ajuste cada associação.",
+                "fieldColumn": "Coluna do ficheiro",
+                "none": "— Nenhuma —",
+                "fields": {
+                    "name": "Nome",
+                    "email": "Email",
+                    "phone": "Telemóvel",
+                    "category": "Categoria"
+                },
+                "required": "obrigatório",
+                "optional": "opcional",
+                "school": "Escola",
+                "defaultCategory": "Categoria por defeito",
+                "defaultCategoryHint": "Aplicada a todos os alunos sem categoria reconhecida na coluna associada.",
+                "continue": "Continuar"
+            },
+            "preview": {
+                "title": "Reveja os alunos antes de importar",
+                "hint": "Corrija qualquer campo assinalado diretamente na tabela. As linhas inválidas não são importadas.",
+                "summary": "{importable} de {total} alunos prontos a importar",
+                "remove": "Remover linha",
+                "status": "Estado",
+                "valid": "Pronto",
+                "willReactivate": "Será reativado",
+                "alreadyActive": "Já é aluno (ignorado)",
+                "back": "Voltar",
+                "submit": "Importar {count} alunos",
+                "submitting": "A importar...",
+                "noneImportable": "Nenhuma linha válida para importar."
+            },
+            "rowErrors": {
+                "nameRequired": "Nome em falta",
+                "emailInvalid": "Email inválido",
+                "emailDuplicate": "Email repetido no ficheiro",
+                "categoryRequired": "Categoria em falta"
+            },
+            "results": {
+                "title": "Importação concluída",
+                "summary": "{created} criados, {reactivated} reativados, {skipped} ignorados, {failed} falhados",
+                "created": "Criado",
+                "reactivated": "Reativado",
+                "skipped": "Ignorado",
+                "failed": "Falhou",
+                "importAnother": "Importar outro ficheiro",
+                "done": "Concluir"
+            }
+        }
     },
     "instructors": {
         "title": "Instrutores",

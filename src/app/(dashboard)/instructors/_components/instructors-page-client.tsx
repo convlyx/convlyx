@@ -99,7 +99,7 @@ export function InstructorsPageClient() {
               placeholder={t("common.search") + "..."}
               value={searchInput}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 w-full sm:w-[200px]"
+              className="h-9 pl-9 w-full sm:w-[200px]"
             />
           </div>
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "ACTIVE" | "INACTIVE" | "ALL")}>
