@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useTranslations, useFormatter } from "next-intl";
 import * as Popover from "@radix-ui/react-popover";
 import { Newspaper, ArrowRight } from "lucide-react";
@@ -10,15 +9,39 @@ import { Loading } from "@/components/loading";
 import type { UserRole } from "@/generated/prisma/enums";
 
 /**
+ * The public Novidades blog lives on the ROOT domain (convlyx.com), not on a
+ * tenant subdomain (demo.convlyx.com). Strip a leading tenant label from the
+ * current host so links open the canonical public URL — and so the blog's
+ * footer (root-relative SEO/legal links) resolves correctly.
+ */
+function computeRootOrigin(): string {
+  if (typeof window === "undefined") return "https://convlyx.com";
+  const { protocol, hostname, port } = window.location;
+  let rootHost: string;
+  if (hostname === "localhost" || hostname.endsWith(".localhost")) {
+    rootHost = "localhost";
+  } else {
+    const parts = hostname.split(".");
+    rootHost = parts.length >= 3 ? parts.slice(1).join(".") : hostname;
+  }
+  return `${protocol}//${rootHost}${port ? `:${port}` : ""}`;
+}
+
+/**
  * "Novidades" (What's New) panel — a sibling of the notification bell that
  * surfaces product changelog posts. Staff-only (hidden for students). Content
  * is global Markdown (see src/lib/novidades.ts); this just shows the
- * role-filtered feed and an unread badge driven by `novidadesSeenAt`.
+ * role-filtered feed and an unread badge driven by `novidadesSeenAt`. Posts
+ * open in a new tab on the public root-domain blog.
  */
 export function NovidadesButton({ userRole }: { userRole: UserRole }) {
   const t = useTranslations("novidades");
   const format = useFormatter();
   const [open, setOpen] = useState(false);
+  // Resolved once per mount. On the server this returns the prod default; on the
+  // client it returns the live host. It isn't part of any server-rendered DOM
+  // (the popover is closed/portaled), so there's no hydration mismatch.
+  const [rootOrigin] = useState(computeRootOrigin);
   const utils = trpc.useUtils();
 
   const { data, isLoading, isError } = trpc.novidades.feed.useQuery({ limit: 8 });
@@ -35,7 +58,7 @@ export function NovidadesButton({ userRole }: { userRole: UserRole }) {
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
-    // Opening the panel marks everything seen — non-invasive, no extra click.
+    // Opening the panel marks everything seen: non-invasive, no extra click.
     if (next && unread > 0 && !markSeen.isPending) markSeen.mutate();
   }
 
@@ -83,8 +106,10 @@ export function NovidadesButton({ userRole }: { userRole: UserRole }) {
               <ul className="divide-y">
                 {posts.map((post) => (
                   <li key={post.slug}>
-                    <Link
-                      href={`/novidades/${post.slug}`}
+                    <a
+                      href={`${rootOrigin}/novidades/${post.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       onClick={() => setOpen(false)}
                       className="block px-4 py-3 transition-colors hover:bg-muted/50"
                     >
@@ -102,21 +127,23 @@ export function NovidadesButton({ userRole }: { userRole: UserRole }) {
                           </p>
                         </div>
                       </div>
-                    </Link>
+                    </a>
                   </li>
                 ))}
               </ul>
             )}
           </div>
 
-          <Link
-            href="/novidades"
+          <a
+            href={`${rootOrigin}/novidades`}
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={() => setOpen(false)}
             className="flex items-center justify-center gap-1.5 px-4 py-3 border-t text-xs font-medium text-primary hover:bg-muted/50 transition-colors shrink-0"
           >
             {t("seeAll")}
             <ArrowRight className="h-3 w-3" />
-          </Link>
+          </a>
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>

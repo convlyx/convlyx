@@ -91,7 +91,9 @@ function deriveSummary(body: string): string {
 let cachedPosts: NovidadesPost[] | null = null;
 
 function loadPosts(): NovidadesPost[] {
-  if (cachedPosts) return cachedPosts;
+  // Cache only in production (content is fixed per deploy). In dev, re-read each
+  // time so newly authored posts show up without restarting the server.
+  if (cachedPosts && process.env.NODE_ENV === "production") return cachedPosts;
 
   let filenames: string[] = [];
   try {

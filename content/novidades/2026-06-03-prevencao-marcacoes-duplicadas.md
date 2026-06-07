@@ -9,6 +9,6 @@ Já não é possível inscrever um aluno em duas atividades que se sobreponham n
 
 ## Porque é importante
 
-Evita conflitos de agenda que antes só eram detetados manualmente — um aluno não pode estar em dois sítios ao mesmo tempo. A verificação abrange tanto **aulas** como **exames**.
+Evita conflitos de agenda que antes só eram detetados manualmente: um aluno não pode estar em dois sítios ao mesmo tempo. A verificação abrange tanto **aulas** como **exames**.
 
 A validação acontece no momento da marcação, pelo que recebe o aviso imediatamente, antes de confirmar.
