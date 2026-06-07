@@ -211,6 +211,16 @@ Living document of everything the app can do, organized by area.
 - Notifications stored in database (persistent, survives refresh)
 - Relative timestamps
 
+## Novidades (What's New)
+- Staff-facing changelog: a `Newspaper` icon beside the notification bell (ADMIN/SECRETARY desktop header + INSTRUCTOR mobile shell; hidden for students)
+- Popover lists recent posts (title · relative date · summary) with an unread badge; non-invasive (no auto-popup)
+- Unread badge driven by a per-user `novidades_seen_at` timestamp — counts posts newer than the last open that match the user's role; opening the panel marks all seen
+- Content is **global editorial Markdown** in `content/novidades/*.md` (frontmatter: `title`, `date`, optional `audience`/`summary`/`cover`) — not per-tenant DB rows. One source of truth via `src/lib/novidades.ts`
+- `audience` frontmatter targets which staff roles get nudged in-app (defaults to all staff)
+- Public blog on the apex domain: `/novidades` (index) + `/novidades/[slug]` (post) — statically generated, SEO metadata + JSON-LD `BlogPosting`, in the sitemap, linked from the landing footer
+- tRPC `novidades` router: `feed` (role-filtered posts + unread count) + `markSeen`
+- See `docs/decisions/2026-06-07-novidades-changelog.md`
+
 ## UI/UX
 - Convlyx branding with custom logo
 - Green/grey/white professional theme (CSS variables, ready for per-tenant accent color)

@@ -15,6 +15,7 @@ import {
   CheckSquare,
 } from "lucide-react";
 import { NotificationBell } from "@/components/notification-bell";
+import { NovidadesButton } from "@/components/novidades-button";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/generated/prisma/enums";
 import type { LucideIcon } from "lucide-react";
@@ -110,6 +111,7 @@ export function MobileLayout({
             )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
+            <NovidadesButton userRole={userRole} />
             <NotificationBell userId={userId} />
             <button
               onClick={handleLogout}

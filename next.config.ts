@@ -40,6 +40,12 @@ const nextConfig: NextConfig = {
   // landing-page screenshots taken from the running dev server are clean.
   // No effect on production builds.
   devIndicators: false,
+  // The Novidades feed (tRPC) reads Markdown from `content/novidades/` at
+  // runtime, so pin that directory into the serverless function bundle — Next's
+  // tracer can't see the dynamic fs.readdir. Blog pages are static and unaffected.
+  outputFileTracingIncludes: {
+    "/api/trpc/[trpc]": ["./content/novidades/**/*"],
+  },
   headers: async () => [
     {
       source: "/(.*)",

@@ -643,6 +643,16 @@
         "cancellationTooLate": "Já não é possível cancelar — é necessário avisar com antecedência mínima",
         "cancellationLockedHint": "Cancelamento bloqueado: a aula começa em menos de {hours}h"
     },
+    "novidades": {
+        "title": "Novidades",
+        "kicker": "Atualizações do produto",
+        "blogSubtitle": "Tudo o que há de novo no Convlyx — cada melhoria e funcionalidade, à medida que chega.",
+        "empty": "Ainda não há novidades.",
+        "error": "Não foi possível carregar as novidades.",
+        "seeAll": "Ver todas as novidades",
+        "backToHome": "Voltar ao início",
+        "backToList": "Todas as novidades"
+    },
     "notifications": {
         "title": "Notificações",
         "markAllRead": "Marcar todas como lidas",

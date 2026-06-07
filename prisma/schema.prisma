@@ -144,6 +144,9 @@ model User {
   status    UserStatus @default(ACTIVE)
   // Categories an instructor is qualified to teach. Empty for non-instructors.
   qualifiedCategories LicenseCategory[] @default([]) @map("qualified_categories")
+  // Timestamp of the last time the user opened the "Novidades" panel; drives the
+  // unread badge — posts newer than this (and matching their role) count as unread.
+  novidadesSeenAt DateTime? @map("novidades_seen_at")
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
 

@@ -74,6 +74,11 @@ export async function middleware(request: NextRequest) {
     if (LEGAL_PAGES.includes(pathname)) {
       return response;
     }
+    // Public "Novidades" blog — changelog index + individual posts. Served on
+    // the apex for SEO; the in-app popover (on tenant subdomains) links here too.
+    if (pathname === "/novidades" || pathname.startsWith("/novidades/")) {
+      return response;
+    }
     // Allow SEO/PWA files served from public/ and Next.js internals
     const ALLOWED = ["/robots.txt", "/sitemap.xml", "/favicon", "/manifest.json", "/sw.js", "/og-image", "/llms.txt", "/screenshots/"];
     if (ALLOWED.some((p) => pathname.startsWith(p)) || pathname.startsWith("/_next/")) {

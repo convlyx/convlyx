@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { LogOut } from "lucide-react";
 import { NotificationBell } from "@/components/notification-bell";
+import { NovidadesButton } from "@/components/novidades-button";
 import type { UserRole } from "@/generated/prisma/enums";
 
 type HeaderProps = {
@@ -49,6 +50,7 @@ export function Header({
         <span className="text-sm font-semibold truncate md:hidden">{schoolName}</span>
       </div>
       <div className="flex items-center gap-2 md:gap-3">
+        <NovidadesButton userRole={userRole} />
         <NotificationBell userId={userId} />
         <UserAvatar name={userName} className="h-8 w-8 bg-primary text-primary-foreground text-xs font-bold" />
         <div className="text-right hidden sm:block">
