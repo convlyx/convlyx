@@ -44,6 +44,10 @@ export function CheckInScanner() {
   const [scanNonce, setScanNonce] = useState(0);
   const [cameraError, setCameraError] = useState(false);
   const [invalid, setInvalid] = useState(false);
+  // State (not just the ref) so acquiring the stream re-renders and re-runs the
+  // decode effect — otherwise it runs before getUserMedia resolves and never
+  // attaches the stream (black preview, no decoding).
+  const [streamReady, setStreamReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const handledRef = useRef(false);
@@ -54,6 +58,7 @@ export function CheckInScanner() {
   function stopStream() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
+    setStreamReady(false);
   }
 
   // Acquire the camera inside the user gesture (reliable permission prompt).
@@ -61,6 +66,7 @@ export function CheckInScanner() {
     try {
       stopStream();
       streamRef.current = await navigator.mediaDevices.getUserMedia(CAMERA_CONSTRAINTS);
+      setStreamReady(true);
       return true;
     } catch {
       setCameraError(true);
@@ -85,7 +91,7 @@ export function CheckInScanner() {
 
   // Decode from the already-acquired stream.
   useEffect(() => {
-    if (!scanning || !streamRef.current) return;
+    if (!scanning || !streamReady || !streamRef.current) return;
     let controls: { stop: () => void } | null = null;
     let cancelled = false;
     handledRef.current = false;
@@ -120,7 +126,7 @@ export function CheckInScanner() {
       controls?.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scanning, scanNonce]);
+  }, [scanning, streamReady, scanNonce]);
 
   // Release the camera whenever the dialog is closed.
   useEffect(() => {
