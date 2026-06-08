@@ -13,6 +13,8 @@ import { createNotification, formatClassTime } from "../lib/notifications";
 import { hasStudentScheduleConflict } from "../lib/schedule-conflict";
 import { getStudentClassAccess } from "../lib/student-access";
 import { logger } from "@/lib/logger";
+import { studentCheckInSchema } from "@/lib/validations/checkin";
+import { verifyToken } from "../lib/checkin-token";
 
 export const enrollmentRouter = router({
   /** Enroll a student in a class session */
@@ -539,5 +541,75 @@ export const enrollmentRouter = router({
         ctx.db.enrollment.count({ where: { ...base, status: "NO_SHOW" } }),
       ]);
       return { scheduled, attended, noShow };
+    }),
+
+  /**
+   * Student self-check-in via the instructor's rotating QR. Validates the
+   * token + same-school eligibility, marks ATTENDED (idempotent), and
+   * auto-enrolls walk-ins when capacity allows. Theory classes only.
+   */
+  checkIn: roleProtectedProcedure(["STUDENT"])
+    .input(studentCheckInSchema)
+    .mutation(async ({ ctx, input }) => {
+      const session = await ctx.db.classSession.findFirst({
+        where: { id: input.sessionId, tenantId: ctx.tenantId },
+        select: {
+          id: true,
+          title: true,
+          classType: true,
+          schoolId: true,
+          capacity: true,
+          checkInOpenedAt: true,
+          checkInSecret: true,
+          _count: { select: { enrollments: true } },
+        },
+      });
+      if (!session) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "classes.notFound" });
+      }
+      if (session.classType !== "THEORY") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "checkin.notTheory" });
+      }
+      if (session.schoolId !== ctx.user.schoolId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "checkin.differentSchool" });
+      }
+      if (!session.checkInOpenedAt || !session.checkInSecret) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "checkin.windowClosed" });
+      }
+      if (!verifyToken(session.checkInSecret, session.id, input.token, Date.now())) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "checkin.tokenExpired" });
+      }
+
+      const existing = await ctx.db.enrollment.findFirst({
+        where: { sessionId: session.id, studentId: ctx.user.id },
+        select: { id: true, status: true },
+      });
+
+      if (existing) {
+        if (existing.status === "ATTENDED") {
+          return { success: true, title: session.title, alreadyMarked: true };
+        }
+        await ctx.db.enrollment.update({
+          where: { id: existing.id },
+          data: { status: "ATTENDED", checkedInAt: new Date() },
+        });
+        return { success: true, title: session.title, alreadyMarked: false };
+      }
+
+      // Walk-in: auto-enroll if there is room.
+      if (session._count.enrollments >= session.capacity) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "enrollments.classFull" });
+      }
+      await ctx.db.enrollment.create({
+        data: {
+          tenantId: ctx.tenantId,
+          schoolId: session.schoolId,
+          sessionId: session.id,
+          studentId: ctx.user.id,
+          status: "ATTENDED",
+          checkedInAt: new Date(),
+        },
+      });
+      return { success: true, title: session.title, alreadyMarked: false };
     }),
 });

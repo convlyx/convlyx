@@ -125,6 +125,16 @@ Living document of everything the app can do, organized by area.
 - Secretary/admin can remove individual students from class detail
 - PDF export (attendance sheet) only available for completed classes
 
+## QR Attendance Check-in (theory classes)
+- Students self-mark presence by scanning a QR the instructor displays — built for theory classes only.
+- Instructor "check-in display" screen (`/checkin-display/[id]`, full-screen, outside the dashboard chrome for projector use; ADMIN/SECRETARY/INSTRUCTOR, instructors restricted to their own classes). Shows a large QR, live "X de Y presentes" counter, recent check-ins, and an Abrir/Fechar marcação toggle.
+- Instructor "Aula a decorrer" banner on the instructor home links to the display whenever a theory class is inside its time window (reuses the today query; robust to the status-sync cron lag).
+- Opening the window flips the class to `IN_PROGRESS`, generates a per-session secret, and starts issuing rotating tokens; closing it clears the secret so every live QR dies immediately.
+- Anti-fraud: the QR encodes `/checkin/[sessionId]?t=<token>` where the token is a rotating TOTP-style HMAC (`src/server/lib/checkin-token.ts`, ~20s window, ±4-window tolerance, 64-bit truncated HMAC over `sessionId:window`). A screenshot shared later goes stale fast; the secret never reaches the browser (the display polls `class.getCheckInToken`).
+- Student flow: native camera opens the deep link → authenticated "Confirmar presença" screen (one tap). Not-signed-in users bounce to `/login?redirectTo=…` and return after auth.
+- `enrollment.checkIn` validates window-open + token + **same-school** eligibility, marks `ATTENDED` (+ `checkedInAt`), is idempotent on re-scan, and **auto-enrolls walk-ins** when capacity allows (rejects "turma cheia" otherwise). Theory-only and different-school scans are rejected with translatable errors.
+- Coexists with the post-class attendance modal: QR check-ins mark `ATTENDED` live; whoever never scans still surfaces in the modal for `NO_SHOW` marking.
+
 ## Calendar
 - FullCalendar integration (week, day, month, list views)
 - Portuguese locale, Monday start, 07:00-22:00 range

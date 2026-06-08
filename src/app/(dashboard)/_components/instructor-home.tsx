@@ -21,6 +21,7 @@ import {
 import { typeKeys, statusKeys, statusVariant, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
 import { PushPrompt } from "@/components/push-prompt";
 import { PendingAttendanceModal } from "./pending-attendance-modal";
+import { CurrentClassBanner } from "./current-class-banner";
 
 export function InstructorHome({
   userId,
@@ -59,6 +60,8 @@ export function InstructorHome({
       <PushPrompt userId={userId} />
 
       <PendingAttendanceModal />
+
+      <CurrentClassBanner todayRange={todayRange} />
 
       {/* Hero — current/next class (driven by today query) */}
       {todayLoading ? (

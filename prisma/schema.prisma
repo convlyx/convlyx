@@ -193,6 +193,10 @@ model ClassSession {
   endsAt       DateTime    @map("ends_at")
   capacity     Int
   status       ClassStatus @default(SCHEDULED)
+  // QR self-check-in window. checkInOpenedAt non-null ⇒ window open; the
+  // secret backs the rotating QR token and is cleared on close to invalidate it.
+  checkInOpenedAt DateTime? @map("check_in_opened_at")
+  checkInSecret   String?   @map("check_in_secret") @db.VarChar(64)
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
   createdById  String      @map("created_by") @db.Uuid
@@ -218,7 +222,8 @@ model Enrollment {
   sessionId  String           @map("session_id") @db.Uuid
   studentId  String           @map("student_id") @db.Uuid
   status     EnrollmentStatus @default(ENROLLED)
-  notes      String?          // Instructor notes about the student's performance
+  notes       String?          // Instructor notes about the student's performance
+  checkedInAt DateTime? @map("checked_in_at") // set on QR self-check-in
   enrolledAt DateTime         @default(now()) @map("enrolled_at")
   updatedAt  DateTime         @updatedAt @map("updated_at")
 

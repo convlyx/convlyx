@@ -12,6 +12,8 @@ import { getStudentClassAccess } from "../lib/student-access";
 import { hasInstructorScheduleConflict, hasStudentScheduleConflict } from "../lib/schedule-conflict";
 import { wallClockToUTC } from "@/lib/dates";
 import { logger } from "@/lib/logger";
+import { checkInSessionSchema } from "@/lib/validations/checkin";
+import { generateSecret, currentToken, CHECKIN_WINDOW_MS } from "../lib/checkin-token";
 
 export const classRouter = router({
   list: protectedProcedure
@@ -160,6 +162,109 @@ export const classRouter = router({
       }
 
       return result;
+    }),
+
+  /** Open the QR self-check-in window for a theory class (instructor/staff). */
+  openCheckIn: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
+    .input(checkInSessionSchema)
+    .mutation(async ({ ctx, input }) => {
+      const session = await ctx.db.classSession.findFirst({
+        where: {
+          id: input.sessionId,
+          tenantId: ctx.tenantId,
+          ...(ctx.user.role === "INSTRUCTOR" && { instructorId: ctx.user.id }),
+        },
+        select: { id: true, classType: true, status: true },
+      });
+      if (!session) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "classes.notFound" });
+      }
+      if (session.classType !== "THEORY") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "checkin.notTheory" });
+      }
+      if (session.status === "CANCELLED") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "checkin.classCancelled" });
+      }
+      await ctx.db.classSession.update({
+        where: { id: session.id },
+        data: {
+          checkInOpenedAt: new Date(),
+          checkInSecret: generateSecret(),
+          status: "IN_PROGRESS",
+          updatedById: ctx.user.id,
+        },
+      });
+      return { success: true };
+    }),
+
+  /** Close the check-in window — clears the secret so all live QRs die. */
+  closeCheckIn: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
+    .input(checkInSessionSchema)
+    .mutation(async ({ ctx, input }) => {
+      const session = await ctx.db.classSession.findFirst({
+        where: {
+          id: input.sessionId,
+          tenantId: ctx.tenantId,
+          ...(ctx.user.role === "INSTRUCTOR" && { instructorId: ctx.user.id }),
+        },
+        select: { id: true },
+      });
+      if (!session) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "classes.notFound" });
+      }
+      await ctx.db.classSession.update({
+        where: { id: session.id },
+        data: { checkInOpenedAt: null, checkInSecret: null, updatedById: ctx.user.id },
+      });
+      return { success: true };
+    }),
+
+  /**
+   * Current QR token + live check-in state for the display screen. Polled
+   * client-side every ~windowMs. The secret never leaves the server — only the
+   * derived, short-lived token does.
+   */
+  getCheckInToken: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
+    .input(checkInSessionSchema)
+    .query(async ({ ctx, input }) => {
+      const session = await ctx.db.classSession.findFirst({
+        where: {
+          id: input.sessionId,
+          tenantId: ctx.tenantId,
+          ...(ctx.user.role === "INSTRUCTOR" && { instructorId: ctx.user.id }),
+        },
+        select: {
+          id: true,
+          title: true,
+          capacity: true,
+          checkInOpenedAt: true,
+          checkInSecret: true,
+          enrollments: {
+            where: { checkedInAt: { not: null } },
+            select: { id: true, checkedInAt: true, student: { select: { name: true } } },
+            orderBy: { checkedInAt: "desc" },
+          },
+        },
+      });
+      if (!session) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "classes.notFound" });
+      }
+      const checkInOpen = Boolean(session.checkInOpenedAt && session.checkInSecret);
+      const token =
+        checkInOpen && session.checkInSecret
+          ? currentToken(session.checkInSecret, session.id, Date.now())
+          : null;
+      return {
+        title: session.title,
+        capacity: session.capacity,
+        checkInOpen,
+        token,
+        windowMs: CHECKIN_WINDOW_MS,
+        attendedCount: session.enrollments.length,
+        recentCheckIns: session.enrollments
+          .slice(0, 8)
+          .map((e) => ({ id: e.id, name: e.student.name, checkedInAt: e.checkedInAt })),
+      };
     }),
 
   create: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
