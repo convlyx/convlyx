@@ -1,15 +1,15 @@
 import { Sidebar } from "./sidebar";
-import { Header } from "./header";
-import { MobileTopBar } from "./mobile-top-bar";
+import { InstructorTopBar } from "./instructor-top-bar";
 import { MobileTabBar } from "./mobile-tab-bar";
 import type { UserRole } from "@/generated/prisma/enums";
 
 /**
  * Instructor shell — responsive, children rendered once:
- *  - desktop (md+): the same sidebar + header backoffice as admin/secretary
- *  - mobile: the curved top bar + floating bottom tab bar (the student shell)
- * Only the chrome is toggled via CSS, so client components in `children`
- * mount a single time.
+ *  - desktop (md+): the same sidebar backoffice as admin/secretary
+ *  - mobile: a curved top bar + floating bottom tab bar (the student shell)
+ * A single InstructorTopBar carries the (one) NotificationBell across both
+ * viewports — two header instances would double-subscribe to realtime. Only
+ * the chrome toggles via CSS, so client components in `children` mount once.
  */
 export function InstructorLayout({
   children,
@@ -32,25 +32,11 @@ export function InstructorLayout({
       <Sidebar userRole={userRole} tenantName={schoolName} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Desktop header */}
-        <div className="hidden md:block">
-          <Header
-            userId={userId}
-            userName={userName}
-            userRole={userRole}
-            userMobileNav={null}
-            tenantName={tenantName}
-            schoolName={schoolName}
-          />
-        </div>
-
-        {/* Mobile top bar */}
-        <MobileTopBar
+        <InstructorTopBar
           userId={userId}
           userName={userName}
           userRole={userRole}
-          tenantName={schoolName}
-          className="md:hidden"
+          tenantName={tenantName}
         />
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
