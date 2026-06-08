@@ -612,4 +612,46 @@ export const enrollmentRouter = router({
       });
       return { success: true, title: session.title, alreadyMarked: false };
     }),
+
+  /**
+   * The theory session the student can mark presence for *right now* — drives
+   * whether the "Marcar presença" card shows. Returns the session when the
+   * student is enrolled-but-not-yet-ATTENDED, or could walk in (capacity left);
+   * null once they're marked or no theory class is in its window.
+   */
+  markableSession: roleProtectedProcedure(["STUDENT"])
+    .query(async ({ ctx }) => {
+      const now = new Date();
+      const session = await ctx.db.classSession.findFirst({
+        where: {
+          tenantId: ctx.tenantId,
+          schoolId: ctx.user.schoolId,
+          classType: "THEORY",
+          status: { not: "CANCELLED" },
+          startsAt: { lte: now },
+          endsAt: { gte: now },
+        },
+        select: {
+          id: true,
+          title: true,
+          capacity: true,
+          enrollments: {
+            where: { studentId: ctx.user.id },
+            select: { status: true },
+          },
+          _count: { select: { enrollments: true } },
+        },
+        orderBy: { startsAt: "asc" },
+      });
+      if (!session) return null;
+
+      const mine = session.enrollments[0];
+      if (mine) {
+        return mine.status === "ATTENDED" ? null : { id: session.id, title: session.title };
+      }
+      // Walk-in: only offer it if there's still capacity.
+      return session._count.enrollments >= session.capacity
+        ? null
+        : { id: session.id, title: session.title };
+    }),
 });

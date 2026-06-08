@@ -17,10 +17,15 @@ import { Button } from "@/components/ui/button";
 function parseCheckInUrl(text: string): { sessionId: string; token: string } | null {
   try {
     const url = new URL(text);
-    const match = url.pathname.match(/\/checkin\/([0-9a-fA-F-]{36})$/);
     const token = url.searchParams.get("t");
-    if (!match || !token) return null;
-    return { sessionId: match[1], token };
+    if (!token) return null;
+    // New form: /?checkin=<id>&t=<token>
+    const query = url.searchParams.get("checkin");
+    if (query && /^[0-9a-fA-F-]{36}$/.test(query)) return { sessionId: query, token };
+    // Legacy form: /checkin/<id>?t=<token>
+    const match = url.pathname.match(/\/checkin\/([0-9a-fA-F-]{36})$/);
+    if (match) return { sessionId: match[1], token };
+    return null;
   } catch {
     return null;
   }
@@ -56,7 +61,17 @@ export function CheckInScanner() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const handledRef = useRef(false);
-  const checkIn = trpc.enrollment.checkIn.useMutation();
+  const utils = trpc.useUtils();
+  // Drives card visibility: only show when there's a theory class to mark right
+  // now (hidden once ATTENDED or when no class is in its window).
+  const { data: markable } = trpc.enrollment.markableSession.useQuery();
+  const checkIn = trpc.enrollment.checkIn.useMutation({
+    onSuccess: () => {
+      utils.enrollment.markableSession.invalidate();
+      utils.enrollment.studentStats.invalidate();
+      utils.enrollment.listByStudent.invalidate();
+    },
+  });
 
   const scanning =
     open && !directMode && !checkIn.isSuccess && !checkIn.isError && !cameraError;
@@ -158,20 +173,22 @@ export function CheckInScanner() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={openScanner}
-        className="flex w-full items-center gap-3 rounded-2xl border bg-card p-4 text-left card-shadow transition-all hover:card-shadow-hover"
-      >
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <QrCode className="h-5 w-5" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold">{t("scanCardTitle")}</p>
-          <p className="text-xs text-muted-foreground">{t("scanCardSubtitle")}</p>
-        </div>
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-      </button>
+      {markable && (
+        <button
+          type="button"
+          onClick={openScanner}
+          className="flex w-full items-center gap-3 rounded-2xl border bg-card p-4 text-left card-shadow transition-all hover:card-shadow-hover"
+        >
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <QrCode className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold">{t("scanCardTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("scanCardSubtitle")}</p>
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </button>
+      )}
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) setOpen(false); }}>
         <DialogContent className="sm:max-w-sm">

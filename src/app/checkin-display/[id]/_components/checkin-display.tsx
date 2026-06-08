@@ -23,7 +23,10 @@ export function CheckInDisplay({ sessionId }: { sessionId: string }) {
 
   useEffect(() => {
     if (!canvasRef.current || !data?.checkInOpen || !data.token) return;
-    const url = `${window.location.protocol}//${window.location.host}/checkin/${sessionId}?t=${data.token}`;
+    // Encode the home URL directly so a native-camera scan lands on the painel
+    // with no /checkin redirect hop (faster cold open). The in-app scanner and
+    // the /checkin deep-link route both still understand the token.
+    const url = `${window.location.protocol}//${window.location.host}/?checkin=${sessionId}&t=${data.token}`;
     QRCode.toCanvas(canvasRef.current, url, { width: 320, margin: 1 }).catch(() => {});
   }, [data?.token, data?.checkInOpen, sessionId]);
 
