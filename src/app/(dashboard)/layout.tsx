@@ -47,7 +47,6 @@ export default async function DashboardLayout({
         userId={user.id}
         userName={user.name}
         userRole={user.role}
-        tenantName={user.school.name}
       >
         {content}
       </MobileLayout>

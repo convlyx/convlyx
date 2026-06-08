@@ -50,7 +50,6 @@ export function InstructorLayout({
           userId={userId}
           userName={userName}
           userRole={userRole}
-          tenantName={schoolName}
           className="md:hidden"
         />
 

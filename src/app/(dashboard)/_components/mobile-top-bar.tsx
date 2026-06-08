@@ -18,13 +18,11 @@ export function MobileTopBar({
   userId,
   userName,
   userRole,
-  tenantName,
   className,
 }: {
   userId: string;
   userName: string;
   userRole: UserRole;
-  tenantName: string;
   className?: string;
 }) {
   const t = useTranslations();
@@ -38,7 +36,6 @@ export function MobileTopBar({
   const timeZone = useTimeZone() ?? "Europe/Lisbon";
 
   const firstName = userName.split(" ")[0];
-  const isDashboard = pathname === "/";
 
   function greeting() {
     const hour = hourInTimeZone(now, timeZone);
@@ -46,14 +43,17 @@ export function MobileTopBar({
     if (hour < 18) return t("dashboard.greeting.afternoon");
     return t("dashboard.greeting.evening");
   }
-  function screenTitle() {
+  function knownTitle(): string | null {
     if (pathname.startsWith("/calendar")) return tNav("calendar");
     if (pathname.startsWith("/classes")) return tNav("classes");
     if (pathname.startsWith("/students")) return tNav("students");
     if (pathname.startsWith("/enrollments")) return t("enrollments.enrollmentsShort");
     if (pathname.startsWith("/settings")) return t("common.profile");
-    return tenantName;
+    return null;
   }
+  // Default to the greeting on the home and any unmatched route, so a transient
+  // route change never flashes a fallback title (previously the school name).
+  const title = pathname === "/" ? null : knownTitle();
 
   async function handleLogout() {
     const supabase = createClient();
@@ -73,13 +73,13 @@ export function MobileTopBar({
     >
       <div className="flex items-start justify-between gap-3 pt-1">
         <div className="min-w-0 flex-1">
-          {isDashboard ? (
+          {title ? (
+            <h1 className="text-2xl font-bold leading-tight">{title}</h1>
+          ) : (
             <>
               <p className="text-sm text-muted-foreground">{greeting()}</p>
               <h1 className="text-2xl font-bold leading-tight">{firstName} 👋</h1>
             </>
-          ) : (
-            <h1 className="text-2xl font-bold leading-tight">{screenTitle()}</h1>
           )}
         </div>
         <div className="flex items-center gap-1 shrink-0">

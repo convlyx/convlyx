@@ -8,13 +8,11 @@ export function MobileLayout({
   userId,
   userName,
   userRole,
-  tenantName,
 }: {
   children: React.ReactNode;
   userId: string;
   userName: string;
   userRole: UserRole;
-  tenantName: string;
 }) {
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -22,7 +20,6 @@ export function MobileLayout({
         userId={userId}
         userName={userName}
         userRole={userRole}
-        tenantName={tenantName}
       />
       <main className="flex-1 overflow-y-auto overflow-x-hidden">
         <div className="px-4 pt-4 pb-28">{children}</div>
