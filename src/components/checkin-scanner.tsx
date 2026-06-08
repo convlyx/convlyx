@@ -26,12 +26,16 @@ function parseCheckInUrl(text: string): { sessionId: string; token: string } | n
   }
 }
 
+const CAMERA_CONSTRAINTS: MediaStreamConstraints = {
+  video: { facingMode: "environment" },
+};
+
 /**
- * In-app QR scanner for students. Opens the camera inside the app (works in the
- * installed PWA on iOS/Android — secure context required, which prod/preview
- * are) and checks in within the current session, so there's no browser hop or
- * re-login. The zxing decoder is dynamically imported so it stays out of the
- * route bundle until the student opens the scanner.
+ * In-app QR scanner for students. Works in the installed PWA on iOS/Android
+ * (secure context required, which prod/preview are). The camera is requested
+ * directly from the tap handler so the permission prompt fires within the user
+ * gesture (Safari skips the prompt if getUserMedia is awaited behind a dynamic
+ * import). The zxing decoder stays lazy-loaded out of the route bundle.
  */
 export function CheckInScanner() {
   const t = useTranslations("checkin");
@@ -41,25 +45,57 @@ export function CheckInScanner() {
   const [cameraError, setCameraError] = useState(false);
   const [invalid, setInvalid] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const handledRef = useRef(false);
   const checkIn = trpc.enrollment.checkIn.useMutation();
 
-  // Scan while the dialog is open and we haven't resolved a check-in yet.
   const scanning = open && !checkIn.isSuccess && !checkIn.isError && !cameraError;
 
+  function stopStream() {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+  }
+
+  // Acquire the camera inside the user gesture (reliable permission prompt).
+  async function requestCamera(): Promise<boolean> {
+    try {
+      stopStream();
+      streamRef.current = await navigator.mediaDevices.getUserMedia(CAMERA_CONSTRAINTS);
+      return true;
+    } catch {
+      setCameraError(true);
+      return false;
+    }
+  }
+
+  async function openScanner() {
+    setCameraError(false);
+    setInvalid(false);
+    checkIn.reset();
+    setOpen(true);
+    await requestCamera();
+  }
+
+  async function restart() {
+    setCameraError(false);
+    setInvalid(false);
+    checkIn.reset();
+    if (await requestCamera()) setScanNonce((n) => n + 1);
+  }
+
+  // Decode from the already-acquired stream.
   useEffect(() => {
-    if (!scanning) return;
+    if (!scanning || !streamRef.current) return;
     let controls: { stop: () => void } | null = null;
     let cancelled = false;
     handledRef.current = false;
-    setInvalid(false);
 
     (async () => {
       try {
         const { BrowserQRCodeReader } = await import("@zxing/browser");
         const reader = new BrowserQRCodeReader();
-        controls = await reader.decodeFromConstraints(
-          { video: { facingMode: "environment" } },
+        controls = await reader.decodeFromStream(
+          streamRef.current!,
           videoRef.current!,
           (result) => {
             if (!result || handledRef.current) return;
@@ -86,24 +122,16 @@ export function CheckInScanner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanning, scanNonce]);
 
-  function reset() {
-    checkIn.reset();
-    setInvalid(false);
-    setCameraError(false);
-  }
-  function restart() {
-    reset();
-    setScanNonce((n) => n + 1);
-  }
+  // Release the camera whenever the dialog is closed.
+  useEffect(() => {
+    if (!open) stopStream();
+  }, [open]);
 
   return (
     <>
       <button
         type="button"
-        onClick={() => {
-          reset();
-          setOpen(true);
-        }}
+        onClick={openScanner}
         className="flex w-full items-center gap-3 rounded-2xl border bg-card p-4 text-left card-shadow transition-all hover:card-shadow-hover"
       >
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
