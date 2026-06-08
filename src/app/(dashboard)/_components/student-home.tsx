@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { track } from "@/lib/posthog";
 import { PushPrompt } from "@/components/push-prompt";
+import { CheckInScanner } from "@/components/checkin-scanner";
 
 export function StudentHome({
   userId,
@@ -107,6 +108,8 @@ export function StudentHome({
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <PushPrompt userId={userId} />
+
+      <CheckInScanner />
 
       {/* Hero — next class (driven by enrollments query) */}
       {enrollmentsLoading ? (

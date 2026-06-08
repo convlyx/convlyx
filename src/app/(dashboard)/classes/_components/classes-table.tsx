@@ -52,7 +52,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   // statusFilter has a dynamic default that depends on the active time tab.
   // Empty string in the URL means "fall back to whatever the tab implies."
   const [statusFilterRaw, setStatusFilter] = useUrlParam<string>("status", "");
-  const effectiveStatusDefault = timeTab === "upcoming" ? "SCHEDULED" : "COMPLETED";
+  const effectiveStatusDefault = timeTab === "upcoming" ? "ALL" : "COMPLETED";
   const statusFilter = statusFilterRaw || effectiveStatusDefault;
   const [page, setPage] = useUrlParamInt("page", 1);
   const [cancelId, setCancelId] = useState<string | null>(null);
@@ -76,6 +76,17 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   const isStudent = userRole === "STUDENT";
   const canManageStaff = userRole === "ADMIN" || userRole === "SECRETARY";
 
+  // Students browse enrollable (scheduled) classes. For staff/instructors the
+  // upcoming tab defaults to "active" (scheduled + in-progress): with no
+  // explicit status we omit the filter so class.list returns all non-cancelled
+  // classes, bounded to not-yet-ended by the time tab — so a class happening
+  // right now still appears. Past keeps its COMPLETED default.
+  const queryStatus = isStudent
+    ? "SCHEDULED"
+    : timeTab === "upcoming" && !statusFilterRaw
+      ? undefined
+      : statusFilter;
+
   // Staff queries hit the paginated/filtered server endpoint; students keep
   // the legacy "fetch all then filter client-side" path because their list
   // has a niche "not full / not enrolled" filter that isn't worth pushing
@@ -84,7 +95,9 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
     ...(typeFilter !== "ALL" && { classType: typeFilter as "THEORY" | "PRACTICAL" }),
     ...(categoryFilter !== "ALL" && { category: categoryFilter as LicenseCategory }),
     ...(instructorFilter !== "ALL" && { instructorId: instructorFilter }),
-    status: statusFilter as "ALL" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED",
+    ...(queryStatus && {
+      status: queryStatus as "ALL" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED",
+    }),
     // Students get search + future filtering server-side too (much smaller
     // payload). Only the "not full" check and pagination stay client-side —
     // Prisma can't compare the enrolment count to `capacity` in a WHERE.

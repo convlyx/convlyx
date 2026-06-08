@@ -11,6 +11,10 @@ if (dsn) {
     replaysOnErrorSampleRate: 1.0,
     integrations: [Sentry.replayIntegration()],
     enabled: process.env.NODE_ENV === "production",
+    // Non-actionable device/browser camera noise from the in-app QR scanner —
+    // thrown asynchronously by the Chromium-on-Android media pipeline; the scan
+    // still works, so don't report it.
+    ignoreErrors: ["setPhotoOptions failed"],
   });
 }
 

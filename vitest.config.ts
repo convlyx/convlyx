@@ -17,7 +17,7 @@ export default defineConfig({
     // from .env); CI spins up a service-container Postgres.
     fileParallelism: false,
     testTimeout: 30_000,
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/**/*.test.ts", "src/**/*.test.ts"],
     setupFiles: ["tests/setup.ts"],
   },
 });

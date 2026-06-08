@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import * as Popover from "@radix-ui/react-popover";
 import { Bell, CheckCheck } from "lucide-react";
@@ -43,6 +43,10 @@ export function NotificationBell({ userId }: { userId: string }) {
   const format = useFormatter();
   const [open, setOpen] = useState(false);
   const utils = trpc.useUtils();
+  // Unique per mounted instance: a fixed channel name throws "cannot add
+  // callbacks after subscribe()" if the bell renders more than once on a page
+  // (e.g. responsive desktop + mobile chrome).
+  const channelId = useId();
 
   const { data: unreadCount } = trpc.notification.unreadCount.useQuery(undefined, {
     // Live updates come from the Supabase Realtime subscription below, so we no
@@ -74,7 +78,7 @@ export function NotificationBell({ userId }: { userId: string }) {
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel("notifications")
+      .channel(`notifications:${userId}:${channelId}`)
       .on(
         "postgres_changes",
         {
@@ -95,7 +99,7 @@ export function NotificationBell({ userId }: { userId: string }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, open, utils]);
+  }, [userId, open, utils, channelId]);
 
   const count = unreadCount ?? 0;
 
