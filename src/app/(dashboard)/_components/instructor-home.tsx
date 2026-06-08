@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations, useFormatter } from "next-intl";
+import { useTranslations, useFormatter, useNow } from "next-intl";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
 import { HeroCardSkeleton } from "@/components/skeletons/hero-card-skeleton";
@@ -41,7 +41,9 @@ export function InstructorHome({
   const todayClasses = todayData?.items;
   const weekClasses = weekData?.items;
 
-  const now = new Date();
+  // Shared "now" inherited from the server (see i18n.ts) so the current/next
+  // class selection hydrates without a mismatch; re-evaluates each minute.
+  const now = useNow({ updateInterval: 60_000 });
 
   const currentOrNextClass = todayClasses?.find(
     (cls) => cls.status === "IN_PROGRESS" || (cls.status === "SCHEDULED" && new Date(cls.startsAt) > now)

@@ -39,6 +39,12 @@ export default getRequestConfig(async () => {
   return {
     locale,
     timeZone: await resolveTimeZone(),
+    // Shared per-request "now" so relative-time rendering (e.g. the student
+    // dashboard countdown) is identical on the server and on client hydration.
+    // Inherited by NextIntlClientProvider since it's rendered from a Server
+    // Component. Without this, `new Date()` differs between SSR and hydration
+    // and triggers React #418 text-content mismatches.
+    now: new Date(),
     messages: (await import(`../../messages/${locale}.json`)).default,
   };
 });

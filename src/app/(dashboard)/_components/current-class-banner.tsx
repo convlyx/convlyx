@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useTranslations, useNow } from "next-intl";
 import { Radio } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
@@ -16,7 +16,9 @@ export function CurrentClassBanner({ todayRange }: { todayRange: { from: string;
   const t = useTranslations("checkin");
   const { data } = trpc.class.list.useQuery(todayRange);
 
-  const now = new Date().getTime();
+  // Shared "now" inherited from the server (see i18n.ts) so the banner's
+  // presence is identical on SSR and hydration; re-checks each minute.
+  const now = useNow({ updateInterval: 60_000 }).getTime();
   const current = data?.items.find(
     (c) =>
       c.classType === "THEORY" &&

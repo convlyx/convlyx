@@ -379,6 +379,7 @@
         "scanInvalid": "Código QR inválido. Tenta novamente.",
         "cameraError": "Não foi possível aceder à câmara. Verifica as permissões.",
         "tryAgain": "Tentar novamente",
+        "marking": "A marcar presença…",
         "close": "Fechar"
     },
     "classes": {

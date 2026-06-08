@@ -1,9 +1,9 @@
-import { CheckInConfirm } from "./_components/checkin-confirm";
+import { redirect } from "next/navigation";
 
-// Auth + tenant are handled by middleware and the (dashboard) layout, which
-// also wraps this page in the normal app chrome (sidebar / bottom nav). The
-// middleware preserves the `?t=` token through the login bounce for scans
-// made while logged out.
+// Native-camera deep link. Auth + tenant are handled by middleware (which
+// preserves the ?t= token through the login bounce). We redirect to the home
+// painel with the token so the check-in is confirmed in the same dialog the
+// in-app scanner uses — same popup, same app chrome — instead of a bare page.
 export default async function CheckInPage({
   params,
   searchParams,
@@ -13,5 +13,6 @@ export default async function CheckInPage({
 }) {
   const { sessionId } = await params;
   const { t } = await searchParams;
-  return <CheckInConfirm sessionId={sessionId} token={t ?? ""} />;
+  const query = new URLSearchParams({ checkin: sessionId, ...(t ? { t } : {}) });
+  redirect(`/?${query.toString()}`);
 }

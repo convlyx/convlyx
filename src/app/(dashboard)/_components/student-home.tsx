@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations, useFormatter } from "next-intl";
+import { useTranslations, useFormatter, useNow } from "next-intl";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
 import { HeroCardSkeleton } from "@/components/skeletons/hero-card-skeleton";
@@ -37,9 +37,11 @@ export function StudentHome({
   const t = useTranslations();
   const { onError } = useTranslatedError();
   const format = useFormatter();
+  // Shared "now" inherited from the server (see i18n.ts) so the countdown
+  // hydrates without a text mismatch; ticks every minute client-side after mount.
+  const now = useNow({ updateInterval: 60_000 });
 
-  function getTimeUntil(date: Date): string {
-    const now = new Date();
+  function getTimeUntil(date: Date, now: Date): string {
     const diff = date.getTime() - now.getTime();
     if (diff < 0) return t("dashboard.timeNow");
     const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -84,7 +86,6 @@ export function StudentHome({
   // Only future, still-scheduled enrollments are relevant on the dashboard
   // "As minhas aulas" panel — past ENROLLED rows would otherwise linger here
   // until attendance is marked.
-  const now = new Date();
   const upcomingEnrollments = activeEnrollments
     .filter(
       (e) =>
@@ -121,7 +122,7 @@ export function StudentHome({
           <div className="relative">
             <div className="flex items-center gap-2 text-xs font-medium opacity-80 uppercase tracking-wide">
               <Timer className="h-3.5 w-3.5" />
-              {getTimeUntil(new Date(nextClass.session.startsAt))}
+              {getTimeUntil(new Date(nextClass.session.startsAt), now)}
             </div>
             <h2 className="text-xl font-bold mt-2">{nextClass.session.title}</h2>
             <div className="mt-4 space-y-2 text-sm opacity-90">

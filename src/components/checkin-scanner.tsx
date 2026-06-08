@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { QrCode, CheckCircle, ChevronRight, CameraOff } from "lucide-react";
+import { QrCode, CheckCircle, ChevronRight, CameraOff, Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import {
   Dialog,
@@ -31,11 +31,17 @@ const CAMERA_CONSTRAINTS: MediaStreamConstraints = {
 };
 
 /**
- * In-app QR scanner for students. Works in the installed PWA on iOS/Android
- * (secure context required, which prod/preview are). The camera is requested
- * directly from the tap handler so the permission prompt fires within the user
- * gesture (Safari skips the prompt if getUserMedia is awaited behind a dynamic
- * import). The zxing decoder stays lazy-loaded out of the route bundle.
+ * In-app QR check-in for students, presented as a dialog over the painel.
+ *
+ * Two entry points, one popup:
+ *  - tap "Marcar presença" → opens the camera scanner (works in the installed
+ *    PWA; secure context required). zxing is lazy-loaded.
+ *  - a native-camera scan of the QR deep-links into the PWA, which redirects to
+ *    the home with `?checkin=<id>&t=<token>` — picked up here and confirmed
+ *    directly (no camera), so both paths end in the same dialog + app chrome.
+ *
+ * The camera is requested inside the tap gesture so the permission prompt fires
+ * (Safari skips it when getUserMedia is awaited behind a dynamic import).
  */
 export function CheckInScanner() {
   const t = useTranslations("checkin");
@@ -44,16 +50,16 @@ export function CheckInScanner() {
   const [scanNonce, setScanNonce] = useState(0);
   const [cameraError, setCameraError] = useState(false);
   const [invalid, setInvalid] = useState(false);
-  // State (not just the ref) so acquiring the stream re-renders and re-runs the
-  // decode effect — otherwise it runs before getUserMedia resolves and never
-  // attaches the stream (black preview, no decoding).
+  // Direct mode = confirming a token from the deep-link URL (no camera).
+  const [directMode, setDirectMode] = useState(false);
   const [streamReady, setStreamReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const handledRef = useRef(false);
   const checkIn = trpc.enrollment.checkIn.useMutation();
 
-  const scanning = open && !checkIn.isSuccess && !checkIn.isError && !cameraError;
+  const scanning =
+    open && !directMode && !checkIn.isSuccess && !checkIn.isError && !cameraError;
 
   function stopStream() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -75,6 +81,7 @@ export function CheckInScanner() {
   }
 
   async function openScanner() {
+    setDirectMode(false);
     setCameraError(false);
     setInvalid(false);
     checkIn.reset();
@@ -89,7 +96,23 @@ export function CheckInScanner() {
     if (await requestCamera()) setScanNonce((n) => n + 1);
   }
 
-  // Decode from the already-acquired stream.
+  // Native-camera deep link: /checkin/[id] redirects here as ?checkin=&t=.
+  // Confirm directly and clean the URL so a refresh doesn't re-run it.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("checkin");
+    const token = params.get("t");
+    if (sessionId && /^[0-9a-fA-F-]{36}$/.test(sessionId) && token) {
+      window.history.replaceState(null, "", window.location.pathname);
+      setDirectMode(true);
+      setOpen(true);
+      checkIn.mutate({ sessionId, token });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Decode from the already-acquired stream (camera path only).
   useEffect(() => {
     if (!scanning || !streamReady || !streamRef.current) return;
     let controls: { stop: () => void } | null = null;
@@ -176,9 +199,17 @@ export function CheckInScanner() {
                     ? tRoot(checkIn.error.message as never)
                     : tRoot("errors.unexpected")}
                 </p>
-                <Button className="mt-2 w-full" onClick={restart}>
-                  {t("tryAgain")}
+                <Button
+                  className="mt-2 w-full"
+                  onClick={directMode ? () => setOpen(false) : restart}
+                >
+                  {directMode ? t("close") : t("tryAgain")}
                 </Button>
+              </div>
+            ) : directMode ? (
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">{t("marking")}</p>
               </div>
             ) : cameraError ? (
               <div className="flex flex-col items-center gap-3 py-4 text-center">

@@ -15,6 +15,12 @@ if (dsn) {
     // thrown asynchronously by the Chromium-on-Android media pipeline; the scan
     // still works, so don't report it.
     ignoreErrors: ["setPhotoOptions failed"],
+    // Drop noise from injected third-party scripts we don't control. Crypto
+    // wallet extensions (MetaMask, Coinbase, Phantom…) inject `inpage.js` into
+    // every page and throw EventEmitter errors (`reading 'emit'/'addListener'`)
+    // that Sentry's global handlers attribute to us. Matches the frame URL, so
+    // it can't hide our own errors.
+    denyUrls: [/inpage\.js/i],
   });
 }
 
