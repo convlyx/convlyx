@@ -53,15 +53,19 @@ export const classRouter = router({
         };
       }
 
-      // Build the startsAt filter from either explicit from/to OR the
-      // upcoming/past flag, with from/to winning if both are provided.
-      const startsAtFilter: { gte?: Date; lte?: Date; lt?: Date } = {};
+      // Explicit from/to (calendar/dashboard date windows) filter on startsAt.
+      const startsAtFilter: { gte?: Date; lte?: Date } = {};
       if (input?.from) startsAtFilter.gte = new Date(input.from);
       if (input?.to) startsAtFilter.lte = new Date(input.to);
+
+      // The upcoming/past tabs split on whether the class has ENDED, not on
+      // when it starts — so a class happening right now counts as
+      // "upcoming/current" instead of falling between the two tabs.
+      const endsAtFilter: { gte?: Date; lt?: Date } = {};
       if (!input?.from && !input?.to && input?.time) {
         const now = new Date();
-        if (input.time === "upcoming") startsAtFilter.gte = now;
-        else startsAtFilter.lt = now;
+        if (input.time === "upcoming") endsAtFilter.gte = now;
+        else endsAtFilter.lt = now;
       }
 
       const where = {
@@ -72,6 +76,7 @@ export const classRouter = router({
         ...(input?.classType && { classType: input.classType }),
         ...(input?.category && { category: input.category }),
         ...(Object.keys(startsAtFilter).length > 0 && { startsAt: startsAtFilter }),
+        ...(Object.keys(endsAtFilter).length > 0 && { endsAt: endsAtFilter }),
         ...(input?.search && {
           title: { contains: input.search, mode: "insensitive" as const },
         }),

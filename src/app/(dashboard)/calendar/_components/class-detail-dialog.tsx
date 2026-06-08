@@ -103,6 +103,14 @@ export function ClassDetailDialog({
     classDetail.startsAt.getTime() - nowMs <
       noticeHours * 3600_000;
 
+  // A theory class currently within its time window — show the QR check-in link.
+  const isOccurring =
+    classDetail.status !== "CANCELLED" &&
+    classDetail.startsAt.getTime() <= nowMs &&
+    classDetail.endsAt.getTime() >= nowMs;
+  const canOpenCheckIn =
+    classDetail.classType === "THEORY" && (canManage || isInstructor) && isOccurring;
+
   return (
     <Dialog open={open} onOpenChange={(val) => { if (!val) onClose(); }}>
       <DialogContent className="sm:max-w-lg">
@@ -256,8 +264,14 @@ export function ClassDetailDialog({
               ) : null}
             </>
           )}
-          {/* Instructor: flag unavailable */}
-          {isInstructor && classDetail.status === "SCHEDULED" && (
+          {/* Check-in (theory, happening now) for instructor + staff */}
+          {canOpenCheckIn && (
+            <Link href={`/checkin-display/${classDetail.id}`} className={buttonVariants()}>
+              {t("checkin.bannerAction")}
+            </Link>
+          )}
+          {/* Instructor: flag unavailable — only before the class starts */}
+          {isInstructor && classDetail.status === "SCHEDULED" && classDetail.startsAt.getTime() > nowMs && (
             <Button
               variant="destructive"
               disabled={instructorUnavailableMutation.isPending}

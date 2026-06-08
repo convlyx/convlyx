@@ -371,7 +371,15 @@
         "noCheckInsYet": "Ainda ninguém marcou presença.",
         "needScan": "Lê o código QR mostrado pelo formador para marcares presença.",
         "openHint": "Toca em \"Abrir marcação\" para mostrar o código QR aos alunos.",
-        "back": "Voltar"
+        "back": "Voltar",
+        "scanCardTitle": "Marcar presença",
+        "scanCardSubtitle": "Lê o código QR mostrado na aula",
+        "scannerTitle": "Marcar presença",
+        "scanHint": "Aponta a câmara ao código QR da aula.",
+        "scanInvalid": "Código QR inválido. Tenta novamente.",
+        "cameraError": "Não foi possível aceder à câmara. Verifica as permissões.",
+        "tryAgain": "Tentar novamente",
+        "close": "Fechar"
     },
     "classes": {
         "title": "Aulas",

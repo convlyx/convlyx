@@ -1,15 +1,16 @@
 import { Sidebar } from "./sidebar";
-import { InstructorTopBar } from "./instructor-top-bar";
+import { Header } from "./header";
+import { MobileTopBar } from "./mobile-top-bar";
 import { MobileTabBar } from "./mobile-tab-bar";
 import type { UserRole } from "@/generated/prisma/enums";
 
 /**
  * Instructor shell — responsive, children rendered once:
- *  - desktop (md+): the same sidebar backoffice as admin/secretary
- *  - mobile: a curved top bar + floating bottom tab bar (the student shell)
- * A single InstructorTopBar carries the (one) NotificationBell across both
- * viewports — two header instances would double-subscribe to realtime. Only
- * the chrome toggles via CSS, so client components in `children` mount once.
+ *  - desktop (md+): the exact same sidebar + Header backoffice as admin/secretary
+ *  - mobile: the exact same curved MobileTopBar + floating MobileTabBar as students
+ * Each header is the real component (so spacing matches by construction) and is
+ * shown on a single breakpoint. The NotificationBell inside both is safe to
+ * mount twice now that it uses a per-instance realtime channel.
  */
 export function InstructorLayout({
   children,
@@ -32,11 +33,25 @@ export function InstructorLayout({
       <Sidebar userRole={userRole} tenantName={schoolName} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <InstructorTopBar
+        {/* Desktop: identical to the admin/secretary header */}
+        <div className="hidden md:block">
+          <Header
+            userId={userId}
+            userName={userName}
+            userRole={userRole}
+            userMobileNav={null}
+            tenantName={tenantName}
+            schoolName={schoolName}
+          />
+        </div>
+
+        {/* Mobile: identical to the student curved top bar */}
+        <MobileTopBar
           userId={userId}
           userName={userName}
           userRole={userRole}
-          tenantName={tenantName}
+          tenantName={schoolName}
+          className="md:hidden"
         />
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden">

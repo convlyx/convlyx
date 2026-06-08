@@ -7,7 +7,7 @@ import { DetailPageSkeleton } from "@/components/skeletons/detail-page-skeleton"
 import { EmptyState } from "@/components/empty-state";
 import { StatCard } from "@/components/stat-card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { StudentPicker } from "@/components/student-picker";
 import {
@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CategoryBadge } from "@/components/category-badge";
 import {
   ArrowLeft, BookOpen, CalendarDays, Clock, Users, UserPlus,
-  CheckCircle, XCircle, Building2, Pencil, CheckCheck, FileDown,
+  CheckCircle, XCircle, Building2, Pencil, CheckCheck, FileDown, QrCode,
 } from "lucide-react";
 import { exportClassAttendancePDF } from "@/lib/pdf-export";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -164,6 +164,15 @@ export function ClassDetailView({
   const isInstructor = userRole === "INSTRUCTOR";
   const canAddStudent = (isStaff || isInstructor) && classDetail.status !== "CANCELLED";
 
+  // QR check-in: theory class currently within its time window, for staff/instructor.
+  const nowMs = new Date().getTime();
+  const canOpenCheckIn =
+    classDetail.classType === "THEORY" &&
+    (isStaff || isInstructor) &&
+    classDetail.status !== "CANCELLED" &&
+    new Date(classDetail.startsAt).getTime() <= nowMs &&
+    new Date(classDetail.endsAt).getTime() >= nowMs;
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Back */}
@@ -217,6 +226,15 @@ export function ClassDetailView({
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+            {canOpenCheckIn && (
+              <Link
+                href={`/checkin-display/${classDetail.id}`}
+                className={buttonVariants({ size: "sm", className: "gap-1.5" })}
+              >
+                <QrCode className="h-3.5 w-3.5" />
+                {t("checkin.bannerAction")}
+              </Link>
+            )}
             {isStaff && isActive && (
               <Button
                 variant="outline"
