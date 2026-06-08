@@ -128,7 +128,9 @@ export async function middleware(request: NextRequest) {
 
   if (!user && !isPublicPath) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirectTo", pathname);
+    // Preserve the query string too (e.g. the QR check-in token ?t=…) so the
+    // deep link survives the login bounce.
+    loginUrl.searchParams.set("redirectTo", pathname + request.nextUrl.search);
     return NextResponse.redirect(loginUrl);
   }
 

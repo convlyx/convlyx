@@ -4,6 +4,7 @@ import { Sidebar } from "./_components/sidebar";
 import { MobileNav } from "./_components/mobile-nav";
 import { Header } from "./_components/header";
 import { MobileLayout } from "./_components/mobile-layout";
+import { InstructorLayout } from "./_components/instructor-layout";
 import { PageTitle } from "@/components/page-title";
 import { AnalyticsIdentifier } from "@/components/analytics-identifier";
 import { PostHogInit, PostHogPageviews } from "@/components/posthog-provider";
@@ -27,8 +28,20 @@ export default async function DashboardLayout({
     schoolId: user.schoolId,
   };
 
-  // Student and Instructor get mobile-first layout
-  if (user.role === "STUDENT" || user.role === "INSTRUCTOR") {
+  const content = (
+    <>
+      <PageTitle title={pageTitle} />
+      <AnalyticsIdentifier {...analyticsProps} />
+      <PostHogInit />
+      <Suspense fallback={null}>
+        <PostHogPageviews />
+      </Suspense>
+      {children}
+    </>
+  );
+
+  // Students get the mobile-first shell on every viewport.
+  if (user.role === "STUDENT") {
     return (
       <MobileLayout
         userId={user.id}
@@ -36,14 +49,23 @@ export default async function DashboardLayout({
         userRole={user.role}
         tenantName={user.school.name}
       >
-        <PageTitle title={pageTitle} />
-        <AnalyticsIdentifier {...analyticsProps} />
-        <PostHogInit />
-        <Suspense fallback={null}>
-          <PostHogPageviews />
-        </Suspense>
-        {children}
+        {content}
       </MobileLayout>
+    );
+  }
+
+  // Instructors: backoffice (sidebar) on desktop, mobile shell on phones.
+  if (user.role === "INSTRUCTOR") {
+    return (
+      <InstructorLayout
+        userId={user.id}
+        userName={user.name}
+        userRole={user.role}
+        tenantName={user.tenant.name}
+        schoolName={user.school.name}
+      >
+        {content}
+      </InstructorLayout>
     );
   }
 

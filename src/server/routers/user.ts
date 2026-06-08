@@ -107,6 +107,13 @@ export const userRouter = router({
             some: { status: "IN_PROGRESS" as const, category: input.category },
           },
         }),
+        // Instructors only ever see STUDENTs, and only those enrolled in a class
+        // they teach (read-only; management actions stay admin/secretary). Spread
+        // last so it overrides any requested role filter. GDPR data-minimisation.
+        ...(ctx.user.role === "INSTRUCTOR" && {
+          role: "STUDENT" as const,
+          enrollments: { some: { session: { instructorId: ctx.user.id } } },
+        }),
       };
 
       const select = {
@@ -187,6 +194,12 @@ export const userRouter = router({
           tenantId: ctx.tenantId,
           role: input.role,
           ...(input.status && { status: input.status }),
+          // Match the instructor scoping in `list` so the count badge agrees
+          // with the visible (own-students-only) roster.
+          ...(ctx.user.role === "INSTRUCTOR" && {
+            role: "STUDENT" as const,
+            enrollments: { some: { session: { instructorId: ctx.user.id } } },
+          }),
         },
       });
       return { count };
@@ -795,7 +808,15 @@ export const userRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const student = await ctx.db.user.findFirst({
-        where: { id: input.id, tenantId: ctx.tenantId, role: "STUDENT" },
+        where: {
+          id: input.id,
+          tenantId: ctx.tenantId,
+          role: "STUDENT",
+          // Instructors may only view students they teach.
+          ...(ctx.user.role === "INSTRUCTOR" && {
+            enrollments: { some: { session: { instructorId: ctx.user.id } } },
+          }),
+        },
         select: {
           id: true,
           name: true,
@@ -837,7 +858,15 @@ export const userRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const studentExists = await ctx.db.user.findFirst({
-        where: { id: input.id, tenantId: ctx.tenantId, role: "STUDENT" },
+        where: {
+          id: input.id,
+          tenantId: ctx.tenantId,
+          role: "STUDENT",
+          // Instructors may only view students they teach.
+          ...(ctx.user.role === "INSTRUCTOR" && {
+            enrollments: { some: { session: { instructorId: ctx.user.id } } },
+          }),
+        },
         select: { id: true },
       });
       if (!studentExists) {
@@ -949,7 +978,15 @@ export const userRouter = router({
       const { id, page, pageSize } = input;
 
       const studentExists = await ctx.db.user.findFirst({
-        where: { id, tenantId: ctx.tenantId, role: "STUDENT" },
+        where: {
+          id,
+          tenantId: ctx.tenantId,
+          role: "STUDENT",
+          // Instructors may only view students they teach.
+          ...(ctx.user.role === "INSTRUCTOR" && {
+            enrollments: { some: { session: { instructorId: ctx.user.id } } },
+          }),
+        },
         select: { id: true },
       });
       if (!studentExists) {
@@ -999,7 +1036,15 @@ export const userRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const student = await ctx.db.user.findFirst({
-        where: { id: input.id, tenantId: ctx.tenantId, role: "STUDENT" },
+        where: {
+          id: input.id,
+          tenantId: ctx.tenantId,
+          role: "STUDENT",
+          // Instructors may only view students they teach.
+          ...(ctx.user.role === "INSTRUCTOR" && {
+            enrollments: { some: { session: { instructorId: ctx.user.id } } },
+          }),
+        },
         select: {
           id: true,
           name: true,

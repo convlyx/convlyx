@@ -367,7 +367,11 @@
         "alreadyMarked": "A tua presença já estava registada.",
         "bannerInProgress": "Aula a decorrer",
         "bannerAction": "Abrir marcação de presença",
-        "recentCheckIns": "Marcações recentes"
+        "recentCheckIns": "Marcações recentes",
+        "noCheckInsYet": "Ainda ninguém marcou presença.",
+        "needScan": "Lê o código QR mostrado pelo formador para marcares presença.",
+        "openHint": "Toca em \"Abrir marcação\" para mostrar o código QR aos alunos.",
+        "back": "Voltar"
     },
     "classes": {
         "title": "Aulas",
