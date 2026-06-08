@@ -54,3 +54,35 @@ export function wallClockToISO(dateStr: string, timeStr: string, timeZone: strin
   const [hour, minute] = timeStr.split(":").map(Number);
   return wallClockToUTC(year, month - 1, day, hour, minute, timeZone).toISOString();
 }
+
+/**
+ * The hour-of-day (0–23) shown by `timeZone` at the given instant. Use this
+ * instead of `Date#getHours()` in code that renders on both server and client:
+ * `getHours()` reflects the *runtime's* timezone (UTC/Dublin on the server),
+ * so it produces a different value than the user's browser and triggers
+ * hydration mismatches.
+ */
+export function hourInTimeZone(instant: Date, timeZone: string): number {
+  return Number(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone,
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).format(instant),
+  );
+}
+
+/**
+ * The calendar day shown by `timeZone` at the given instant, as a sortable
+ * "YYYY-MM-DD" key. Comparing two instants' day keys tells you whether they
+ * fall on the same local day — DST-safe and independent of the runtime's own
+ * timezone (so it's stable across SSR + client hydration).
+ */
+export function dayKeyInTimeZone(instant: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(instant);
+}

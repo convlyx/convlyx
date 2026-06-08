@@ -1,8 +1,9 @@
 "use client";
 
-import { useTranslations, useFormatter } from "next-intl";
+import { useTranslations, useFormatter, useNow, useTimeZone } from "next-intl";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
+import { dayKeyInTimeZone } from "@/lib/dates";
 import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
 import { StatCardSkeleton } from "@/components/skeletons/stat-row-skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -48,14 +49,17 @@ export function DashboardView({
   );
   const enrollments = enrollmentsData?.items;
 
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+  // "Today" in the school's timezone, derived from the shared server "now"
+  // (see i18n.ts) so the count is identical on SSR and hydration. The previous
+  // `new Date().setHours(...)` used the runtime's own timezone (UTC/Dublin on
+  // the server), which both mis-bucketed classes and caused #418 mismatches.
+  const now = useNow({ updateInterval: 60_000 });
+  const timeZone = useTimeZone() ?? "Europe/Lisbon";
+  const todayKey = dayKeyInTimeZone(now, timeZone);
 
-  const todayClasses = upcomingClasses?.filter((c) => {
-    return c.startsAt >= startOfToday && c.startsAt <= today;
-  }) ?? [];
+  const todayClasses = upcomingClasses?.filter(
+    (c) => dayKeyInTimeZone(new Date(c.startsAt), timeZone) === todayKey,
+  ) ?? [];
 
   const scheduledToday = todayClasses.filter((c) => c.status === "SCHEDULED").length;
   const inProgressCount = todayClasses.filter((c) => c.status === "IN_PROGRESS").length;

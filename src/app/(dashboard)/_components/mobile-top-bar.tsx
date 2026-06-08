@@ -1,8 +1,9 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useNow, useTimeZone } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
+import { hourInTimeZone } from "@/lib/dates";
 import { LogOut } from "lucide-react";
 import { NotificationBell } from "@/components/notification-bell";
 import { NovidadesButton } from "@/components/novidades-button";
@@ -30,12 +31,17 @@ export function MobileTopBar({
   const tNav = useTranslations("nav");
   const pathname = usePathname();
   const router = useRouter();
+  // Shared "now" + school timezone (both inherited from the server, see
+  // i18n.ts) so the greeting matches on SSR and hydration. `Date#getHours()`
+  // would use the server's UTC/Dublin clock and mismatch the user's browser.
+  const now = useNow({ updateInterval: 60_000 });
+  const timeZone = useTimeZone() ?? "Europe/Lisbon";
 
   const firstName = userName.split(" ")[0];
   const isDashboard = pathname === "/";
 
   function greeting() {
-    const hour = new Date().getHours();
+    const hour = hourInTimeZone(now, timeZone);
     if (hour < 12) return t("dashboard.greeting.morning");
     if (hour < 18) return t("dashboard.greeting.afternoon");
     return t("dashboard.greeting.evening");
