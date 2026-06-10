@@ -1,16 +1,19 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Eyebrow, SectionHeading, Reveal } from "./_primitives";
+import { Route } from "lucide-react";
+import { Eyebrow, SectionHeading, Reveal, SectionDecor } from "./_primitives";
 
 export function HowItWorks() {
   const t = useTranslations();
   return (
-    <section className="py-14 md:py-20">
-      <div className="mx-auto max-w-6xl px-6">
+    <section className="relative overflow-hidden py-14 md:py-20">
+      <SectionDecor />
+      <div className="relative mx-auto max-w-6xl px-6">
         <SectionHeading
           eyebrow={<Eyebrow>{t("landing.threeSteps")}</Eyebrow>}
           title={t("landing.howItWorksTitle")}
+          icon={Route}
         />
         <Reveal className="relative grid gap-6 md:grid-cols-3">
           {/* Connecting line */}

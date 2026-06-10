@@ -20,9 +20,10 @@ import {
   X,
   ZoomIn,
   ImageIcon,
+  Laptop,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Eyebrow, SectionHeading } from "./_primitives";
+import { Eyebrow, SectionHeading, SectionDecor } from "./_primitives";
 
 const BO = {
   calendar: "/screenshots/bo-calendar.png",
@@ -81,13 +82,15 @@ export function ProductShowcase() {
   const appCurrent = appShots[appActive];
 
   return (
-    <section id="showcase" className="py-14 md:py-20">
-      <div className="mx-auto max-w-6xl px-6">
+    <section id="showcase" className="relative overflow-hidden py-14 md:py-20">
+      <SectionDecor />
+      <div className="relative mx-auto max-w-6xl px-6">
         <SectionHeading
           eyebrow={<Eyebrow>{t("landing.showcaseKicker")}</Eyebrow>}
           title={t("landing.showcaseTitle")}
           accent={t("landing.showcaseTitleAccent")}
           subtitle={t("landing.showcaseDescription")}
+          icon={Laptop}
         />
 
         {/* Top toggle: Backoffice | App */}

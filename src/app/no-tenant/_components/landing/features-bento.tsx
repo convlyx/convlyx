@@ -8,21 +8,24 @@ import {
   Bell,
   Smartphone,
   BarChart3,
+  Car,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Eyebrow, SectionHeading, Reveal } from "./_primitives";
+import { Eyebrow, SectionHeading, Reveal, SectionDecor } from "./_primitives";
 
 export function FeaturesBento() {
   const t = useTranslations();
 
   return (
-    <section id="features" className="py-14 md:py-20">
-      <div className="mx-auto max-w-6xl px-6">
+    <section id="features" className="relative overflow-hidden py-14 md:py-20">
+      <SectionDecor />
+      <div className="relative mx-auto max-w-6xl px-6">
         <SectionHeading
           eyebrow={<Eyebrow>{t("landing.featuresKicker")}</Eyebrow>}
           title={t("landing.featuresTitle")}
           accent={t("landing.featuresTitleAccent")}
           subtitle={t("landing.featuresDescription")}
+          icon={Car}
         />
 
         <Reveal className="grid grid-cols-2 gap-4 md:grid-cols-6 md:[grid-auto-rows:minmax(0,1fr)]">

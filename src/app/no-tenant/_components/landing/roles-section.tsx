@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Briefcase, BarChart3, UserCog, GraduationCap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Eyebrow, SectionHeading, Reveal } from "./_primitives";
+import { Eyebrow, SectionHeading, Reveal, SectionDecor } from "./_primitives";
 
 export function RolesSection() {
   const t = useTranslations();
@@ -31,12 +31,14 @@ export function RolesSection() {
   ];
 
   return (
-    <section className="py-14 md:py-20">
-      <div className="mx-auto max-w-6xl px-6">
+    <section className="relative overflow-hidden py-14 md:py-20">
+      <SectionDecor flip />
+      <div className="relative mx-auto max-w-6xl px-6">
         <SectionHeading
           eyebrow={<Eyebrow>{t("landing.rolesKicker")}</Eyebrow>}
           title={t("landing.rolesSectionTitle")}
           accent={t("landing.rolesSectionTitleAccent")}
+          icon={GraduationCap}
         />
         <Reveal className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {roles.map(({ icon: Icon, title, desc }) => (

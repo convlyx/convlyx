@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { CalendarDays, Repeat, AlertTriangle, Bell, LayoutGrid, Smartphone } from "lucide-react";
 import { SeoLanding } from "@/app/no-tenant/_components/seo-landing";
 import { CalendarHeroMockup, CalendarDeepDiveMockup } from "@/app/no-tenant/_components/mockups/calendar-mockup";
+import { ORGANIZATION_SCHEMA } from "@/lib/seo-schema";
 
 const URL = "https://convlyx.com/calendario-aulas-conducao";
 const TITLE = "Calendário e agenda de aulas de condução | Convlyx";
@@ -56,6 +57,11 @@ export default function Page() {
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       <script
@@ -64,6 +70,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
       />
       <SeoLanding
+        themeIcon="calendar"
         kicker="Calendário e agenda de aulas de condução"
         title="A agenda da sua escola de condução,"
         highlight="sempre organizada."

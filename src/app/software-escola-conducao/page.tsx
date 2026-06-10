@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { CalendarDays, Users, BookOpen, Shield, Smartphone, BarChart3 } from "lucide-react";
 import { SeoLanding } from "@/app/no-tenant/_components/seo-landing";
 import { SoftwareHeroMockup, SoftwareDeepDiveMockup } from "@/app/no-tenant/_components/mockups/software-mockup";
+import { ORGANIZATION_SCHEMA } from "@/lib/seo-schema";
 
 const URL = "https://convlyx.com/software-escola-conducao";
 const TITLE = "Software para escola de condução em Portugal | Convlyx";
@@ -57,6 +58,11 @@ export default function Page() {
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       <script
@@ -65,6 +71,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
       />
       <SeoLanding
+        themeIcon="laptop"
         kicker="Software para escolas de condução"
         title="Toda a sua escola de condução"
         highlight="num só software."

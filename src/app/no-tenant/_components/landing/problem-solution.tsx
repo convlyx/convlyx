@@ -1,8 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { X, Check } from "lucide-react";
-import { Eyebrow, SectionHeading, Reveal } from "./_primitives";
+import { X, Check, TrafficCone } from "lucide-react";
+import { Eyebrow, SectionHeading, Reveal, SectionDecor } from "./_primitives";
 
 export function ProblemSolution() {
   const t = useTranslations();
@@ -10,13 +10,15 @@ export function ProblemSolution() {
   const after = t("landing.problemAfterItems").split("|");
 
   return (
-    <section className="py-14 md:py-20">
-      <div className="mx-auto max-w-5xl px-6">
+    <section className="relative overflow-hidden py-14 md:py-20">
+      <SectionDecor flip />
+      <div className="relative mx-auto max-w-5xl px-6">
         <SectionHeading
           eyebrow={<Eyebrow>{t("landing.problemKicker")}</Eyebrow>}
           title={t("landing.problemTitle")}
           accent={t("landing.problemTitleAccent")}
           subtitle={t("landing.problemBody")}
+          icon={TrafficCone}
         />
         <Reveal className="mt-10 grid gap-5 md:grid-cols-2">
           {/* Before — pastel red, header strip */}

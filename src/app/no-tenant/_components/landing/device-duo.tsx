@@ -20,6 +20,18 @@ export function DeviceDuo({
 
   return (
     <div className="relative mx-auto w-full max-w-[480px] pt-6">
+      {/* Dot-grid texture behind the devices (peeks around their edges) */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -inset-10 z-0"
+        style={{
+          backgroundImage:
+            "radial-gradient(color-mix(in srgb, var(--landing-forest) 38%, transparent) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+          WebkitMaskImage: "radial-gradient(ellipse at 50% 45%, black 55%, transparent 82%)",
+          maskImage: "radial-gradient(ellipse at 50% 45%, black 55%, transparent 82%)",
+        }}
+      />
       {/* Soft neutral ambient shadow behind the devices, so they lift off the
           sage cleanly without a competing colour. */}
       <div aria-hidden className="pointer-events-none absolute -inset-6 z-0 flex items-center justify-center">

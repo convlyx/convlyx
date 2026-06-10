@@ -1,14 +1,15 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { ChevronRight, HelpCircle } from "lucide-react";
-import { Eyebrow, SectionHeading } from "./_primitives";
+import { ChevronRight, HelpCircle, Signpost } from "lucide-react";
+import { Eyebrow, SectionHeading, SectionDecor } from "./_primitives";
 
 export function FaqSection() {
   const t = useTranslations();
   return (
-    <section id="faq" className="py-14 md:py-20">
-      <div className="mx-auto max-w-3xl px-6">
+    <section id="faq" className="relative overflow-hidden py-14 md:py-20">
+      <SectionDecor flip />
+      <div className="relative mx-auto max-w-3xl px-6">
         <SectionHeading
           eyebrow={
             <Eyebrow>
@@ -17,6 +18,7 @@ export function FaqSection() {
             </Eyebrow>
           }
           title={t("landing.faqTitle")}
+          icon={Signpost}
         />
         <div className="space-y-4">
           {[1, 2, 3, 4, 5, 6, 7].map((n) => (

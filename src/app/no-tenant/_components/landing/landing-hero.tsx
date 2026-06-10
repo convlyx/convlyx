@@ -17,7 +17,7 @@ export function LandingHero({ onRequestDemo }: { onRequestDemo: () => void }) {
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col items-center gap-12 lg:flex-row lg:gap-16">
           {/* Left text */}
-          <div className="flex-1 text-center lg:text-left">
+          <div className="animate-in fade-in slide-in-from-bottom-3 flex-1 text-center duration-700 motion-reduce:animate-none lg:text-left">
             <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.04em] text-[var(--landing-muted)]">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--landing-green)] ring-4 ring-[var(--landing-green)]/15" />
               {t("landing.heroEyebrow")}
@@ -56,7 +56,7 @@ export function LandingHero({ onRequestDemo }: { onRequestDemo: () => void }) {
           </div>
 
           {/* Right — product devices */}
-          <div className="w-full flex-1">
+          <div className="animate-in fade-in zoom-in-95 slide-in-from-bottom-5 w-full flex-1 duration-1000 [animation-delay:150ms] [animation-fill-mode:both] motion-reduce:animate-none">
             <DeviceDuo
               laptopAlt={t("landing.heroDeviceLaptopAlt")}
               phoneAlt={t("landing.heroDevicePhoneAlt")}

@@ -3,10 +3,19 @@
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
-import { ArrowRight, Check, ChevronRight } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, Laptop, CalendarDays, GraduationCap } from "lucide-react";
 import { SiteFooter } from "./site-footer";
 import { DemoDialog } from "./demo-dialog";
-import { Eyebrow, SectionHeading, Reveal } from "./landing/_primitives";
+import { Eyebrow, SectionHeading, Reveal, SectionDecor } from "./landing/_primitives";
+
+/** Theme icons can't be passed as components across the server→client boundary,
+ *  so pages pass a key and we resolve it here. */
+const THEME_ICONS = {
+  laptop: Laptop,
+  calendar: CalendarDays,
+  students: GraduationCap,
+} as const;
+type ThemeIconKey = keyof typeof THEME_ICONS;
 
 export type SeoLandingRelated = {
   href: string;
@@ -44,6 +53,7 @@ export function SeoLanding({
   deepDive,
   midCta,
   related,
+  themeIcon,
 }: {
   kicker: string;
   title: string;
@@ -54,8 +64,11 @@ export function SeoLanding({
   deepDive: SeoDeepDive;
   midCta?: { title: string; description: string };
   related?: SeoLandingRelated[];
+  /** Key of the faint driving-themed icon shown behind the features heading. */
+  themeIcon?: ThemeIconKey;
 }) {
   const [demoOpen, setDemoOpen] = useState(false);
+  const ThemeIcon = themeIcon ? THEME_ICONS[themeIcon] : undefined;
 
   function scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -153,12 +166,14 @@ export function SeoLanding({
       </section>
 
       {/* Features */}
-      <section id="features" className="py-14 md:py-20">
-        <div className="mx-auto max-w-6xl px-6">
+      <section id="features" className="relative overflow-hidden py-14 md:py-20">
+        <SectionDecor />
+        <div className="relative mx-auto max-w-6xl px-6">
           <SectionHeading
             eyebrow={<Eyebrow>Funcionalidades</Eyebrow>}
             title="O que pode fazer com o"
             accent="Convlyx"
+            icon={ThemeIcon}
           />
           <Reveal
             className={`grid gap-5 ${
@@ -203,8 +218,9 @@ export function SeoLanding({
       )}
 
       {/* Deep dive — split with mockup */}
-      <section id="saber-mais" className="py-14 md:py-20">
-        <div className="mx-auto max-w-6xl px-6">
+      <section id="saber-mais" className="relative overflow-hidden py-14 md:py-20">
+        <SectionDecor flip />
+        <div className="relative mx-auto max-w-6xl px-6">
           <Reveal
             className={`flex flex-col items-center gap-12 ${
               mockupOnLeft ? "lg:flex-row-reverse" : "lg:flex-row"

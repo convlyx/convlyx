@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { User, Award, Calendar, BarChart3, FileText, Filter } from "lucide-react";
 import { SeoLanding } from "@/app/no-tenant/_components/seo-landing";
 import { StudentsHeroMockup, StudentsDeepDiveMockup } from "@/app/no-tenant/_components/mockups/students-mockup";
+import { ORGANIZATION_SCHEMA } from "@/lib/seo-schema";
 
 const URL = "https://convlyx.com/gestao-alunos-conducao";
 const TITLE = "Gestão de alunos para escolas de condução | Convlyx";
@@ -56,6 +57,11 @@ export default function Page() {
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       <script
@@ -64,6 +70,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
       />
       <SeoLanding
+        themeIcon="students"
         kicker="Gestão de alunos para escolas de condução"
         title="Cada aluno da sua escola de condução,"
         highlight="num só perfil."
