@@ -53,7 +53,6 @@ export function LandingNav({ onRequestDemo }: { onRequestDemo: () => void }) {
           </button>
           <Button
             onClick={onRequestDemo}
-            size="sm"
             className="ml-1 cursor-pointer gap-1.5 rounded-full bg-[var(--landing-forest)] text-white shadow-md shadow-[var(--landing-forest)]/30 hover:bg-[var(--landing-green)]"
           >
             <span className="hidden sm:inline">{t("landing.requestDemo")}</span>

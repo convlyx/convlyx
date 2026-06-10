@@ -20,9 +20,15 @@ export function DeviceDuo({
 
   return (
     <div className="relative mx-auto w-full max-w-[480px] pt-6">
+      {/* Soft neutral ambient shadow behind the devices, so they lift off the
+          sage cleanly without a competing colour. */}
+      <div aria-hidden className="pointer-events-none absolute -inset-6 z-0 flex items-center justify-center">
+        <div className="h-full w-full translate-y-6 rounded-[50%] bg-[radial-gradient(circle_at_50%_55%,rgba(15,23,42,0.5),rgba(15,23,42,0.22)_46%,transparent_70%)] blur-2xl" />
+      </div>
+
       {/* Laptop — in flow, defines the height (no leftover empty space) */}
-      <div className="w-[88%]">
-        <div className="overflow-hidden rounded-t-xl border-[8px] border-b-0 border-[#1f2937] bg-[#f4f7f4] shadow-2xl shadow-[var(--landing-forest)]/15">
+      <div className="relative z-10 w-[88%]">
+        <div className="overflow-hidden rounded-t-xl border-[8px] border-b-0 border-[#1f2937] bg-[#f4f7f4] shadow-[0_40px_80px_-22px_rgba(15,23,42,0.6)]">
           <div className="aspect-[16/10]">
             {hasLaptop ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -45,7 +51,7 @@ export function DeviceDuo({
 
       {/* Phone — bigger, overlapping the lower-right of the laptop, raised in front */}
       <div className="absolute -right-1 bottom-[-28%] z-10 w-[33%] max-w-[148px]">
-        <div className="relative overflow-hidden rounded-[2rem] border-[6px] border-[#1f2937] bg-[#1f2937] shadow-2xl shadow-[var(--landing-forest)]/30">
+        <div className="relative overflow-hidden rounded-[2rem] border-[6px] border-[#1f2937] bg-[#1f2937] shadow-[0_30px_60px_-16px_rgba(15,23,42,0.7)]">
           {/* Notch — flush with the top bezel */}
           <div className="absolute top-0 left-1/2 z-10 h-2.5 w-[40%] -translate-x-1/2 rounded-b-xl bg-[#1f2937]" />
           <div className="aspect-[9/19] overflow-hidden rounded-[1.5rem] bg-[#f4f7f4]">
