@@ -46,7 +46,7 @@ export function SiteFooter({ onRequestDemo }: { onRequestDemo?: () => void } = {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-emerald-500 shadow-md shadow-primary/20">
               <img src="/favicon.png" alt="" width={22} height={22} className="brightness-0 invert" />
             </div>
-            <span className="text-lg font-bold bg-gradient-to-r from-primary to-emerald-500 bg-clip-text text-transparent">
+            <span className="text-lg font-bold text-foreground">
               {t("common.appName")}
             </span>
           </Link>

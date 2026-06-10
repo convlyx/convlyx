@@ -256,7 +256,7 @@ Living document of everything the app can do, organized by area.
 - Auto-select when only one option (school, instructor)
 - Form validation with Zod schemas
 - Custom 404 pages (dashboard with sidebar, root standalone)
-- No-tenant landing page for root domain
+- No-tenant landing page for root domain — "modern editorial" identity (Plus Jakarta Sans + Newsreader italic accents, green-sage canvas with honey accent, scoped to `.landing-scope` so the app theme is untouched). Composed from per-section components under `_components/landing/`: device-duo hero (laptop + phone), trust strip, problem→solution, features bento, product showcase, per-role section, how-it-works, security band, FAQ, final CTA. Restrained scroll-reveal motion (IntersectionObserver, respects `prefers-reduced-motion`)
 
 ## i18n
 - next-intl with pt-PT locale
