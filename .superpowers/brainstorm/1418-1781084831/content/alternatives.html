@@ -1,0 +1,136 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,400;9..144,0,500;9..144,0,600;9..144,1,500;9..144,1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Figtree:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+.alt-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:8px; }
+@media (max-width:1100px){ .alt-grid{ grid-template-columns:1fr; } }
+.alt { border-radius:16px; overflow:hidden; cursor:pointer; border:2px solid transparent; transition:transform .15s, box-shadow .15s; background:#fff; }
+.alt:hover { transform:translateY(-3px); box-shadow:0 18px 40px rgba(0,0,0,.18); }
+.alt.selected { border-color:#16a34a; box-shadow:0 0 0 4px rgba(22,163,74,.18); }
+.alt .preview { height:330px; padding:20px; overflow:hidden; position:relative; }
+.alt .meta { padding:16px 18px 20px; border-top:1px solid #eee; background:#fff; color:#111; }
+.alt .meta .badge { display:inline-block; font:700 11px Inter; letter-spacing:.07em; text-transform:uppercase; color:#16a34a; }
+.alt .meta h3 { margin:6px 0 6px; font:600 18px Inter; color:#0f172a; }
+.alt .meta p { margin:0; font:400 13px/1.5 Inter; color:#475569; }
+.alt .meta .mix { margin-top:10px; font:600 11px Inter; color:#64748b; }
+.alt .meta .mix b{ color:#16a34a; }
+
+/* ---------- D: Editorial Green ---------- */
+.D { background:#fbfdfb; }
+.D .top { display:flex; justify-content:space-between; align-items:center; border-top:2px solid #0f172a; padding-top:7px; }
+.D .top .k { font:600 8px Inter; letter-spacing:.16em; text-transform:uppercase; color:#15803d; }
+.D .top .tag { font:600 7px Inter; background:#fef3c7; color:#92400e; padding:3px 7px; border-radius:999px; }
+.D h1 { font:600 31px/1.02 Fraunces,serif; color:#0f172a; margin:13px 0 0; letter-spacing:-.02em; }
+.D h1 em { font-style:italic; color:#15803d; }
+.D .sub { font:400 10px/1.5 Inter; color:#64748b; margin:10px 0 0; max-width:84%; }
+.D .card2 { margin-top:13px; background:#fff; border:1px solid #e6efe6; border-radius:12px; padding:11px; box-shadow:0 6px 18px rgba(16,80,40,.06); }
+.D .row{ display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid #f1f5f1; }
+.D .row:last-child{ border-bottom:0; }
+.D .row .c{ width:7px;height:7px;border-radius:50%; }
+.D .row .t{ flex:1; font:600 8px Inter; color:#334155; }
+.D .row .m{ font:500 7px Inter; color:#94a3b8; }
+.D .cta{ margin-top:12px; display:inline-block; background:#0f172a; color:#fff; font:600 9px Inter; padding:7px 14px; border-radius:6px; }
+
+/* ---------- E: Modern Editorial (balanced) ---------- */
+.E { background:#f1f5f1; }
+.E .nav{ display:flex; justify-content:space-between; align-items:center; margin-bottom:13px; }
+.E .logo{ font:800 12px 'Plus Jakarta Sans'; color:#0f172a; }
+.E .pill{ background:#16a34a; color:#fff; font:700 8px 'Plus Jakarta Sans'; padding:6px 11px; border-radius:999px; }
+.E h1{ font:800 24px/1.05 'Plus Jakarta Sans'; color:#0f172a; margin:0 0 4px; letter-spacing:-.02em; }
+.E h1 em{ font:500 italic 24px Fraunces,serif; color:#15803d; }
+.E .sub{ font:400 9.5px/1.5 'Plus Jakarta Sans'; color:#64748b; margin:0 0 12px; max-width:90%; }
+.E .bento{ display:grid; grid-template-columns:1.25fr 1fr; gap:9px; }
+.E .card2{ background:#fff; border-radius:13px; padding:11px; box-shadow:0 3px 10px rgba(0,0,0,.05); }
+.E .stat{ font:800 20px 'Plus Jakarta Sans'; color:#16a34a; }
+.E .stat small{ display:block; font:600 7.5px 'Plus Jakarta Sans'; color:#94a3b8; margin-top:2px; }
+.E .mini{ display:flex; align-items:center; gap:6px; margin-top:6px; }
+.E .dot{ width:6px;height:6px;border-radius:50%;background:#16a34a; }
+.E .bar{ flex:1; height:5px; border-radius:4px; background:#e8efe8; }
+.E .warm{ width:6px;height:6px;border-radius:50%;background:#f59e0b; }
+
+/* ---------- F: Warm Modern (green, not cream) ---------- */
+.F { background:#eef3ee; }
+.F h1{ font:800 25px/1.08 Figtree; color:#14532d; margin:4px 0 0; letter-spacing:-.01em; }
+.F h1 .hl{ background:linear-gradient(transparent 58%, #fcd97a 58%); padding:0 2px; }
+.F .sub{ font:400 10px/1.55 Figtree; color:#4d5b4d; margin:11px 0 0; max-width:88%; }
+.F .ctaRow{ display:flex; gap:8px; margin-top:13px; }
+.F .ctaP{ background:#15803d; color:#fff; font:700 9px Figtree; padding:8px 14px; border-radius:999px; }
+.F .ctaS{ background:#fff; color:#14532d; border:1px solid #d7e0d7; font:700 9px Figtree; padding:8px 14px; border-radius:999px; }
+.F .cardWrap{ margin-top:15px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.F .tcard{ background:#fff; border:1px solid #e3ebe3; border-radius:13px; padding:10px; box-shadow:0 4px 12px rgba(20,83,45,.05); }
+.F .tcard .ic{ width:18px;height:18px;border-radius:7px;background:#dcfce7;margin-bottom:6px; }
+.F .tcard .am{ width:18px;height:18px;border-radius:7px;background:#fef3c7;margin-bottom:6px; }
+.F .tcard b{ font:700 8.5px Figtree; color:#1c2b1c; display:block; }
+.F .tcard small{ font:400 7.5px Figtree; color:#6b7c6b; }
+</style>
+
+<h2>Three blends &mdash; best of A + B + C, green-forward</h2>
+<p class="subtitle">Same DNA in all: editorial / non-AI feel, clean modern product cards, and warmth &mdash; but warmth comes from soft green-tinted neutrals + a small honey accent instead of cream. They differ in where they sit on the editorial &harr; warm dial. Click your favourite; tell me what to push further.</p>
+
+<div class="alt-grid">
+
+  <!-- D -->
+  <div class="alt" data-choice="D-editorial-green" onclick="toggleSelect(this)">
+    <div class="preview D">
+      <div class="top"><span class="k">Gestão · Escolas de condução</span><span class="tag">Feito em PT</span></div>
+      <h1>Toda a escola,<br><em>num só lugar.</em></h1>
+      <p class="sub">Horários, alunos e presenças sem papel.</p>
+      <div class="card2">
+        <div class="row"><span class="c" style="background:#60a5fa"></span><span class="t">Código da Estrada</span><span class="m">09:00 · 14/20</span></div>
+        <div class="row"><span class="c" style="background:#16a34a"></span><span class="t">Aula Prática</span><span class="m">10:30 · 1/1</span></div>
+        <div class="row"><span class="c" style="background:#60a5fa"></span><span class="t">Segurança Rodoviária</span><span class="m">14:00 · 18/20</span></div>
+      </div>
+      <span class="cta">Marcar demonstração →</span>
+    </div>
+    <div class="meta">
+      <span class="badge">D · Editorial Green</span>
+      <h3>Editorial-led, quietly warm</h3>
+      <p>Serif headline + grid discipline (the non-AI part), one real product card, near-white green-tinted canvas, a single honey tag for warmth.</p>
+      <p class="mix">Mix: <b>A</b> heavy · B medium · C light</p>
+    </div>
+  </div>
+
+  <!-- E -->
+  <div class="alt" data-choice="E-modern-editorial" onclick="toggleSelect(this)">
+    <div class="preview E">
+      <div class="nav"><span class="logo">◐ Convlyx</span><span class="pill">Marcar demo</span></div>
+      <h1>A tua escola,<br><em>sem papel.</em></h1>
+      <p class="sub">Gestão completa de aulas, alunos e presenças.</p>
+      <div class="bento">
+        <div class="card2">
+          <div class="mini"><span class="dot"></span><div class="bar"></div></div>
+          <div class="mini"><span class="warm"></span><div class="bar"></div></div>
+          <div class="mini"><span class="dot"></span><div class="bar"></div></div>
+          <div class="mini"><span class="dot"></span><div class="bar"></div></div>
+        </div>
+        <div class="card2"><div class="stat">94%<small>Assiduidade</small></div></div>
+        <div class="card2" style="grid-column:1 / -1"><div class="stat">48 alunos<small>geridos esta semana</small></div></div>
+      </div>
+    </div>
+    <div class="meta">
+      <span class="badge">E · Modern Editorial</span>
+      <h3>Balanced &mdash; the middle</h3>
+      <p>Modern sans display with one serif italic accent word, bento product cards, soft green-tinted canvas, tiny warm accent. Crisp + friendly.</p>
+      <p class="mix">Mix: A medium · <b>B</b> heavy · C medium</p>
+    </div>
+  </div>
+
+  <!-- F -->
+  <div class="alt" data-choice="F-warm-modern" onclick="toggleSelect(this)">
+    <div class="preview F">
+      <h1>O dia-a-dia da escola,<br><span class="hl">mais simples.</span></h1>
+      <p class="sub">Menos burocracia, mais tempo para ensinar a conduzir.</p>
+      <div class="ctaRow"><span class="ctaP">Marcar demo</span><span class="ctaS">Ver funcionalidades</span></div>
+      <div class="cardWrap">
+        <div class="tcard"><div class="ic"></div><b>Dados isolados por escola</b><small>cada escola no seu espaço</small></div>
+        <div class="tcard"><div class="am"></div><b>100% digital</b><small>adeus papelada</small></div>
+      </div>
+    </div>
+    <div class="meta">
+      <span class="badge">F · Warm Modern</span>
+      <h3>Warm &amp; approachable, on green</h3>
+      <p>C's friendliness without the cream: warmth from a soft sage canvas + honey highlight, rounded modern cards, highly readable Figtree.</p>
+      <p class="mix">Mix: A light · B medium · <b>C</b> heavy</p>
+    </div>
+  </div>
+
+</div>
