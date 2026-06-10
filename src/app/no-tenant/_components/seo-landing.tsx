@@ -3,9 +3,19 @@
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
-import { ArrowRight, Check, ChevronRight } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, Laptop, CalendarDays, GraduationCap } from "lucide-react";
 import { SiteFooter } from "./site-footer";
 import { DemoDialog } from "./demo-dialog";
+import { Eyebrow, SectionHeading, Reveal, SectionDecor } from "./landing/_primitives";
+
+/** Theme icons can't be passed as components across the server→client boundary,
+ *  so pages pass a key and we resolve it here. */
+const THEME_ICONS = {
+  laptop: Laptop,
+  calendar: CalendarDays,
+  students: GraduationCap,
+} as const;
+type ThemeIconKey = keyof typeof THEME_ICONS;
 
 export type SeoLandingRelated = {
   href: string;
@@ -19,7 +29,7 @@ export type SeoFeature = {
   icon: ReactNode;
   title: string;
   description: string;
-  /** tailwind gradient classes — e.g. "from-primary/10 to-emerald-400/10" */
+  /** tailwind gradient classes — kept for back-compat; no longer used visually. */
   gradient: string;
 };
 
@@ -43,6 +53,7 @@ export function SeoLanding({
   deepDive,
   midCta,
   related,
+  themeIcon,
 }: {
   kicker: string;
   title: string;
@@ -53,8 +64,11 @@ export function SeoLanding({
   deepDive: SeoDeepDive;
   midCta?: { title: string; description: string };
   related?: SeoLandingRelated[];
+  /** Key of the faint driving-themed icon shown behind the features heading. */
+  themeIcon?: ThemeIconKey;
 }) {
   const [demoOpen, setDemoOpen] = useState(false);
+  const ThemeIcon = themeIcon ? THEME_ICONS[themeIcon] : undefined;
 
   function scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -63,32 +77,36 @@ export function SeoLanding({
   const mockupOnLeft = deepDive.mockupPosition === "left";
 
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
-      {/* Nav — mirrors main landing */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/70 backdrop-blur-xl border-b border-primary/5">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+    <div className="landing-scope min-h-screen overflow-hidden">
+      {/* Floating pill nav */}
+      <nav className="fixed top-0 right-0 left-0 z-50 px-4 pt-3 sm:px-6 sm:pt-4">
+        <div className="mx-auto flex max-w-5xl items-center justify-between rounded-full border border-[var(--landing-forest)]/12 bg-white/95 py-2 pr-2 pl-4 shadow-[0_8px_30px_rgba(16,80,40,0.10)] sm:pl-5">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-emerald-500 shadow-md shadow-primary/20">
-              <img src="/favicon.png" alt="" width={22} height={22} className="brightness-0 invert" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-gradient-to-br from-[var(--landing-green)] to-[var(--landing-forest)] shadow-sm shadow-[var(--landing-forest)]/25">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/favicon.png" alt="" width={20} height={20} className="brightness-0 invert" />
             </div>
-            <span className="text-lg font-bold bg-gradient-to-r from-primary to-emerald-500 bg-clip-text text-transparent">Convlyx</span>
+            <span className="text-base font-extrabold tracking-tight text-[var(--landing-ink)]">Convlyx</span>
           </Link>
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1">
             <button
+              type="button"
               onClick={() => scrollTo("features")}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors hidden sm:block px-3 py-1.5"
+              className="hidden cursor-pointer rounded-full px-3.5 py-2 text-sm font-semibold text-[var(--landing-muted)] transition-colors hover:bg-[var(--landing-green)]/8 hover:text-[var(--landing-forest)] sm:block"
             >
               Funcionalidades
             </button>
             <button
+              type="button"
               onClick={() => scrollTo("saber-mais")}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors hidden md:block px-3 py-1.5"
+              className="hidden cursor-pointer rounded-full px-3.5 py-2 text-sm font-semibold text-[var(--landing-muted)] transition-colors hover:bg-[var(--landing-green)]/8 hover:text-[var(--landing-forest)] md:block"
             >
               Saber mais
             </button>
             <button
+              type="button"
               onClick={() => setDemoOpen(true)}
-              className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-1.5 text-sm font-medium hover:bg-primary/90 transition-colors gap-1.5"
+              className="ml-1 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[var(--landing-forest)] px-4 py-2 text-sm font-semibold text-white shadow-md shadow-[var(--landing-forest)]/30 transition-colors hover:bg-[var(--landing-green)]"
             >
               <span className="hidden sm:inline">Pedir demonstração</span>
               <span className="sm:hidden">Demo</span>
@@ -98,91 +116,98 @@ export function SeoLanding({
         </div>
       </nav>
 
-      {/* Hero — split layout matching main landing's pattern */}
-      <section className="relative pt-24 pb-12 md:pt-28 md:pb-16">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/8 via-emerald-500/3 to-background" />
-        <div className="absolute top-10 right-10 w-[500px] h-[500px] rounded-full bg-primary/15 blur-[120px]" />
-        <div className="absolute top-40 left-0 w-80 h-80 rounded-full bg-emerald-400/12 blur-[100px]" />
-
-        <div className="relative mx-auto max-w-6xl px-6">
-          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+      {/* Hero — full-bleed sage gradient */}
+      <section className="landing-hero-bg relative px-6 pt-28 pb-16 md:pt-32 md:pb-24">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex flex-col items-center gap-12 lg:flex-row lg:gap-16">
             <div className="flex-1 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary mb-6">
-                <span className="flex h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.04em] text-[var(--landing-muted)]">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--landing-green)] ring-4 ring-[var(--landing-green)]/15" />
                 {kicker}
-              </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.08]">
+              </span>
+              <h1 className="mt-4 text-4xl leading-[1.05] font-extrabold tracking-tight text-[var(--landing-ink)] md:text-5xl lg:text-6xl">
                 {title}{" "}
-                <span className="bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">
-                  {highlight}
-                </span>
+                <span className="font-accent font-semibold text-[var(--landing-forest)]">{highlight}</span>
               </h1>
-              <p className="mt-6 text-lg text-muted-foreground max-w-xl leading-relaxed mx-auto lg:mx-0">
+              <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-[var(--landing-muted)] lg:mx-0">
                 {intro}
               </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
                 <button
+                  type="button"
                   onClick={() => setDemoOpen(true)}
-                  className={buttonVariants({ size: "lg", className: "gap-2 w-full sm:w-auto shadow-lg shadow-primary/20" })}
+                  className={buttonVariants({
+                    size: "lg",
+                    className:
+                      "w-full cursor-pointer gap-2 bg-[var(--landing-green)] text-white shadow-lg shadow-[var(--landing-forest)]/25 hover:bg-[var(--landing-forest)] sm:w-auto",
+                  })}
                 >
                   Pedir demonstração
                   <ArrowRight className="h-4 w-4" />
                 </button>
                 <button
+                  type="button"
                   onClick={() => scrollTo("features")}
-                  className={buttonVariants({ variant: "outline", size: "lg", className: "gap-2 w-full sm:w-auto" })}
+                  className={buttonVariants({
+                    variant: "outline",
+                    size: "lg",
+                    className:
+                      "w-full cursor-pointer gap-2 border-[var(--landing-forest)]/25 bg-white text-[var(--landing-forest)] hover:border-[var(--landing-forest)]/40 hover:bg-white hover:text-[var(--landing-forest)] sm:w-auto",
+                  })}
                 >
                   Ver funcionalidades
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
             </div>
-            <div className="flex-1 w-full max-w-lg">{heroMockup}</div>
+            <div className="w-full max-w-lg flex-1">{heroMockup}</div>
           </div>
         </div>
       </section>
 
-      {/* Features — themed to this page's keyword cluster */}
-      <section id="features" className="py-14 md:py-20 relative bg-gradient-to-b from-background via-primary/[0.02] to-background">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-[150px]" />
-
+      {/* Features */}
+      <section id="features" className="relative overflow-hidden py-14 md:py-20">
+        <SectionDecor />
         <div className="relative mx-auto max-w-6xl px-6">
-          <div className="text-center max-w-xl mx-auto mb-10">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary mb-4">
-              Funcionalidades
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold">O que pode fazer com o Convlyx</h2>
-          </div>
-
-          <div className={`grid gap-6 ${features.length >= 4 ? "md:grid-cols-2 lg:grid-cols-3" : "md:grid-cols-3"}`}>
+          <SectionHeading
+            eyebrow={<Eyebrow>Funcionalidades</Eyebrow>}
+            title="O que pode fazer com o"
+            accent="Convlyx"
+            icon={ThemeIcon}
+          />
+          <Reveal
+            className={`grid gap-5 ${
+              features.length >= 4 ? "md:grid-cols-2 lg:grid-cols-3" : "md:grid-cols-3"
+            }`}
+          >
             {features.map((f) => (
-              <FeatureCard
-                key={f.title}
-                icon={f.icon}
-                title={f.title}
-                description={f.description}
-                gradient={f.gradient}
-              />
+              <FeatureCard key={f.title} icon={f.icon} title={f.title} description={f.description} />
             ))}
-          </div>
+          </Reveal>
         </div>
       </section>
 
-      {/* Mid CTA — green band breaks the white run */}
+      {/* Mid CTA — green band */}
       {midCta && (
-        <section className="relative py-12 md:py-14 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-700 via-primary to-emerald-600" />
-          <div className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-white/8" />
-          <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-emerald-300/10" />
-          <div className="relative mx-auto max-w-4xl px-6 text-center text-primary-foreground">
-            <h2 className="text-2xl md:text-3xl font-bold">{midCta.title}</h2>
-            <p className="mt-3 text-base md:text-lg opacity-85 max-w-2xl mx-auto leading-relaxed">
+        <section className="relative overflow-hidden py-12 md:py-16">
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,var(--landing-forest),#166534)]" />
+          <div
+            className="absolute inset-0 opacity-[0.07]"
+            style={{
+              backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
+              backgroundSize: "22px 22px",
+            }}
+          />
+          <div className="relative mx-auto max-w-4xl px-6 text-center text-white">
+            <h2 className="text-2xl font-extrabold tracking-tight md:text-3xl">{midCta.title}</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-base leading-relaxed opacity-85 md:text-lg">
               {midCta.description}
             </p>
             <div className="mt-6">
               <button
+                type="button"
                 onClick={() => setDemoOpen(true)}
-                className="inline-flex items-center justify-center rounded-lg bg-white text-primary px-7 py-3 text-sm font-semibold hover:bg-white/90 transition-all cursor-pointer gap-2 shadow-lg shadow-black/10 hover:scale-105"
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-7 py-3 text-sm font-semibold text-[var(--landing-forest)] shadow-lg shadow-black/10 transition-all hover:scale-105 hover:bg-white/90"
               >
                 Pedir demonstração
                 <ArrowRight className="h-4 w-4" />
@@ -192,20 +217,22 @@ export function SeoLanding({
         </section>
       )}
 
-      {/* Deep dive — keyword-rich split section with mockup */}
-      <section id="saber-mais" className="py-14 md:py-20 relative">
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-emerald-400/8 blur-[120px]" />
-        <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-primary/5 blur-[80px]" />
-
+      {/* Deep dive — split with mockup */}
+      <section id="saber-mais" className="relative overflow-hidden py-14 md:py-20">
+        <SectionDecor flip />
         <div className="relative mx-auto max-w-6xl px-6">
-          <div className={`flex flex-col gap-12 items-center ${mockupOnLeft ? "lg:flex-row-reverse" : "lg:flex-row"}`}>
+          <Reveal
+            className={`flex flex-col items-center gap-12 ${
+              mockupOnLeft ? "lg:flex-row-reverse" : "lg:flex-row"
+            }`}
+          >
             <div className="flex-1 space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
-                {deepDive.kicker}
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{deepDive.title}</h2>
+              <Eyebrow>{deepDive.kicker}</Eyebrow>
+              <h2 className="text-3xl font-extrabold tracking-tight text-[var(--landing-ink)] md:text-4xl">
+                {deepDive.title}
+              </h2>
               {deepDive.body.map((p, i) => (
-                <p key={i} className="text-base md:text-lg text-muted-foreground leading-relaxed">
+                <p key={i} className="text-base leading-relaxed text-[var(--landing-muted)] md:text-lg">
                   {p}
                 </p>
               ))}
@@ -213,37 +240,41 @@ export function SeoLanding({
                 <ul className="space-y-3 pt-2">
                   {deepDive.bullets.map((b) => (
                     <li key={b} className="flex items-start gap-3">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary mt-0.5">
+                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[var(--landing-green)]/12 text-[var(--landing-forest)]">
                         <Check className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="text-sm md:text-base text-foreground/80 leading-relaxed">{b}</span>
+                      </span>
+                      <span className="text-sm leading-relaxed text-[var(--landing-ink)]/85 md:text-base">{b}</span>
                     </li>
                   ))}
                 </ul>
               )}
             </div>
-            <div className="flex-1 w-full max-w-lg">{deepDive.mockup}</div>
-          </div>
+            <div className="w-full max-w-lg flex-1">{deepDive.mockup}</div>
+          </Reveal>
         </div>
       </section>
 
       {/* Related pages — internal linking */}
       {related && related.length > 0 && (
-        <section className="py-12 md:py-14 bg-muted/30">
+        <section className="py-12 md:py-14">
           <div className="mx-auto max-w-3xl px-6">
-            <h2 className="text-xl md:text-2xl font-semibold text-center mb-8">Saiba mais</h2>
+            <h2 className="mb-8 text-center text-xl font-bold text-[var(--landing-ink)] md:text-2xl">
+              Saiba mais
+            </h2>
             <ul className="grid gap-4 md:grid-cols-2">
               {related.map((r) => (
                 <li key={r.href}>
                   <Link
                     href={r.href}
-                    className="group flex items-start gap-3 rounded-2xl border bg-card p-5 shadow-sm hover:shadow-md hover:border-primary/30 transition-all h-full"
+                    className="group flex h-full items-start gap-3 rounded-2xl border border-[var(--landing-forest)]/10 bg-white p-5 shadow-sm shadow-[var(--landing-forest)]/5 transition-all hover:-translate-y-0.5 hover:border-[var(--landing-forest)]/20 hover:shadow-lg hover:shadow-[var(--landing-forest)]/10"
                   >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm mb-1 group-hover:text-primary transition-colors">{r.title}</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{r.description}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="mb-1 text-sm font-semibold text-[var(--landing-ink)] transition-colors group-hover:text-[var(--landing-forest)]">
+                        {r.title}
+                      </p>
+                      <p className="text-xs leading-relaxed text-[var(--landing-muted)]">{r.description}</p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                    <ChevronRight className="h-4 w-4 shrink-0 text-[var(--landing-muted)] transition-all group-hover:translate-x-0.5 group-hover:text-[var(--landing-forest)]" />
                   </Link>
                 </li>
               ))}
@@ -252,23 +283,31 @@ export function SeoLanding({
         </section>
       )}
 
-      {/* Final CTA */}
-      <section id="demo" className="relative py-16 md:py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-700 via-primary to-emerald-600" />
-        <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-white/8" />
-        <div className="absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-emerald-300/10" />
-        <div className="absolute top-1/2 left-1/4 h-48 w-48 rounded-full bg-white/5 blur-3xl" />
-
-        <div className="relative mx-auto max-w-3xl px-6 text-center text-primary-foreground">
-          <h2 className="text-2xl md:text-3xl font-bold">Pronto para experimentar o Convlyx?</h2>
-          <p className="mt-3 text-base opacity-80 max-w-xl mx-auto">
-            Peça uma demonstração gratuita e veja como o Convlyx pode simplificar a gestão da sua escola de condução.
+      {/* Final CTA — green band */}
+      <section id="demo" className="relative overflow-hidden py-16 md:py-20">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,var(--landing-forest),#166534)]" />
+        <div
+          className="absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
+            backgroundSize: "22px 22px",
+          }}
+        />
+        <div className="absolute -top-24 -right-24 h-80 w-80 rounded-full bg-white/8" />
+        <div className="relative mx-auto max-w-3xl px-6 text-center text-white">
+          <h2 className="text-2xl font-extrabold tracking-tight md:text-3xl">
+            Pronto para experimentar o{" "}
+            <span className="font-accent font-semibold text-[var(--landing-accent-soft)]">Convlyx?</span>
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-base opacity-80">
+            Peça uma demonstração gratuita e veja como o Convlyx pode simplificar a gestão da sua escola
+            de condução.
           </p>
           <div className="mt-6">
             <button
               type="button"
               onClick={() => setDemoOpen(true)}
-              className="inline-flex items-center justify-center rounded-lg bg-white text-primary px-8 py-3.5 text-sm font-semibold hover:bg-white/90 transition-all cursor-pointer gap-2 shadow-lg shadow-black/10 hover:scale-105"
+              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-8 py-3.5 text-sm font-semibold text-[var(--landing-forest)] shadow-lg shadow-black/10 transition-all hover:scale-105 hover:bg-white/90"
             >
               Pedir demonstração
               <ArrowRight className="h-4 w-4" />
@@ -277,7 +316,7 @@ export function SeoLanding({
           <div className="mt-8">
             <Link
               href="/"
-              className="inline-flex items-center gap-1 text-sm opacity-80 hover:opacity-100 transition-opacity"
+              className="inline-flex items-center gap-1 text-sm opacity-80 transition-opacity hover:opacity-100"
             >
               Voltar à página inicial
               <ChevronRight className="h-3.5 w-3.5" />
@@ -297,22 +336,18 @@ function FeatureCard({
   icon,
   title,
   description,
-  gradient,
 }: {
   icon: ReactNode;
   title: string;
   description: string;
-  gradient: string;
 }) {
   return (
-    <div
-      className={`group rounded-2xl border p-6 shadow-md shadow-primary/3 hover:shadow-xl hover:shadow-primary/10 transition-all hover:border-primary/20 hover:-translate-y-1 bg-gradient-to-br ${gradient} backdrop-blur-sm`}
-    >
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/80 dark:bg-white/10 mb-4 group-hover:scale-110 transition-transform shadow-sm">
+    <div className="group rounded-2xl border border-[var(--landing-forest)]/10 bg-white p-6 shadow-sm shadow-[var(--landing-forest)]/5 transition-all hover:-translate-y-1 hover:border-[var(--landing-forest)]/20 hover:shadow-xl hover:shadow-[var(--landing-forest)]/10">
+      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--landing-green)]/10 transition-transform group-hover:scale-110">
         {icon}
       </div>
-      <h3 className="font-semibold mb-2">{title}</h3>
-      <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+      <h3 className="mb-2 font-semibold text-[var(--landing-ink)]">{title}</h3>
+      <p className="text-sm leading-relaxed text-[var(--landing-muted)]">{description}</p>
     </div>
   );
 }

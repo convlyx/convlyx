@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans, Newsreader } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { TRPCProvider } from "@/lib/trpc-provider";
@@ -16,6 +16,22 @@ export const preferredRegion = "dub1";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+});
+
+// Landing page (convlyx.com) typography — scoped to `.landing-scope`, the app
+// itself keeps Inter. Plus Jakarta Sans for headings/UI, Newsreader italic for
+// editorial accent words.
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
+  subsets: ["latin"],
+  style: ["italic"],
+  weight: ["500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -47,7 +63,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${inter.variable} h-full antialiased`}
+      className={`${inter.variable} ${jakarta.variable} ${newsreader.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider messages={messages}>
