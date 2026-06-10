@@ -21,7 +21,7 @@ export function CalendarHeroMockup() {
 
   return (
     <div className="relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-emerald-400/30 rounded-3xl blur-3xl scale-90" />
+      <div className="absolute inset-0 bg-[var(--landing-green)]/12 rounded-3xl blur-2xl scale-95" />
       <div className="relative rounded-2xl border border-primary/10 bg-card p-5 shadow-xl shadow-primary/5 space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -84,7 +84,7 @@ export function CalendarHeroMockup() {
 export function CalendarDeepDiveMockup() {
   return (
     <div className="relative">
-      <div className="absolute inset-0 bg-gradient-to-tl from-emerald-500/20 to-primary/20 rounded-3xl blur-3xl scale-90" />
+      <div className="absolute inset-0 bg-[var(--landing-green)]/12 rounded-3xl blur-2xl scale-95" />
       <div className="relative rounded-2xl border border-primary/10 bg-card p-5 shadow-xl shadow-primary/5 space-y-3">
         {/* Form header */}
         <div className="flex items-center gap-2 pb-2 border-b">
