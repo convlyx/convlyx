@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingAnnounce } from "@/components/loading-announce";
 
 /**
  * Inner-content skeleton for list pages — rendered when filters/title are
@@ -9,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function CardListSkeleton({ rows = 6 }: { rows?: number } = {}) {
   return (
     <div className="grid gap-3 animate-in fade-in duration-300">
+      <LoadingAnnounce />
       {Array.from({ length: rows }).map((_, i) => (
         <div
           key={i}

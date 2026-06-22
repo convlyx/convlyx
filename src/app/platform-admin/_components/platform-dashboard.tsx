@@ -164,7 +164,7 @@ export function PlatformDashboard({
                   <div className="flex items-center gap-2">
                     <p className="font-semibold">{tenant.name}</p>
                     <Badge variant={tenant.status === "ACTIVE" ? "default" : "destructive"}>
-                      {tenant.status}
+                      {tenant.status === "ACTIVE" ? "Ativo" : "Inativo"}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
@@ -224,9 +224,10 @@ export function PlatformDashboard({
                     href={`https://${school.subdomain}.convlyx.com`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label={`Abrir site de ${school.name}`}
                     className="text-muted-foreground hover:text-primary transition-colors"
                   >
-                    <ExternalLink className="h-4 w-4" />
+                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
                   </a>
                 </div>
               </div>
@@ -244,8 +245,8 @@ export function PlatformDashboard({
           <DialogBody>
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label>Nome do grupo</Label>
-                <Input value={tenantName} onChange={(e) => setTenantName(e.target.value)} placeholder="Ex: Grupo Escola Lisboa" />
+                <Label htmlFor="pa-tenant-name">Nome do grupo</Label>
+                <Input id="pa-tenant-name" value={tenantName} onChange={(e) => setTenantName(e.target.value)} placeholder="Ex: Grupo Escola Lisboa" />
               </div>
             </div>
           </DialogBody>
@@ -267,8 +268,9 @@ export function PlatformDashboard({
           <DialogBody>
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label>Grupo</Label>
+                <Label htmlFor="pa-school-tenant">Grupo</Label>
                 <select
+                  id="pa-school-tenant"
                   value={schoolData.tenantId}
                   onChange={(e) => setSchoolData({ ...schoolData, tenantId: e.target.value })}
                   className="flex h-9 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm cursor-pointer"
@@ -280,27 +282,28 @@ export function PlatformDashboard({
                 </select>
               </div>
               <div className="grid gap-2">
-                <Label>Nome da escola</Label>
-                <Input value={schoolData.name} onChange={(e) => setSchoolData({ ...schoolData, name: e.target.value })} placeholder="Ex: Escola de Condução Lisboa" />
+                <Label htmlFor="pa-school-name">Nome da escola</Label>
+                <Input id="pa-school-name" value={schoolData.name} onChange={(e) => setSchoolData({ ...schoolData, name: e.target.value })} placeholder="Ex: Escola de Condução Lisboa" />
               </div>
               <div className="grid gap-2">
-                <Label>Subdomínio</Label>
+                <Label htmlFor="pa-school-subdomain">Subdomínio</Label>
                 <div className="flex items-center gap-1">
-                  <Input value={schoolData.subdomain} onChange={(e) => setSchoolData({ ...schoolData, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })} placeholder="lisboa" className="flex-1" />
+                  <Input id="pa-school-subdomain" value={schoolData.subdomain} onChange={(e) => setSchoolData({ ...schoolData, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })} placeholder="lisboa" className="flex-1" />
                   <span className="text-sm text-muted-foreground">.convlyx.com</span>
                 </div>
               </div>
               <div className="grid gap-2">
-                <Label>Morada</Label>
-                <Input value={schoolData.address} onChange={(e) => setSchoolData({ ...schoolData, address: e.target.value })} />
+                <Label htmlFor="pa-school-address">Morada</Label>
+                <Input id="pa-school-address" value={schoolData.address} onChange={(e) => setSchoolData({ ...schoolData, address: e.target.value })} />
               </div>
               <div className="grid gap-2">
-                <Label>Telefone</Label>
-                <Input value={schoolData.phone} onChange={(e) => setSchoolData({ ...schoolData, phone: e.target.value })} />
+                <Label htmlFor="pa-school-phone">Telefone</Label>
+                <Input id="pa-school-phone" value={schoolData.phone} onChange={(e) => setSchoolData({ ...schoolData, phone: e.target.value })} />
               </div>
               <div className="grid gap-2">
-                <Label>Fuso horário</Label>
+                <Label htmlFor="pa-school-tz">Fuso horário</Label>
                 <select
+                  id="pa-school-tz"
                   value={schoolData.timeZone}
                   onChange={(e) => setSchoolData({ ...schoolData, timeZone: e.target.value })}
                   className="flex h-9 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm cursor-pointer"
@@ -334,20 +337,20 @@ export function PlatformDashboard({
                 O admin é criado imediatamente, sem email de confirmação. Forneça-lhe a palavra-passe definida aqui.
               </p>
               <div className="grid gap-2">
-                <Label>Nome</Label>
-                <Input value={adminData.name} onChange={(e) => setAdminData({ ...adminData, name: e.target.value })} placeholder="Ex: João Silva" />
+                <Label htmlFor="pa-admin-name">Nome</Label>
+                <Input id="pa-admin-name" value={adminData.name} onChange={(e) => setAdminData({ ...adminData, name: e.target.value })} placeholder="Ex: João Silva" />
               </div>
               <div className="grid gap-2">
-                <Label>Email</Label>
-                <Input type="email" value={adminData.email} onChange={(e) => setAdminData({ ...adminData, email: e.target.value })} placeholder="admin@escola.pt" />
+                <Label htmlFor="pa-admin-email">Email</Label>
+                <Input id="pa-admin-email" type="email" value={adminData.email} onChange={(e) => setAdminData({ ...adminData, email: e.target.value })} placeholder="admin@escola.pt" />
               </div>
               <div className="grid gap-2">
-                <Label>Telefone (opcional)</Label>
-                <Input value={adminData.phone} onChange={(e) => setAdminData({ ...adminData, phone: e.target.value })} />
+                <Label htmlFor="pa-admin-phone">Telefone (opcional)</Label>
+                <Input id="pa-admin-phone" value={adminData.phone} onChange={(e) => setAdminData({ ...adminData, phone: e.target.value })} />
               </div>
               <div className="grid gap-2">
-                <Label>Palavra-passe (mínimo 8 caracteres)</Label>
-                <PasswordInput value={adminData.password} onChange={(e) => setAdminData({ ...adminData, password: e.target.value })} />
+                <Label htmlFor="pa-admin-password">Palavra-passe (mínimo 8 caracteres)</Label>
+                <PasswordInput id="pa-admin-password" value={adminData.password} onChange={(e) => setAdminData({ ...adminData, password: e.target.value })} />
               </div>
             </div>
           </DialogBody>
@@ -370,7 +373,7 @@ function StatCard({ icon: Icon, label, value }: { icon: typeof Building2; label:
   return (
     <div className="rounded-xl border bg-card p-4 card-shadow">
       <div className="flex items-center justify-between mb-2">
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <Icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
       </div>
       <p className="text-2xl font-bold">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>

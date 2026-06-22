@@ -64,9 +64,10 @@ export function Header({
           size="icon"
           onClick={handleLogout}
           title={t("auth.logout")}
+          aria-label={t("auth.logout")}
           className="h-8 w-8 text-muted-foreground hover:text-foreground"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-4 w-4" aria-hidden="true" />
         </Button>
       </div>
     </header>

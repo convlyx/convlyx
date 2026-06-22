@@ -414,11 +414,12 @@ export function ClassDetailView({
                       {userRole === "INSTRUCTOR" && (
                         <button
                           type="button"
-                          className="text-muted-foreground hover:text-foreground transition-colors p-0.5 shrink-0"
+                          className="text-muted-foreground hover:text-foreground transition-colors p-0.5 shrink-0 rounded outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           onClick={() => { setEditingNoteId(enrollment.id); setNoteText(enrollment.notes ?? ""); }}
                           title={enrollment.notes ? t("enrollments.editNote") : t("enrollments.addNote")}
+                          aria-label={enrollment.notes ? t("enrollments.editNote") : t("enrollments.addNote")}
                         >
-                          <Pencil className="h-3 w-3" />
+                          <Pencil className="h-3 w-3" aria-hidden="true" />
                         </button>
                       )}
                     </div>
@@ -437,8 +438,9 @@ export function ClassDetailView({
                           enrollmentId: enrollment.id,
                           status: "ATTENDED",
                         })}
+                        aria-label={t("enrollments.attended")}
                       >
-                        <CheckCircle className="h-3.5 w-3.5 sm:mr-1" />
+                        <CheckCircle className="h-3.5 w-3.5 sm:mr-1" aria-hidden="true" />
                         <span className="hidden sm:inline">{t("enrollments.attended")}</span>
                       </Button>
                       <Button
@@ -449,8 +451,9 @@ export function ClassDetailView({
                           enrollmentId: enrollment.id,
                           status: "NO_SHOW",
                         })}
+                        aria-label={t("enrollments.noShow")}
                       >
-                        <XCircle className="h-3.5 w-3.5 sm:mr-1" />
+                        <XCircle className="h-3.5 w-3.5 sm:mr-1" aria-hidden="true" />
                         <span className="hidden sm:inline">{t("enrollments.noShow")}</span>
                       </Button>
                     </>
@@ -461,9 +464,10 @@ export function ClassDetailView({
                       variant="destructive"
                       disabled={cancelEnrollmentMutation.isPending}
                       onClick={() => setRemoveEnrollmentId(enrollment.id)}
+                      aria-label={t("enrollments.remove")}
                     >
                       <span className="hidden sm:inline">{t("enrollments.remove")}</span>
-                      <span className="sm:hidden">×</span>
+                      <span className="sm:hidden" aria-hidden="true">×</span>
                     </Button>
                   )}
                 </div>
@@ -475,8 +479,9 @@ export function ClassDetailView({
                         variant="outline"
                         disabled={markAttendanceMutation.isPending}
                         onClick={() => setPendingAttendanceChange({ enrollmentId: enrollment.id, status: "ATTENDED" })}
+                        aria-label={t("enrollments.attended")}
                       >
-                        <CheckCircle className="h-3.5 w-3.5 sm:mr-1" />
+                        <CheckCircle className="h-3.5 w-3.5 sm:mr-1" aria-hidden="true" />
                         <span className="hidden sm:inline">{t("enrollments.attended")}</span>
                       </Button>
                     )}
@@ -486,8 +491,9 @@ export function ClassDetailView({
                         variant="outline"
                         disabled={markAttendanceMutation.isPending}
                         onClick={() => setPendingAttendanceChange({ enrollmentId: enrollment.id, status: "NO_SHOW" })}
+                        aria-label={t("enrollments.noShow")}
                       >
-                        <XCircle className="h-3.5 w-3.5 sm:mr-1" />
+                        <XCircle className="h-3.5 w-3.5 sm:mr-1" aria-hidden="true" />
                         <span className="hidden sm:inline">{t("enrollments.noShow")}</span>
                       </Button>
                     )}

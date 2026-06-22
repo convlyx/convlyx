@@ -66,3 +66,19 @@ export function LegalPage({
     </div>
   );
 }
+
+/** A titled section within a legal page body. */
+export function LegalSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="space-y-3">
+      <h2 className="text-xl md:text-2xl font-semibold tracking-tight">{title}</h2>
+      {children}
+    </section>
+  );
+}

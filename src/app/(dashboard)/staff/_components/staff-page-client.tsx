@@ -8,6 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { keepPreviousData } from "@tanstack/react-query";
 import { UserCog, Search, Pencil, Phone, BadgeCheck, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/radix-select";
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
+import { DataTableCard } from "@/components/data-table-card";
 import { EmptyState } from "@/components/empty-state";
 import { UserAvatar } from "@/components/user-avatar";
 import { roleColorMap } from "@/lib/constants/class";
@@ -92,36 +94,34 @@ export function StaffPageClient() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">{t("nav.staff")}</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[140px] sm:flex-none">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t("common.search") + "..."}
-              value={searchInput}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 w-full sm:w-[200px]"
-            />
-          </div>
-          <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-auto min-w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">{t("users.allRoles")}</SelectItem>
-              {STAFF_ROLES.map((role) => (
-                <SelectItem key={role} value={role}>{t(`roles.${role}`)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <ViewToggle view={view} onChange={handleViewChange} />
-          <CreateUserDialog
-            allowedRoles={STAFF_ROLES}
-            buttonLabel={t("staff.create")}
+      <PageHeader title={t("nav.staff")}>
+        <div className="relative flex-1 min-w-[140px] sm:flex-none">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t("common.search") + "..."}
+            aria-label={t("common.search")}
+            value={searchInput}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 w-full sm:w-[200px]"
           />
         </div>
-      </div>
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-auto min-w-[140px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">{t("users.allRoles")}</SelectItem>
+            {STAFF_ROLES.map((role) => (
+              <SelectItem key={role} value={role}>{t(`roles.${role}`)}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <ViewToggle view={view} onChange={handleViewChange} />
+        <CreateUserDialog
+          allowedRoles={STAFF_ROLES}
+          buttonLabel={t("staff.create")}
+        />
+      </PageHeader>
 
       {isLoading ? (
         <CardListSkeleton />
@@ -142,9 +142,9 @@ export function StaffPageClient() {
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground mt-0.5 min-w-0">
                     <span className="flex items-center gap-1 truncate min-w-0">
                       {user.emailConfirmed ? (
-                        <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-label={t("users.emailConfirmed")} />
+                        <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-success" aria-label={t("users.emailConfirmed")} />
                       ) : (
-                        <Clock className="h-3.5 w-3.5 shrink-0 text-amber-600" aria-label={t("users.emailPending")} />
+                        <Clock className="h-3.5 w-3.5 shrink-0 text-warning" aria-label={t("users.emailPending")} />
                       )}
                       <span className="truncate">{user.email}</span>
                     </span>
@@ -184,8 +184,9 @@ export function StaffPageClient() {
           ))}
         </div>
       ) : (
-        <div className={`rounded-xl border card-shadow overflow-hidden animate-in fade-in duration-300 ${isFetching ? "opacity-60 transition-opacity" : ""}`}>
+        <DataTableCard className={`animate-in fade-in duration-300 ${isFetching ? "opacity-60 transition-opacity" : ""}`}>
           <Table>
+            <caption className="sr-only">{t("nav.staff")}</caption>
             <TableHeader>
               <TableRow>
                 <TableHead>{t("common.name")}</TableHead>
@@ -203,9 +204,9 @@ export function StaffPageClient() {
                   <TableCell>
                     <span className="flex items-center gap-1.5">
                       {user.emailConfirmed ? (
-                        <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-label={t("users.emailConfirmed")} />
+                        <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-success" aria-label={t("users.emailConfirmed")} />
                       ) : (
-                        <Clock className="h-3.5 w-3.5 shrink-0 text-amber-600" aria-label={t("users.emailPending")} />
+                        <Clock className="h-3.5 w-3.5 shrink-0 text-warning" aria-label={t("users.emailPending")} />
                       )}
                       {user.email}
                     </span>
@@ -237,7 +238,7 @@ export function StaffPageClient() {
               ))}
             </TableBody>
           </Table>
-        </div>
+        </DataTableCard>
       )}
 
       <Pagination

@@ -5,7 +5,7 @@ export function StatCard({ icon: Icon, label, value, description }: { icon: Luci
     <div className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-shadow">
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm text-muted-foreground">{label}</p>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <Icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
       </div>
       <p className="text-3xl font-bold">{value}</p>
       {description && <p className="text-xs text-muted-foreground">{description}</p>}

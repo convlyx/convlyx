@@ -1,8 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingAnnounce } from "@/components/loading-announce";
 
 export function CalendarSkeleton() {
   return (
     <div className="space-y-4 animate-in fade-in duration-300">
+      <LoadingAnnounce />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Skeleton className="h-8 w-32" />
         <div className="flex flex-wrap items-center gap-2">

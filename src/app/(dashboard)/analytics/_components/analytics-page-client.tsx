@@ -6,6 +6,7 @@ import { useUrlParam, useUrlParamInt } from "@/hooks/use-url-param";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
+import { PageHeader } from "@/components/page-header";
 import { ANALYTICS_RANGE_DAYS, type AnalyticsRangeDays } from "@/lib/validations/analytics";
 import { SnapshotRow } from "./snapshot-row";
 import { EnrolmentsOverTime } from "./enrolments-over-time";
@@ -38,39 +39,36 @@ export function AnalyticsPageClient() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">{t("nav.analytics")}</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <Select
-            value={String(rangeDays)}
-            onValueChange={(v) => setRangeRaw(Number(v))}
-          >
-            <SelectTrigger className="w-auto min-w-[140px]">
+      <PageHeader title={t("nav.analytics")}>
+        <Select
+          value={String(rangeDays)}
+          onValueChange={(v) => setRangeRaw(Number(v))}
+        >
+          <SelectTrigger className="w-auto min-w-[140px]" aria-label={t("analytics.rangeLabel")}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ANALYTICS_RANGE_DAYS.map((days) => (
+              <SelectItem key={days} value={String(days)}>
+                {t(`analytics.range.${days}`)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {hasMultipleSchools && (
+          <Select value={schoolFilter} onValueChange={setSchoolFilter}>
+            <SelectTrigger className="w-auto min-w-[180px]" aria-label={t("common.school")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {ANALYTICS_RANGE_DAYS.map((days) => (
-                <SelectItem key={days} value={String(days)}>
-                  {t(`analytics.range.${days}`)}
-                </SelectItem>
+              <SelectItem value={ALL}>{t("analytics.allSchools")}</SelectItem>
+              {schools?.map((s) => (
+                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {hasMultipleSchools && (
-            <Select value={schoolFilter} onValueChange={setSchoolFilter}>
-              <SelectTrigger className="w-auto min-w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>{t("analytics.allSchools")}</SelectItem>
-                {schools?.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
-      </div>
+        )}
+      </PageHeader>
 
       <SnapshotRow rangeDays={rangeDays} schoolId={schoolId} />
       <EnrolmentsOverTime rangeDays={rangeDays} schoolId={schoolId} />

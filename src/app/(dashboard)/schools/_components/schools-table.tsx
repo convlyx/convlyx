@@ -9,6 +9,8 @@ import {
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
 import { EmptyState } from "@/components/empty-state";
+import { IconTile } from "@/components/icon-tile";
+import { DataTableCard } from "@/components/data-table-card";
 
 export function SchoolsTable() {
   const t = useTranslations();
@@ -30,9 +32,7 @@ export function SchoolsTable() {
           {schools.map((school) => (
             <div key={school.id} className="rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all">
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Building2 className="h-5 w-5" />
-                </div>
+                <IconTile icon={Building2} className="bg-primary/10 text-primary" />
                 <div className="flex-1 min-w-0 space-y-1">
                   <p className="font-semibold truncate">{school.name}</p>
                   <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1 sm:gap-x-4 text-sm text-muted-foreground">
@@ -61,8 +61,9 @@ export function SchoolsTable() {
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border card-shadow overflow-hidden animate-in fade-in duration-300">
+        <DataTableCard className="animate-in fade-in duration-300">
           <Table>
+            <caption className="sr-only">{t("schools.title")}</caption>
             <TableHeader>
               <TableRow>
                 <TableHead>{t("common.name")}</TableHead>
@@ -84,7 +85,7 @@ export function SchoolsTable() {
               ))}
             </TableBody>
           </Table>
-        </div>
+        </DataTableCard>
       )}
     </div>
   );

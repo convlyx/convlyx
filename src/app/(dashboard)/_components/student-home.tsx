@@ -164,7 +164,7 @@ export function StudentHome({
 
       {/* Stats — progress card (driven by the lightweight counts query) */}
       {statsLoading ? (
-        <div className="rounded-2xl border bg-card p-4 card-shadow animate-in fade-in duration-300 space-y-3">
+        <div className="rounded-xl border bg-card p-4 card-shadow animate-in fade-in duration-300 space-y-3">
           <Skeleton className="h-3 w-24" />
           <div className="flex items-center justify-around py-1">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -177,7 +177,7 @@ export function StudentHome({
           </div>
         </div>
       ) : (
-        <div className="rounded-2xl border bg-card p-4 card-shadow">
+        <div className="rounded-xl border bg-card p-4 card-shadow">
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-3">{t("dashboard.myProgress")}</p>
           <div className="flex items-center justify-around">
             <div className="flex flex-col items-center gap-1">
@@ -189,8 +189,8 @@ export function StudentHome({
             </div>
             <div className="w-px h-10 bg-border" />
             <div className="flex flex-col items-center gap-1">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10">
-                <BookCheck className="h-4 w-4 text-emerald-500" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/10">
+                <BookCheck className="h-4 w-4 text-success" />
               </div>
               <span className="text-lg font-bold">{attendedCount}</span>
               <span className="text-[10px] text-muted-foreground">{t("dashboard.attendances")}</span>
@@ -212,7 +212,7 @@ export function StudentHome({
               </div>
               <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  className="h-full rounded-full bg-success transition-all duration-500"
                   style={{ width: `${totalClasses > 0 ? (attendedCount / totalClasses) * 100 : 0}%` }}
                 />
               </div>
@@ -239,7 +239,7 @@ export function StudentHome({
             {upcomingEnrollments.slice(0, 4).map((enrollment) => (
               <div
                 key={enrollment.id}
-                className="flex items-start gap-3 rounded-2xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
+                className="flex items-start gap-3 rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
               >
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[enrollment.session.classType]}`}>
                   <BookOpen className="h-4 w-4" />
@@ -293,7 +293,7 @@ export function StudentHome({
             {availableClasses.slice(0, 5).map((cls) => (
               <div
                 key={cls.id}
-                className="flex items-start gap-3 rounded-2xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
+                className="flex items-start gap-3 rounded-xl border bg-card p-4 card-shadow hover:card-shadow-hover transition-all"
               >
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[cls.classType]}`}>
                   <BookOpen className="h-4 w-4" />

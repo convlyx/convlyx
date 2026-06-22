@@ -10,6 +10,8 @@ import {
 } from "recharts";
 import type { AnalyticsRangeDays } from "@/lib/validations/analytics";
 import { formatBucket } from "./bucket-label";
+import { ChartCard } from "./chart-card";
+import { SrDataTable } from "@/components/sr-data-table";
 
 export function EnrolmentsOverTime({
   rangeDays,
@@ -28,18 +30,17 @@ export function EnrolmentsOverTime({
   const granularity = data?.granularity ?? "day";
 
   return (
-    <section className="rounded-xl border bg-card p-5 card-shadow space-y-4 animate-in fade-in duration-300">
-      <div>
-        <h2 className="text-lg font-semibold">{t("analytics.enrolmentsOverTime")}</h2>
-        <p className="text-sm text-muted-foreground">{t(`analytics.range.${rangeDays}`)}</p>
-      </div>
-
+    <ChartCard
+      title={t("analytics.enrolmentsOverTime")}
+      subtitle={t(`analytics.range.${rangeDays}`)}
+    >
       {isLoading ? (
         <Skeleton className="h-64 w-full" />
       ) : items.every((d) => d.count === 0) ? (
         <EmptyState icon={ClipboardList} message={t("analytics.noData")} />
       ) : (
-        <div className="h-64 w-full">
+        <>
+        <div className="h-64 w-full" aria-hidden="true">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={items.map((d) => ({ ...d, label: formatBucket(d.bucket, granularity) }))}
@@ -76,7 +77,13 @@ export function EnrolmentsOverTime({
             </BarChart>
           </ResponsiveContainer>
         </div>
+        <SrDataTable
+          caption={t("analytics.enrolmentsOverTime")}
+          columns={[t("analytics.period"), t("analytics.enrolments")]}
+          rows={items.map((d) => [formatBucket(d.bucket, granularity), d.count])}
+        />
+        </>
       )}
-    </section>
+    </ChartCard>
   );
 }

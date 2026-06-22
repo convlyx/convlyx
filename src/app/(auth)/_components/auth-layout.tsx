@@ -34,7 +34,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="space-y-4 max-w-md">
-            <h2 className="text-4xl font-bold leading-tight">{t("auth.welcomeBack")}</h2>
+            <p className="text-4xl font-bold leading-tight">{t("auth.welcomeBack")}</p>
             <p className="text-lg opacity-80">{t("auth.welcomeMessage")}</p>
           </div>
 

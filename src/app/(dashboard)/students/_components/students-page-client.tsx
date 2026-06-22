@@ -9,12 +9,14 @@ import { keepPreviousData } from "@tanstack/react-query";
 import Link from "next/link";
 import { GraduationCap, ChevronRight, Search, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
 import { EmptyState } from "@/components/empty-state";
+import { DataTableCard } from "@/components/data-table-card";
 import { UserAvatar } from "@/components/user-avatar";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -97,33 +99,31 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">{t("nav.students")}</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[140px] sm:flex-none">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t("common.search") + "..."}
-              value={searchInput}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-9 pl-9 w-full sm:w-[200px]"
-            />
-          </div>
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "ACTIVE" | "INACTIVE" | "ALL")}>
-            <SelectTrigger className="w-[130px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ACTIVE">{t("common.active")}</SelectItem>
-              <SelectItem value="INACTIVE">{t("common.inactive")}</SelectItem>
-              <SelectItem value="ALL">{t("common.all")}</SelectItem>
-            </SelectContent>
-          </Select>
-          <ViewToggle view={view} onChange={handleViewChange} />
-          {canManage && <BulkImportDialog />}
-          {canManage && <CreateUserDialog fixedRole="STUDENT" buttonLabel={t("users.createStudent")} />}
+      <PageHeader title={t("nav.students")}>
+        <div className="relative flex-1 min-w-[140px] sm:flex-none">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t("common.search") + "..."}
+            aria-label={t("common.search")}
+            value={searchInput}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 w-full sm:w-[200px]"
+          />
         </div>
-      </div>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "ACTIVE" | "INACTIVE" | "ALL")}>
+          <SelectTrigger className="w-[130px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ACTIVE">{t("common.active")}</SelectItem>
+            <SelectItem value="INACTIVE">{t("common.inactive")}</SelectItem>
+            <SelectItem value="ALL">{t("common.all")}</SelectItem>
+          </SelectContent>
+        </Select>
+        <ViewToggle view={view} onChange={handleViewChange} />
+        {canManage && <BulkImportDialog />}
+        {canManage && <CreateUserDialog fixedRole="STUDENT" buttonLabel={t("users.createStudent")} />}
+      </PageHeader>
 
       {isLoading ? (
         <CardListSkeleton />
@@ -189,8 +189,9 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
           ))}
         </div>
       ) : (
-        <div className={`rounded-xl border card-shadow overflow-hidden animate-in fade-in duration-300 ${isFetching ? "opacity-60 transition-opacity" : ""}`}>
+        <DataTableCard className={`animate-in fade-in duration-300 ${isFetching ? "opacity-60 transition-opacity" : ""}`}>
           <Table>
+            <caption className="sr-only">{t("nav.students")}</caption>
             <TableHeader>
               <TableRow>
                 <TableHead>{t("common.name")}</TableHead>
@@ -241,7 +242,7 @@ export function StudentsPageClient({ userRole }: { userRole: UserRole }) {
               ))}
             </TableBody>
           </Table>
-        </div>
+        </DataTableCard>
       )}
 
       <Pagination

@@ -128,7 +128,7 @@ export function InstructorHome({
 
       {/* Today's progress (driven by today query) */}
       {todayLoading ? (
-        <div className="rounded-2xl border bg-card p-4 card-shadow animate-in fade-in duration-300 space-y-3">
+        <div className="rounded-xl border bg-card p-4 card-shadow animate-in fade-in duration-300 space-y-3">
           <div className="flex items-center justify-between">
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-4 w-10" />
@@ -144,7 +144,7 @@ export function InstructorHome({
           </div>
         </div>
       ) : totalToday > 0 && (
-        <div className="rounded-2xl border bg-card p-4 card-shadow">
+        <div className="rounded-xl border bg-card p-4 card-shadow">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-semibold">{t("dashboard.todaysProgress")}</p>
             <span className="text-sm text-muted-foreground">{completedToday}/{totalToday}</span>
@@ -160,7 +160,7 @@ export function InstructorHome({
           <div className="grid grid-cols-3 gap-2 mt-4">
             <div className="text-center">
               <div className="flex items-center justify-center gap-1">
-                <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                <CheckCircle className="h-3.5 w-3.5 text-success" />
                 <span className="text-lg font-bold">{completedToday}</span>
               </div>
               <p className="text-[10px] text-muted-foreground">{t("dashboard.completed")}</p>
@@ -174,7 +174,7 @@ export function InstructorHome({
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1">
-                <Users className="h-3.5 w-3.5 text-blue-500" />
+                <Users className="h-3.5 w-3.5 text-info" />
                 <span className="text-lg font-bold">{totalStudentsToday}</span>
               </div>
               <p className="text-[10px] text-muted-foreground">{t("nav.students")}</p>
@@ -200,7 +200,7 @@ export function InstructorHome({
                 <Link
                   href={`/classes/${cls.id}`}
                   key={cls.id}
-                  className={`relative flex items-center gap-3 rounded-2xl border p-3.5 transition-all hover:border-primary/20 ${
+                  className={`relative flex items-center gap-3 rounded-xl border p-3.5 transition-all hover:border-primary/20 ${
                     isCurrent
                       ? "border-primary bg-primary/5 card-shadow-hover"
                       : isPast
@@ -277,7 +277,7 @@ export function InstructorHome({
               <Link
                 key={cls.id}
                 href={`/classes/${cls.id}`}
-                className="flex items-center gap-3 rounded-2xl border bg-card p-3.5 card-shadow transition-all hover:card-shadow-hover"
+                className="flex items-center gap-3 rounded-xl border bg-card p-3.5 card-shadow transition-all hover:card-shadow-hover"
               >
                 <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[cls.classType]}`}>
                   <BookOpen className="h-5 w-5" />

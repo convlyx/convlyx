@@ -60,10 +60,12 @@ export function GdprPanel() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t("settings.gdprSearchPlaceholder")}
+          aria-label={t("settings.gdprSearchPlaceholder")}
           className="pl-9"
         />
       </div>
 
+      <div aria-live="polite" aria-busy={enabled && isFetching}>
       {!enabled ? null : isFetching ? (
         <Loading />
       ) : !data || data.items.length === 0 ? (
@@ -89,6 +91,7 @@ export function GdprPanel() {
           ))}
         </div>
       )}
+      </div>
     </section>
   );
 }

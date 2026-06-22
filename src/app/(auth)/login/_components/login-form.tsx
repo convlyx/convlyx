@@ -13,6 +13,7 @@ import { AlertCircle, Mail, Lock } from "lucide-react";
 
 export function LoginForm() {
   const t = useTranslations("auth");
+  const tc = useTranslations("common");
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? "/";
@@ -122,14 +123,17 @@ export function LoginForm() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+        <div
+          role="alert"
+          className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3"
+        >
           <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
           <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
 
-      <Button type="submit" size="lg" className="w-full" disabled={loading}>
-        {loading ? "..." : t("login")}
+      <Button type="submit" size="lg" className="w-full" disabled={loading} aria-busy={loading}>
+        {loading ? tc("loading") : t("login")}
       </Button>
     </form>
   );

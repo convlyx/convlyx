@@ -28,7 +28,7 @@ function DeltaBadge({ delta }: { delta: number | null }) {
   const colour = flat
     ? "text-muted-foreground"
     : up
-      ? "text-emerald-600 dark:text-emerald-400"
+      ? "text-success"
       : "text-destructive";
   // Always display deltas as %. For rates (attendance / pass) the underlying
   // number is already in percentage points — the % label is read by users

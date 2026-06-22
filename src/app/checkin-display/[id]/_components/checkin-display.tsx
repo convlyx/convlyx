@@ -79,7 +79,7 @@ export function CheckInDisplay({ sessionId }: { sessionId: string }) {
               {/* QR */}
               <div className="flex flex-col items-center gap-4 rounded-3xl border bg-card p-6 card-shadow">
                 <div className="rounded-2xl border bg-white p-4">
-                  <canvas ref={canvasRef} />
+                  <canvas ref={canvasRef} role="img" aria-label={t("scanToCheckIn")} />
                 </div>
                 <p className="text-center text-sm text-muted-foreground">{t("scanToCheckIn")}</p>
               </div>
@@ -96,7 +96,7 @@ export function CheckInDisplay({ sessionId }: { sessionId: string }) {
                         key={c.id}
                         className="flex items-center gap-2 rounded-xl bg-muted/40 px-3 py-2 text-sm font-medium"
                       >
-                        <CheckCircle className="h-4 w-4 shrink-0 text-emerald-500" />
+                        <CheckCircle className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
                         <span className="truncate">{c.name}</span>
                       </li>
                     ))}

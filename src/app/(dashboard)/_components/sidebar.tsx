@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import type { UserRole } from "@/generated/prisma/enums";
 import type { LucideIcon } from "lucide-react";
+import { NavLink } from "./nav-link";
 
 export type NavItem = {
   key: string;
@@ -40,7 +41,6 @@ export const navItems: NavItem[] = [
 ];
 
 export function Sidebar({ userRole, tenantName }: { userRole: UserRole; tenantName: string }) {
-  const t = useTranslations();
   const tNav = useTranslations("nav");
   const pathname = usePathname();
   const [pendingPath, setPendingPath] = useState<string | null>(null);
@@ -67,53 +67,34 @@ export function Sidebar({ userRole, tenantName }: { userRole: UserRole; tenantNa
         </Link>
       </div>
       <nav className="flex-1 space-y-1 p-3">
-        {mainItems.map((item) => {
-          const isActive =
-            item.href === "/"
-              ? activePath === "/"
-              : activePath.startsWith(item.href);
-          const Icon = item.icon;
-
-          return (
-            <Link
-              key={item.key}
-              href={item.href}
-              onClick={() => setPendingPath(item.href)}
-              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-sidebar-primary"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-              }`}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              {tNav(item.key)}
-            </Link>
-          );
-        })}
+        {mainItems.map((item) => (
+          <NavLink
+            key={item.key}
+            href={item.href}
+            icon={item.icon}
+            label={tNav(item.key)}
+            isActive={
+              item.href === "/"
+                ? activePath === "/"
+                : activePath.startsWith(item.href)
+            }
+            onClick={() => setPendingPath(item.href)}
+          />
+        ))}
 
         {adminItems.length > 0 && (
           <>
             <div className="my-3 border-t border-sidebar-border" />
-            {adminItems.map((item) => {
-              const isActive = activePath.startsWith(item.href);
-              const Icon = item.icon;
-
-              return (
-                <Link
-                  key={item.key}
-                  href={item.href}
-                  onClick={() => setPendingPath(item.href)}
-                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-sidebar-primary"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                  }`}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {tNav(item.key)}
-                </Link>
-              );
-            })}
+            {adminItems.map((item) => (
+              <NavLink
+                key={item.key}
+                href={item.href}
+                icon={item.icon}
+                label={tNav(item.key)}
+                isActive={activePath.startsWith(item.href)}
+                onClick={() => setPendingPath(item.href)}
+              />
+            ))}
           </>
         )}
       </nav>

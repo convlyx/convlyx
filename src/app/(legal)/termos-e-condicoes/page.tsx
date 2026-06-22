@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LegalPage } from "../_components/legal-page";
+import { LegalPage, LegalSection as Section } from "../_components/legal-page";
 import { COMPANY, formatLegalEntity } from "@/lib/company";
 
 const URL = "https://convlyx.com/termos-e-condicoes";
@@ -195,14 +195,5 @@ export default function Page() {
         </p>
       </Section>
     </LegalPage>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="space-y-3">
-      <h2 className="text-xl md:text-2xl font-semibold tracking-tight">{title}</h2>
-      {children}
-    </section>
   );
 }

@@ -1,9 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { DetailBackLink } from "@/app/(dashboard)/_components/detail-back-link";
 import { StudentHeaderSection } from "./student-header-section";
 import { StudentStatsSection } from "./student-stats-section";
 import { CoursesAndExamsSection } from "./courses-and-exams-section";
@@ -25,16 +22,9 @@ export function StudentDetailPage({
   id: string;
   userRole: UserRole;
 }) {
-  const t = useTranslations();
-
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      <Link href="/students" className="inline-flex">
-        <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" />
-          {t("common.back")}
-        </Button>
-      </Link>
+      <DetailBackLink href="/students" />
 
       <StudentHeaderSection id={id} userRole={userRole} />
       <StudentStatsSection id={id} />

@@ -218,18 +218,20 @@ export function PendingAttendanceModal() {
                                 type="button"
                                 size="sm"
                                 variant={value === "ATTENDED" ? "default" : "outline"}
+                                aria-pressed={value === "ATTENDED"}
                                 onClick={() => handleSelect(enrollment.id, "ATTENDED")}
                               >
-                                <Check className="h-3.5 w-3.5 mr-1" />
+                                <Check className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
                                 {t("dashboard.present")}
                               </Button>
                               <Button
                                 type="button"
                                 size="sm"
                                 variant={value === "NO_SHOW" ? "destructive" : "outline"}
+                                aria-pressed={value === "NO_SHOW"}
                                 onClick={() => handleSelect(enrollment.id, "NO_SHOW")}
                               >
-                                <X className="h-3.5 w-3.5 mr-1" />
+                                <X className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
                                 {t("dashboard.absent")}
                               </Button>
                             </div>

@@ -86,10 +86,12 @@ export function MobileTopBar({
           <NovidadesButton userRole={userRole} />
           <NotificationBell userId={userId} />
           <button
+            type="button"
             onClick={handleLogout}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label={t("auth.logout")}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <LogOut className="h-[18px] w-[18px]" />
+            <LogOut className="h-[18px] w-[18px]" aria-hidden="true" />
           </button>
         </div>
       </div>

@@ -314,6 +314,8 @@
     },
     "analytics": {
         "allSchools": "Todas as escolas",
+        "rangeLabel": "Intervalo de datas",
+        "period": "Período",
         "vsPrevious": "vs. período anterior",
         "noData": "Sem dados suficientes para este período",
         "range": {

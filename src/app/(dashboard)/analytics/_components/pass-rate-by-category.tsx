@@ -10,6 +10,8 @@ import {
 } from "recharts";
 
 import type { AnalyticsRangeDays } from "@/lib/validations/analytics";
+import { ChartCard } from "./chart-card";
+import { SrDataTable } from "@/components/sr-data-table";
 
 export function PassRateByCategory({
   rangeDays,
@@ -34,24 +36,23 @@ export function PassRateByCategory({
   // Colour each bar by its rate: green for healthy, amber for marginal,
   // destructive for weak. Visual reinforces what the number already says.
   const barColour = (pct: number): string => {
-    if (pct >= 75) return "#10b981";
-    if (pct >= 50) return "#f59e0b";
+    if (pct >= 75) return "var(--success)";
+    if (pct >= 50) return "var(--warning)";
     return "var(--destructive)";
   };
 
   return (
-    <section className="rounded-xl border bg-card p-5 card-shadow space-y-4 animate-in fade-in duration-300">
-      <div>
-        <h2 className="text-lg font-semibold">{t("analytics.passRateByCategory")}</h2>
-        <p className="text-sm text-muted-foreground">{t(`analytics.range.${rangeDays}`)}</p>
-      </div>
-
+    <ChartCard
+      title={t("analytics.passRateByCategory")}
+      subtitle={t(`analytics.range.${rangeDays}`)}
+    >
       {isLoading ? (
         <Skeleton className="h-64 w-full" />
       ) : rows.length === 0 ? (
         <EmptyState icon={Award} message={t("analytics.noData")} />
       ) : (
-        <div className="w-full" style={{ height: Math.max(96, rows.length * 44 + 32) }}>
+        <>
+        <div className="w-full" style={{ height: Math.max(96, rows.length * 44 + 32) }} aria-hidden="true">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               layout="vertical"
@@ -101,7 +102,13 @@ export function PassRateByCategory({
             </BarChart>
           </ResponsiveContainer>
         </div>
+        <SrDataTable
+          caption={t("analytics.passRateByCategory")}
+          columns={[t("classes.category"), t("analytics.passRate")]}
+          rows={rows.map((r) => [r.category, `${r.pct}% (${r.passed}/${r.attempts})`])}
+        />
+        </>
       )}
-    </section>
+    </ChartCard>
   );
 }

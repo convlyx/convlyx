@@ -17,6 +17,9 @@ import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { typeKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap, classTypeBadgeClass, resolveEnrollmentDisplay } from "@/lib/constants/class";
 import { Pagination } from "@/components/pagination";
+import { SegmentedTabs } from "@/components/segmented-tabs";
+import { IconTile } from "@/components/icon-tile";
+import { DataTableCard } from "@/components/data-table-card";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import type { UserRole } from "@/generated/prisma/enums";
@@ -92,22 +95,14 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
       </div>
 
       {/* Time tabs */}
-      <div className="flex items-center gap-1 rounded-lg border p-0.5 w-fit">
-        <Button
-          variant={timeTab === "current" ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setTimeTab("current")}
-        >
-          {t("classes.upcoming")}
-        </Button>
-        <Button
-          variant={timeTab === "past" ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setTimeTab("past")}
-        >
-          {t("classes.past")}
-        </Button>
-      </div>
+      <SegmentedTabs
+        value={timeTab}
+        onChange={setTimeTab}
+        options={[
+          { value: "current", label: t("classes.upcoming") },
+          { value: "past", label: t("classes.past") },
+        ]}
+      />
 
       {isLoading ? (
         <CardListSkeleton />
@@ -118,12 +113,10 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
           {paginatedEnrollments.map((enrollment) => (
             <div
               key={enrollment.id}
-              className="rounded-2xl border bg-card p-4 card-shadow"
+              className="rounded-xl border bg-card p-4 card-shadow"
             >
               <div className="flex items-start gap-3">
-                <div className={`flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[enrollment.session.classType]}`}>
-                  <BookOpen className="h-5 w-5" />
-                </div>
+                <IconTile icon={BookOpen} className={classTypeColorMap[enrollment.session.classType]} />
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <p className="font-medium truncate">{enrollment.session.title}</p>
@@ -181,7 +174,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
           ))}
         </div>
       ) : (
-        <div className={`rounded-xl border card-shadow overflow-hidden animate-in fade-in duration-300 ${isFetching ? "opacity-60 transition-opacity" : ""}`}>
+        <DataTableCard className={`animate-in fade-in duration-300 ${isFetching ? "opacity-60 transition-opacity" : ""}`}>
           <Table>
             <TableHeader>
               <TableRow>
@@ -234,7 +227,7 @@ export function EnrollmentsList({ userRole }: { userRole: UserRole }) {
               ))}
             </TableBody>
           </Table>
-        </div>
+        </DataTableCard>
       )}
 
       <Pagination

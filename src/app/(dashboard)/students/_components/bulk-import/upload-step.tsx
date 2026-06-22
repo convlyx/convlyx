@@ -53,6 +53,8 @@ export function UploadStep({ onParsed }: Props) {
           if (file) void handleFile(file);
         }}
         disabled={parsing}
+        aria-label={t("upload.dropzone")}
+        aria-busy={parsing}
         className={`flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-8 text-center transition-colors disabled:opacity-60 ${
           dragging ? "border-primary bg-primary/5" : "border-input hover:border-primary/40"
         }`}
@@ -73,6 +75,7 @@ export function UploadStep({ onParsed }: Props) {
       <input
         ref={inputRef}
         type="file"
+        aria-label={t("upload.dropzone")}
         accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
         className="sr-only"
         onChange={(e) => {
@@ -83,7 +86,7 @@ export function UploadStep({ onParsed }: Props) {
         }}
       />
 
-      {error && <p className="text-sm text-destructive text-center">{error}</p>}
+      {error && <p role="alert" className="text-sm text-destructive text-center">{error}</p>}
 
       <div className="flex gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
         <Info className="h-4 w-4 shrink-0 mt-0.5" />

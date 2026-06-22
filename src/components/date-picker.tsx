@@ -119,11 +119,12 @@ export function TimePicker({
                     key={t}
                     type="button"
                     onClick={() => { onChange(t); setOpen(false); }}
+                    aria-pressed={isSelected}
                     className={cn(
-                      "rounded-md px-2 py-1.5 text-xs text-center cursor-pointer transition-colors",
+                      "rounded-md px-2 py-1.5 text-xs text-center cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       isSelected
                         ? "bg-primary text-primary-foreground"
-                        : "hover:bg-muted"
+                        : "hover:bg-muted focus-visible:bg-muted"
                     )}
                   >
                     {t}

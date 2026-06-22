@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingAnnounce } from "@/components/loading-announce";
 
 /** A row of stat-card-shaped skeletons matching <StatCard> dimensions. */
 export function StatRowSkeleton({ count = 3 }: { count?: number } = {}) {
@@ -11,6 +12,7 @@ export function StatRowSkeleton({ count = 3 }: { count?: number } = {}) {
         : "grid grid-cols-1 gap-4 sm:grid-cols-3";
   return (
     <div className={`${gridClass} animate-in fade-in duration-300`}>
+      <LoadingAnnounce />
       {Array.from({ length: count }).map((_, i) => (
         <StatCardSkeleton key={i} />
       ))}

@@ -10,6 +10,8 @@ import {
 } from "recharts";
 import type { AnalyticsRangeDays } from "@/lib/validations/analytics";
 import { formatBucket } from "./bucket-label";
+import { ChartCard } from "./chart-card";
+import { SrDataTable } from "@/components/sr-data-table";
 
 export function AttendanceTrend({
   rangeDays,
@@ -29,18 +31,17 @@ export function AttendanceTrend({
   const hasData = items.some((d) => d.classes > 0);
 
   return (
-    <section className="rounded-xl border bg-card p-5 card-shadow space-y-4 animate-in fade-in duration-300">
-      <div>
-        <h2 className="text-lg font-semibold">{t("analytics.attendanceTrend")}</h2>
-        <p className="text-sm text-muted-foreground">{t(`analytics.range.${rangeDays}`)}</p>
-      </div>
-
+    <ChartCard
+      title={t("analytics.attendanceTrend")}
+      subtitle={t(`analytics.range.${rangeDays}`)}
+    >
       {isLoading ? (
         <Skeleton className="h-64 w-full" />
       ) : !hasData ? (
         <EmptyState icon={BookCheck} message={t("analytics.noData")} />
       ) : (
-        <div className="h-64 w-full">
+        <>
+        <div className="h-64 w-full" aria-hidden="true">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={items.map((d) => ({
@@ -107,7 +108,8 @@ export function AttendanceTrend({
                 type="monotone"
                 dataKey="attendancePct"
                 name={t("analytics.attendanceRate")}
-                stroke="#10b981"
+                stroke="var(--success)"
+                strokeDasharray="5 5"
                 strokeWidth={2}
                 dot={{ r: 3 }}
                 activeDot={{ r: 5 }}
@@ -117,7 +119,17 @@ export function AttendanceTrend({
             </LineChart>
           </ResponsiveContainer>
         </div>
+        <SrDataTable
+          caption={t("analytics.attendanceTrend")}
+          columns={[t("analytics.period"), t("analytics.classes"), t("analytics.attendanceRate")]}
+          rows={items.map((d) => [
+            formatBucket(d.bucket, granularity),
+            d.classes,
+            `${Math.round(d.attendanceRate * 100)}%`,
+          ])}
+        />
+        </>
       )}
-    </section>
+    </ChartCard>
   );
 }

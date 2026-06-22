@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -32,8 +32,8 @@ export function ConfirmDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{message}</DialogDescription>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground">{message}</p>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             {t("no")}

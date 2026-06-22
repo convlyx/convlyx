@@ -8,7 +8,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { InfoTooltip } from "@/components/info-tooltip";
-import { typeKeys, statusKeys, enrollmentStatusKeys, enrollmentStatusVariant, classTypeBadgeClass, resolveEnrollmentDisplay } from "@/lib/constants/class";
+import { typeKeys, statusKeys, statusVariant, enrollmentStatusKeys, enrollmentStatusVariant, classTypeBadgeClass, resolveEnrollmentDisplay } from "@/lib/constants/class";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
@@ -124,7 +124,7 @@ export function ClassDetailDialog({
             <Badge className={classTypeBadgeClass[classDetail.classType]}>
               {t(typeKeys[classDetail.classType])}
             </Badge>
-            <Badge variant={classDetail.status === "CANCELLED" ? "destructive" : "outline"}>
+            <Badge variant={statusVariant[classDetail.status] ?? "outline"}>
               {t(statusKeys[classDetail.status])}
             </Badge>
           </div>

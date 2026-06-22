@@ -9,7 +9,11 @@ export function UserAvatar({ name, className }: { name: string; className?: stri
     .toUpperCase();
 
   return (
-    <div className={cn("flex items-center justify-center rounded-full font-semibold text-sm", className)}>
+    <div
+      role="img"
+      aria-label={name}
+      className={cn("flex items-center justify-center rounded-full font-semibold text-sm", className)}
+    >
       {initials}
     </div>
   );

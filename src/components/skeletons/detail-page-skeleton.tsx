@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingAnnounce } from "@/components/loading-announce";
 
 export function DetailPageSkeleton({
   stats = 3,
@@ -9,6 +10,7 @@ export function DetailPageSkeleton({
 } = {}) {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
+      <LoadingAnnounce />
       <Skeleton className="h-4 w-24" />
 
       {/* Header card: avatar + name + meta */}

@@ -47,6 +47,7 @@ export function PreviewStep({
 
       <div className="rounded-xl border overflow-x-auto max-h-[50vh]">
         <Table>
+          <caption className="sr-only">{t("preview.title")}</caption>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[140px]">{t("preview.status")}</TableHead>
@@ -69,26 +70,26 @@ export function PreviewStep({
                   <TableCell className="align-top">
                     {isActive ? (
                       <span className="inline-flex items-center gap-1 text-xs text-amber-600">
-                        <AlertCircle className="h-3.5 w-3.5" />
+                        <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
                         {t("preview.alreadyActive")}
                       </span>
                     ) : hasError ? (
                       <span className="flex flex-col gap-0.5 text-xs text-destructive">
                         {errors.map((code) => (
                           <span key={code} className="inline-flex items-center gap-1">
-                            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                            <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                             {t(`rowErrors.${code}`)}
                           </span>
                         ))}
                       </span>
                     ) : row.existing === "INACTIVE" ? (
                       <span className="inline-flex items-center gap-1 text-xs text-blue-600">
-                        <RotateCcw className="h-3.5 w-3.5" />
+                        <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                         {t("preview.willReactivate")}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                         {t("preview.valid")}
                       </span>
                     )}
@@ -139,7 +140,7 @@ export function PreviewStep({
                       onClick={() => onRemoveRow(row.id)}
                       title={t("preview.remove")}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
                       <span className="sr-only">{t("preview.remove")}</span>
                     </Button>
                   </TableCell>

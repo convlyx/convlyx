@@ -1,8 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingAnnounce } from "@/components/loading-announce";
 
 export function SettingsSkeleton() {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
+      <LoadingAnnounce />
       <Skeleton className="h-8 w-40" />
 
       {/* Tabs strip */}

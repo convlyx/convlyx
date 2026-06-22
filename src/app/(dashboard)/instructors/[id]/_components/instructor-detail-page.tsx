@@ -1,9 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { DetailBackLink } from "@/app/(dashboard)/_components/detail-back-link";
 import { InstructorHeaderSection } from "./instructor-header-section";
 import { InstructorStatsSection } from "./instructor-stats-section";
 import { InstructorHistorySection } from "./instructor-history-section";
@@ -23,16 +20,9 @@ export function InstructorDetailPage({
   id: string;
   userRole: UserRole;
 }) {
-  const t = useTranslations();
-
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      <Link href="/instructors" className="inline-flex">
-        <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" />
-          {t("common.back")}
-        </Button>
-      </Link>
+      <DetailBackLink href="/instructors" />
 
       <InstructorHeaderSection id={id} userRole={userRole} />
       <InstructorStatsSection id={id} />

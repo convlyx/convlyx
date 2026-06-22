@@ -20,7 +20,11 @@ export function CategoryMultiSelect({ value, onChange }: Props) {
   }
 
   return (
-    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+    <div
+      role="group"
+      aria-label={t("instructors.qualifiedCategories")}
+      className="grid grid-cols-3 gap-2 sm:grid-cols-4"
+    >
       {LICENSE_CATEGORIES.map((cat) => {
         const checked = value.includes(cat);
         return (

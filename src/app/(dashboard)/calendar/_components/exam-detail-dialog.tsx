@@ -16,22 +16,7 @@ import { CalendarDays, MapPin, User as UserIcon, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import type { UserRole } from "@/generated/prisma/enums";
-
-const RESULT_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  SCHEDULED: "secondary",
-  PASSED: "default",
-  FAILED: "destructive",
-  NO_SHOW: "destructive",
-  CANCELLED: "outline",
-};
-
-const RESULT_KEYS: Record<string, string> = {
-  SCHEDULED: "exams.scheduledStatus",
-  PASSED: "exams.passedStatus",
-  FAILED: "exams.failedStatus",
-  NO_SHOW: "exams.noShowStatus",
-  CANCELLED: "exams.cancelledStatus",
-};
+import { examResultKeys, examResultVariant } from "@/lib/constants/exam";
 
 export function ExamDetailDialog({
   examId,
@@ -103,8 +88,8 @@ export function ExamDetailDialog({
               <div className="space-y-3 text-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   <CategoryBadge category={exam.course.category} />
-                  <Badge variant={RESULT_VARIANT[exam.result] ?? "outline"}>
-                    {t(RESULT_KEYS[exam.result] ?? "exams.scheduledStatus")}
+                  <Badge variant={examResultVariant[exam.result] ?? "outline"}>
+                    {t(examResultKeys[exam.result] ?? "exams.scheduledStatus")}
                   </Badge>
                 </div>
                 <div className="flex items-start gap-2 text-muted-foreground">

@@ -12,9 +12,9 @@ type Props = {
 };
 
 const STATUS_META = {
-  created: { icon: CheckCircle2, className: "text-emerald-600" },
-  reactivated: { icon: RotateCcw, className: "text-blue-600" },
-  skipped: { icon: MinusCircle, className: "text-amber-600" },
+  created: { icon: CheckCircle2, className: "text-success" },
+  reactivated: { icon: RotateCcw, className: "text-info" },
+  skipped: { icon: MinusCircle, className: "text-warning" },
   failed: { icon: XCircle, className: "text-destructive" },
 } as const;
 
@@ -44,7 +44,7 @@ export function ResultsStep({ results, onImportAnother, onDone }: Props) {
           const Icon = meta.icon;
           return (
             <li key={`${result.email}-${i}`} className="flex items-center gap-3 p-3 text-sm">
-              <Icon className={`h-4 w-4 shrink-0 ${meta.className}`} />
+              <Icon className={`h-4 w-4 shrink-0 ${meta.className}`} aria-hidden="true" />
               <span className="flex-1 min-w-0 truncate">{result.email}</span>
               <span className={`text-xs ${meta.className}`}>
                 {t(`results.${result.status}`)}

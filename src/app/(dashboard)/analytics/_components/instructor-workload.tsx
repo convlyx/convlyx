@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 
 import type { AnalyticsRangeDays } from "@/lib/validations/analytics";
+import { ChartCard } from "./chart-card";
 
 export function InstructorWorkload({
   rangeDays,
@@ -25,12 +26,10 @@ export function InstructorWorkload({
   });
 
   return (
-    <section className="rounded-xl border bg-card p-5 card-shadow space-y-4 animate-in fade-in duration-300">
-      <div>
-        <h2 className="text-lg font-semibold">{t("analytics.instructorWorkload")}</h2>
-        <p className="text-sm text-muted-foreground">{t(`analytics.range.${rangeDays}`)}</p>
-      </div>
-
+    <ChartCard
+      title={t("analytics.instructorWorkload")}
+      subtitle={t(`analytics.range.${rangeDays}`)}
+    >
       {isLoading ? (
         <Skeleton className="h-40 w-full" />
       ) : !data || data.length === 0 ? (
@@ -38,6 +37,7 @@ export function InstructorWorkload({
       ) : (
         <div className="overflow-hidden rounded-lg border">
           <Table>
+            <caption className="sr-only">{t("analytics.instructorWorkload")}</caption>
             <TableHeader>
               <TableRow>
                 <TableHead>{t("common.name")}</TableHead>
@@ -63,6 +63,6 @@ export function InstructorWorkload({
           </Table>
         </div>
       )}
-    </section>
+    </ChartCard>
   );
 }

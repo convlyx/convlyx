@@ -50,8 +50,9 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
           size="icon-sm"
           disabled={page <= 1}
           onClick={() => changePage(page - 1)}
+          aria-label={t("common.previous")}
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
         </Button>
         {pages.map((p, i) =>
           p === "..." ? (
@@ -63,6 +64,7 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
               size="sm"
               className="h-7 w-7 p-0"
               onClick={() => changePage(p)}
+              aria-current={p === page ? "page" : undefined}
             >
               {p}
             </Button>
@@ -73,8 +75,9 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
           size="icon-sm"
           disabled={page >= totalPages}
           onClick={() => changePage(page + 1)}
+          aria-label={t("common.next")}
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
         </Button>
       </div>
     </div>

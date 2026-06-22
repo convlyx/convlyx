@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { ClassesTable } from "./classes-table";
 import type { UserRole } from "@/generated/prisma/enums";
+import { PageHeader } from "@/components/page-header";
 
 export function ClassesPageClient({ userRole, userId }: { userRole: UserRole; userId: string }) {
   const t = useTranslations("classes");
@@ -12,7 +13,7 @@ export function ClassesPageClient({ userRole, userId }: { userRole: UserRole; us
 
   return (
     <div className="space-y-4">
-      {showTitle && <h1 className="text-2xl font-bold">{t("title")}</h1>}
+      {showTitle && <PageHeader title={t("title")} />}
       <ClassesTable userRole={userRole} userId={userId} />
     </div>
   );

@@ -16,8 +16,15 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
 import { StudentPicker } from "@/components/student-picker";
-import { DatePicker, TimePicker } from "@/components/date-picker";
-import { CategorySelect } from "@/components/category-select";
+import { DatePicker } from "@/components/date-picker";
+import {
+  ClassCategoryField,
+  ClassInstructorField,
+  ClassTitleField,
+  ClassDateField,
+  ClassTimeRangeRow,
+  useQualifiedInstructors,
+} from "./class-form-fields";
 import { LICENSE_CATEGORIES } from "@/lib/license-categories";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
@@ -180,29 +187,17 @@ export function CreateClassDialog({
     if (!schoolId && schools?.length === 1) setValue("schoolId", schools[0].id);
   }, [schools, schoolId, setValue]);
 
-  // When a category is chosen, only show instructors qualified for it
-  const filteredInstructors = isStaff && category && instructors
-    ? instructors.filter((i) =>
-        !i.qualifiedCategories?.length || i.qualifiedCategories.includes(category)
-      )
-    : instructors;
+  const filteredInstructors = useQualifiedInstructors({
+    instructors,
+    category,
+    instructorId,
+    onClear: () => setValue("instructorId", ""),
+  });
 
+  // Auto-select the only qualified instructor.
   useEffect(() => {
     if (!instructorId && filteredInstructors?.length === 1) setValue("instructorId", filteredInstructors[0].id);
   }, [filteredInstructors, instructorId, setValue]);
-
-  // Clear instructor if they're not qualified for the newly selected category
-  useEffect(() => {
-    if (!category || !instructorId || !instructors) return;
-    const current = instructors.find((i) => i.id === instructorId);
-    if (
-      current &&
-      current.qualifiedCategories?.length &&
-      !current.qualifiedCategories.includes(category)
-    ) {
-      setValue("instructorId", "");
-    }
-  }, [category, instructorId, instructors, setValue]);
 
   const createMutation = trpc.class.create.useMutation({
     onSuccess: async (_data, vars) => {
@@ -336,21 +331,7 @@ export function CreateClassDialog({
                 />
               </div>
               {classType === "PRACTICAL" && (
-                <div className="grid gap-2">
-                  <Label>{t("classes.category")}</Label>
-                  <Controller
-                    control={control}
-                    name="category"
-                    render={({ field }) => (
-                      <CategorySelect
-                        value={field.value ?? ""}
-                        onChange={field.onChange}
-                        placeholder={t("classes.categoryRequired")}
-                      />
-                    )}
-                  />
-                  {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
-                </div>
+                <ClassCategoryField control={control} name="category" error={errors.category?.message} />
               )}
             </div>
 
@@ -358,37 +339,17 @@ export function CreateClassDialog({
             <input type="hidden" {...register("schoolId")} />
 
             {isStaff ? (
-              <div className="grid gap-2">
-                <Label>{t("classes.instructor")}</Label>
-                <Controller
-                  control={control}
-                  name="instructorId"
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder={t("classes.instructor")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {filteredInstructors?.map((instructor) => (
-                          <SelectItem key={instructor.id} value={instructor.id}>
-                            {instructor.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.instructorId && <p className="text-sm text-destructive">{errors.instructorId.message}</p>}
-              </div>
+              <ClassInstructorField
+                control={control}
+                name="instructorId"
+                instructors={filteredInstructors}
+                error={errors.instructorId?.message}
+              />
             ) : (
               <input type="hidden" {...register("instructorId")} />
             )}
 
-            <div className="grid gap-2">
-              <Label htmlFor="class-title">{t("common.name")}</Label>
-              <Input id="class-title" {...register("title")} />
-              {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
-            </div>
+            <ClassTitleField register={register} name="title" id="class-title" error={errors.title?.message} />
 
             <div className="grid gap-2">
               <Label htmlFor="class-capacity">{t("classes.capacity")}</Label>
@@ -444,44 +405,13 @@ export function CreateClassDialog({
 
             {scheduleMode === "one-off" ? (
               <>
-                <div className="grid gap-2">
-                  <Label>{t("classes.date")}</Label>
-                  <Controller
-                    control={control}
-                    name="date"
-                    render={({ field }) => (
-                      <DatePicker value={field.value} onChange={field.onChange} />
-                    )}
-                  />
-                  {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label>{t("classes.startTime")}</Label>
-                    <Controller
-                      control={control}
-                      name="startTime"
-                      render={({ field }) => (
-                        <TimePicker value={field.value} onChange={field.onChange} />
-                      )}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>{t("classes.endTime")}</Label>
-                    <Controller
-                      control={control}
-                      name="endTime"
-                      render={({ field }) => (
-                        <TimePicker value={field.value} onChange={field.onChange} />
-                      )}
-                    />
-                  </div>
-                </div>
+                <ClassDateField control={control} name="date" error={errors.date?.message} />
+                <ClassTimeRangeRow control={control} startName="startTime" endName="endTime" />
               </>
             ) : (
               <>
-                <div className="grid gap-2">
-                  <Label>{t("classes.daysOfWeek")}</Label>
+                <fieldset className="grid gap-2">
+                  <legend className="text-sm leading-none font-medium mb-2">{t("classes.daysOfWeek")}</legend>
                   <div className="flex flex-wrap gap-3">
                     {DAYS_OF_WEEK.map((day) => (
                       <label key={day} className="flex items-center gap-1.5 text-sm cursor-pointer">
@@ -501,29 +431,8 @@ export function CreateClassDialog({
                       </label>
                     ))}
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label>{t("classes.startTime")}</Label>
-                    <Controller
-                      control={control}
-                      name="startTime"
-                      render={({ field }) => (
-                        <TimePicker value={field.value} onChange={field.onChange} />
-                      )}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>{t("classes.endTime")}</Label>
-                    <Controller
-                      control={control}
-                      name="endTime"
-                      render={({ field }) => (
-                        <TimePicker value={field.value} onChange={field.onChange} />
-                      )}
-                    />
-                  </div>
-                </div>
+                </fieldset>
+                <ClassTimeRangeRow control={control} startName="startTime" endName="endTime" />
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label>{t("classes.validFrom")}</Label>

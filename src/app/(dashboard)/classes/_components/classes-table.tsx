@@ -24,6 +24,9 @@ import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { typeKeys, statusKeys, statusVariant, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
 import { Pagination } from "@/components/pagination";
+import { SegmentedTabs } from "@/components/segmented-tabs";
+import { IconTile } from "@/components/icon-tile";
+import { DataTableCard } from "@/components/data-table-card";
 import { EditClassDialog } from "./edit-class-dialog";
 import { CreateClassDialog } from "./create-class-dialog";
 import { CategoryBadge } from "@/components/category-badge";
@@ -181,22 +184,14 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
     <div className="space-y-4">
       {/* Time tabs (hidden for students) */}
       {!isStudent && (
-        <div className="flex items-center gap-1 rounded-lg border p-0.5 w-fit">
-          <Button
-            variant={timeTab === "upcoming" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setTimeTab("upcoming")}
-          >
-            {t("classes.upcoming")}
-          </Button>
-          <Button
-            variant={timeTab === "past" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setTimeTab("past")}
-          >
-            {t("classes.past")}
-          </Button>
-        </div>
+        <SegmentedTabs
+          value={timeTab}
+          onChange={setTimeTab}
+          options={[
+            { value: "upcoming", label: t("classes.upcoming") },
+            { value: "past", label: t("classes.past") },
+          ]}
+        />
       )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -206,15 +201,16 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t("common.search") + "..."}
+              aria-label={t("common.search")}
               value={searchInput}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-10 w-full pl-9"
+              className="w-full pl-9"
             />
           </div>
           {/* Filters — share the row evenly on mobile, auto-width on desktop */}
           <div className="flex flex-wrap items-center gap-2">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="h-10 flex-1 min-w-[130px] sm:w-auto sm:min-w-[140px] sm:flex-none">
+              <SelectTrigger className="flex-1 min-w-[130px] sm:w-auto sm:min-w-[140px] sm:flex-none">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -224,7 +220,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
               </SelectContent>
             </Select>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="h-10 flex-1 min-w-[130px] sm:w-auto sm:min-w-[140px] sm:flex-none">
+              <SelectTrigger className="flex-1 min-w-[130px] sm:w-auto sm:min-w-[140px] sm:flex-none">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -236,7 +232,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
             </Select>
             {canManageStaff && (
               <Select value={instructorFilter} onValueChange={setInstructorFilter}>
-                <SelectTrigger className="h-10 flex-1 min-w-[130px] sm:w-auto sm:min-w-[140px] sm:flex-none">
+                <SelectTrigger className="flex-1 min-w-[130px] sm:w-auto sm:min-w-[140px] sm:flex-none">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -249,7 +245,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
             )}
             {!isStudent && (
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="h-10 flex-1 min-w-[130px] sm:w-auto sm:min-w-[140px] sm:flex-none">
+                <SelectTrigger className="flex-1 min-w-[130px] sm:w-auto sm:min-w-[140px] sm:flex-none">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -299,12 +295,10 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
         <div className="grid gap-3 animate-in fade-in duration-300">
           {paginatedClasses.map((cls) => {
             const isClickable = canViewDetail(cls);
-            const cardClass = `rounded-2xl border bg-card p-4 card-shadow transition-all block ${isClickable ? "group hover:card-shadow-hover hover:border-primary/20" : ""}`;
+            const cardClass = `rounded-xl border bg-card p-4 card-shadow transition-all block ${isClickable ? "group hover:card-shadow-hover hover:border-primary/20" : ""}`;
             const cardContent = (
                 <div className="flex items-start gap-3">
-                  <div className={`flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl ${classTypeColorMap[cls.classType]}`}>
-                    <BookOpen className="h-5 w-5" />
-                  </div>
+                  <IconTile icon={BookOpen} className={classTypeColorMap[cls.classType]} />
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <p className={`font-medium truncate ${isClickable ? "group-hover:text-primary transition-colors" : ""}`}>{cls.title}</p>
@@ -351,7 +345,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                     <div className="hidden sm:flex shrink-0 gap-1 items-center">
                       {canManage && (cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
                         <>
-                          <Button variant="outline" size="icon-sm" onClick={(e) => { e.preventDefault(); setEditClass(cls); }} title={t("common.edit")}>
+                          <Button variant="outline" size="icon-sm" onClick={(e) => { e.preventDefault(); setEditClass(cls); }} title={t("common.edit")} aria-label={t("common.edit")}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
                           <Button variant="destructive" size="sm" onClick={(e) => { e.preventDefault(); setCancelId(cls.id); }}>{t("common.cancel")}</Button>
@@ -374,7 +368,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
           })}
         </div>
       ) : (
-        <div className="rounded-xl border card-shadow overflow-hidden animate-in fade-in duration-300">
+        <DataTableCard className="animate-in fade-in duration-300">
           <Table>
             <TableHeader>
               <TableRow>
@@ -423,7 +417,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                     )}
                     {canManage && (cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
                       <div className="flex gap-1">
-                        <Button variant="outline" size="icon-sm" onClick={() => setEditClass(cls)} title={t("common.edit")}>
+                        <Button variant="outline" size="icon-sm" onClick={() => setEditClass(cls)} title={t("common.edit")} aria-label={t("common.edit")}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
                         <Button variant="destructive" size="sm" onClick={() => setCancelId(cls.id)}>{t("common.cancel")}</Button>
@@ -434,7 +428,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
               ))}
             </TableBody>
           </Table>
-        </div>
+        </DataTableCard>
       )}
 
       <Pagination

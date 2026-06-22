@@ -10,6 +10,8 @@ import interactionPlugin from "@fullcalendar/interaction";
 import luxonPlugin from "@fullcalendar/luxon3";
 import type { DateSelectArg, EventClickArg } from "@fullcalendar/core";
 import { trpc } from "@/lib/trpc";
+import { typeKeys, statusKeys } from "@/lib/constants/class";
+import { examResultColors } from "@/lib/constants/exam";
 import { ClassDetailDialog } from "./class-detail-dialog";
 import { ExamDetailDialog } from "./exam-detail-dialog";
 import { RecordExamResultDialog } from "@/app/(dashboard)/students/[id]/_components/record-exam-result-dialog";
@@ -39,29 +41,6 @@ const availableColors: Record<string, { bg: string; border: string }> = {
   PRACTICAL: {
     bg: "var(--calendar-practical-available-bg)",
     border: "var(--calendar-practical-available-border)",
-  },
-};
-
-const examColors: Record<string, { bg: string; border: string }> = {
-  SCHEDULED: {
-    bg: "var(--calendar-exam-scheduled-bg)",
-    border: "var(--calendar-exam-scheduled-border)",
-  },
-  PASSED: {
-    bg: "var(--calendar-exam-passed-bg)",
-    border: "var(--calendar-exam-passed-border)",
-  },
-  FAILED: {
-    bg: "var(--calendar-exam-failed-bg)",
-    border: "var(--calendar-exam-failed-border)",
-  },
-  NO_SHOW: {
-    bg: "var(--calendar-exam-failed-bg)",
-    border: "var(--calendar-exam-failed-border)",
-  },
-  CANCELLED: {
-    bg: "var(--calendar-exam-cancelled-bg)",
-    border: "var(--calendar-exam-cancelled-border)",
   },
 };
 
@@ -179,6 +158,15 @@ export function ClassCalendar({
         colors = enrolledColors[cls.classType] ?? enrolledColors.THEORY;
       }
 
+      // Accessible name carrying everything the colour encodes (type, status,
+      // enrolment) so screen-reader users don't depend on colour.
+      const labelParts = [
+        `${cls.title} (${cls._count.enrollments}/${cls.capacity})`,
+        t(typeKeys[cls.classType]),
+        t(statusKeys[cls.status] ?? cls.status),
+      ];
+      if (isStudent && isEnrolled) labelParts.push(t("enrollments.enrolled"));
+
       return {
         id: cls.id,
         title: `${cls.title} (${cls._count.enrollments}/${cls.capacity})`,
@@ -194,15 +182,16 @@ export function ClassCalendar({
           status: cls.status,
           isFull,
           isEnrolled,
+          ariaLabel: labelParts.join(", "),
         },
       };
     });
-  }, [classes, studentSessionIds, isStudent]);
+  }, [classes, studentSessionIds, isStudent, t]);
 
   const examEvents = useMemo(() => {
     if (!exams) return [];
     return exams.map((exam) => {
-      const colors = examColors[exam.result] ?? examColors.SCHEDULED;
+      const colors = examResultColors[exam.result] ?? examResultColors.SCHEDULED;
       // Default 60-min slot for exams (no end stored in DB)
       const start = new Date(exam.scheduledAt);
       const end = new Date(start.getTime() + 60 * 60 * 1000);
@@ -221,6 +210,7 @@ export function ClassCalendar({
           studentName: exam.course.student.name,
           category: exam.course.category,
           result: exam.result,
+          ariaLabel: `${title}, ${exam.course.category}`,
         },
       };
     });
@@ -228,13 +218,16 @@ export function ClassCalendar({
 
   const allEvents = useMemo(() => [...events, ...examEvents], [events, examEvents]);
 
-  function handleEventClick(info: EventClickArg) {
-    const id = info.event.id;
-    if (id.startsWith(EXAM_PREFIX)) {
-      setSelectedExamId(id.slice(EXAM_PREFIX.length));
+  function openEvent(event: { id: string }) {
+    if (event.id.startsWith(EXAM_PREFIX)) {
+      setSelectedExamId(event.id.slice(EXAM_PREFIX.length));
     } else {
-      setSelectedClassId(id);
+      setSelectedClassId(event.id);
     }
+  }
+
+  function handleEventClick(info: EventClickArg) {
+    openEvent(info.event);
   }
 
   function handleDatesSet(dateInfo: { start: Date; end: Date }) {
@@ -313,6 +306,21 @@ export function ClassCalendar({
             eventDisplay="block"
             events={allEvents}
             eventClick={handleEventClick}
+            eventDidMount={(info) => {
+              // FullCalendar events are pointer-only by default; make them
+              // focusable + operable by keyboard, and expose the colour-encoded
+              // info as an accessible name.
+              const label = info.event.extendedProps.ariaLabel as string | undefined;
+              info.el.tabIndex = 0;
+              info.el.setAttribute("role", "button");
+              if (label) info.el.setAttribute("aria-label", label);
+              info.el.onkeydown = (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openEvent(info.event);
+                }
+              };
+            }}
             select={canCreate ? handleSelect : undefined}
             datesSet={handleDatesSet}
             height="auto"
@@ -334,7 +342,9 @@ export function ClassCalendar({
                     {props.isEnrolled && (
                       <span className="flex h-1.5 w-1.5 rounded-full bg-white shrink-0" />
                     )}
-                    <span className="font-medium truncate">{arg.event.title}</span>
+                    <span className={`font-medium truncate ${props.status === "CANCELLED" ? "line-through" : ""}`}>
+                      {arg.event.title}
+                    </span>
                   </div>
                   <div className="opacity-80 truncate">{props.instructor}</div>
                 </div>
@@ -347,19 +357,19 @@ export function ClassCalendar({
       {isStudent && (
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded bg-blue-500" />
+            <span className="h-3 w-3 rounded" style={{ backgroundColor: "var(--calendar-theory-bg)" }} />
             {t("calendar.enrolled.theory")}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded bg-emerald-500" />
+            <span className="h-3 w-3 rounded" style={{ backgroundColor: "var(--calendar-practical-bg)" }} />
             {t("calendar.enrolled.practical")}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded bg-blue-300" />
+            <span className="h-3 w-3 rounded" style={{ backgroundColor: "var(--calendar-theory-available-bg)" }} />
             {t("calendar.availableLabel")}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded bg-red-600" />
+            <span className="h-3 w-3 rounded" style={{ backgroundColor: "var(--calendar-exam-scheduled-bg)" }} />
             {t("calendar.examLabel")}
           </span>
         </div>

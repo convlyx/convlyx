@@ -76,9 +76,9 @@ See `docs/decisions/2026-06-01-performance-optimization.md` for full context.
 ### Structure & Components
 - **File paths**: pages in `src/app/`, tRPC routers in `src/server/routers/`, Prisma client in `src/server/db.ts`, Zod schemas in `src/lib/validations/`, shared hooks in `src/hooks/`.
 - **Co-locate** page-specific components: `src/app/(dashboard)/calendar/_components/`. Global `src/components/` only for truly shared components.
-- **shadcn/ui** lives in `src/components/ui/` — never modify directly; wrap in project components if needed.
+- **UI primitives** live in `src/components/ui/` and are built on **`@base-ui/react`** (not raw shadcn) — never modify directly; wrap in project components if needed. **One sanctioned exception:** `ui/radix-select.tsx` (the only Select) is built on `@radix-ui/react-select` and is the canonical select — do not add a second select implementation. The shared `Card` (`ui/card.tsx`) is the standard surface wrapper.
 - **Server Components by default.** `"use client"` only for interactivity (forms, calendar, modals, hooks). Keep client components small and leaf-level. Never import server code into client components.
-- **Theme tokens only** — never hardcode colors/spacing. Use CSS variables via Tailwind. Theme/branding file will be defined later; until then, shadcn/ui defaults.
+- **Theme tokens only** — never hardcode colors/spacing. Use CSS variables via Tailwind. Status colors use the semantic tokens `--success` / `--warning` / `--info` (e.g. `text-success`, `bg-warning`) — never raw palette literals like `text-emerald-600`. **Card radius standard: `rounded-xl`** (the `Card` primitive's default) for all card/section surfaces; reserve `rounded-2xl`+ for hero banners, icon tiles, and pills.
 
 ### Naming
 - Files/folders: `kebab-case`. Components: `PascalCase`. tRPC routers: `camelCase`. Zod schemas: `camelCaseSchema` suffix.

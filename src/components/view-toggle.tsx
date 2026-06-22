@@ -59,18 +59,20 @@ export function ViewToggle({
         size="icon-sm"
         onClick={() => onChange("cards")}
         title={t("cardView")}
-        className="h-7 w-7"
+        aria-label={t("cardView")}
+        aria-pressed={view === "cards"}
       >
-        <LayoutGrid className="h-3.5 w-3.5" />
+        <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />
       </Button>
       <Button
         variant={view === "table" ? "default" : "ghost"}
         size="icon-sm"
         onClick={() => onChange("table")}
         title={t("tableView")}
-        className="h-7 w-7"
+        aria-label={t("tableView")}
+        aria-pressed={view === "table"}
       >
-        <List className="h-3.5 w-3.5" />
+        <List className="h-3.5 w-3.5" aria-hidden="true" />
       </Button>
     </div>
   );

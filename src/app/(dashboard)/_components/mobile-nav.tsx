@@ -8,6 +8,7 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { UserRole } from "@/generated/prisma/enums";
 import { navItems } from "./sidebar";
+import { NavLink } from "./nav-link";
 
 export function MobileNav({ userRole, tenantName }: { userRole: UserRole; tenantName: string }) {
   const t = useTranslations();
@@ -62,53 +63,36 @@ export function MobileNav({ userRole, tenantName }: { userRole: UserRole; tenant
               </Button>
             </div>
             <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
-              {mainItems.map((item) => {
-                const isActive =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(item.href);
-                const Icon = item.icon;
-
-                return (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-sidebar-primary"
-                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    {tNav(item.key)}
-                  </Link>
-                );
-              })}
+              {mainItems.map((item) => (
+                <NavLink
+                  key={item.key}
+                  href={item.href}
+                  icon={item.icon}
+                  label={tNav(item.key)}
+                  isActive={
+                    item.href === "/"
+                      ? pathname === "/"
+                      : pathname.startsWith(item.href)
+                  }
+                  onClick={() => setOpen(false)}
+                  className="py-2.5"
+                />
+              ))}
 
               {adminItems.length > 0 && (
                 <>
                   <div className="my-3 border-t border-sidebar-border" />
-                  {adminItems.map((item) => {
-                    const isActive = pathname.startsWith(item.href);
-                    const Icon = item.icon;
-
-                    return (
-                      <Link
-                        key={item.key}
-                        href={item.href}
-                        onClick={() => setOpen(false)}
-                        className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
-                          isActive
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-sidebar-primary"
-                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                        }`}
-                      >
-                        <Icon className="h-4 w-4 shrink-0" />
-                        {tNav(item.key)}
-                      </Link>
-                    );
-                  })}
+                  {adminItems.map((item) => (
+                    <NavLink
+                      key={item.key}
+                      href={item.href}
+                      icon={item.icon}
+                      label={tNav(item.key)}
+                      isActive={pathname.startsWith(item.href)}
+                      onClick={() => setOpen(false)}
+                      className="py-2.5"
+                    />
+                  ))}
                 </>
               )}
             </nav>
