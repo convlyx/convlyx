@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage, LegalSection as Section } from "../_components/legal-page";
 import { COMPANY, formatLegalEntity } from "@/lib/company";
-import { LEGAL_VERSIONS } from "@/lib/legal";
+import { LEGAL_VERSIONS, SUBPROCESSORS } from "@/lib/legal";
 
 const URL = "https://convlyx.com/contrato-de-subcontratacao";
 const TITLE = "Contrato de Subcontratação (DPA) | Convlyx";
@@ -82,11 +82,11 @@ export default function Page() {
       <Section title="7. Subcontratantes autorizados">
         <p>O Cliente autoriza os seguintes subcontratantes ulteriores:</p>
         <ul className="list-disc pl-6 space-y-2">
-          <li><strong>Supabase</strong> — base de dados e autenticação (alojamento na UE, eu-west-1).</li>
-          <li><strong>Vercel</strong> — alojamento e execução da aplicação (região de Dublin).</li>
-          <li><strong>Resend</strong> — envio de emails transacionais.</li>
-          <li><strong>PostHog</strong> — analítica de produto (instância UE).</li>
-          <li><strong>Sentry</strong> — monitorização de erros.</li>
+          {SUBPROCESSORS.map((s) => (
+            <li key={s.name}>
+              <strong>{s.name}</strong> — {s.purpose} ({s.location}).
+            </li>
+          ))}
         </ul>
         <p>
           O Convlyx informa o Cliente de alterações à lista com antecedência razoável,

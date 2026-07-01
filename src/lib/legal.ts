@@ -8,3 +8,23 @@ export const LEGAL_VERSIONS = {
   privacy: "2026-06-04", // ← set to the value currently in politica-de-privacidade/page.tsx
   dpa: "2026-07-01", // new document
 } as const;
+
+/**
+ * Sub-processors that may process personal data on our behalf. SINGLE SOURCE OF
+ * TRUTH rendered by BOTH the Privacy Policy ("Com quem partilhamos os seus dados")
+ * and the DPA ("Subcontratantes autorizados"), so the two lists can never drift.
+ * Add/remove a vendor here and both pages update.
+ *
+ * NOTE: names, purposes, and locations are subject to the DPA's pending legal
+ * review. `location` is a short human note; the SCC/EEA-transfer mechanics live
+ * in the "Transferências internacionais" sections of both documents.
+ */
+export type SubProcessor = { name: string; purpose: string; location: string };
+
+export const SUBPROCESSORS: SubProcessor[] = [
+  { name: "Supabase", purpose: "base de dados e autenticação", location: "UE (eu-west-1)" },
+  { name: "Vercel", purpose: "alojamento e execução da aplicação", location: "UE (Dublin); empresa sediada nos EUA" },
+  { name: "Resend", purpose: "envio de emails transacionais", location: "EUA" },
+  { name: "PostHog", purpose: "análise de utilização agregada da aplicação", location: "instância na UE" },
+  { name: "Sentry", purpose: "monitorização de erros e diagnóstico", location: "EUA" },
+];

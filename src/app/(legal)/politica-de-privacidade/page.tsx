@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage, LegalSection as Section } from "../_components/legal-page";
 import { COMPANY, formatLegalEntity } from "@/lib/company";
-import { LEGAL_VERSIONS } from "@/lib/legal";
+import { LEGAL_VERSIONS, SUBPROCESSORS } from "@/lib/legal";
 
 const URL = "https://convlyx.com/politica-de-privacidade";
 const TITLE = "Política de Privacidade | Convlyx";
@@ -120,21 +120,11 @@ export default function Page() {
           nos prestam serviços técnicos:
         </p>
         <ul className="list-disc pl-6 space-y-2">
-          <li>
-            <strong>Supabase</strong> — base de dados e autenticação (servidores na
-            União Europeia).
-          </li>
-          <li>
-            <strong>Vercel</strong> — alojamento e entrega da aplicação web.
-          </li>
-          <li>
-            <strong>Resend</strong> — envio de emails transacionais e de pedidos
-            de demonstração.
-          </li>
-          <li>
-            <strong>PostHog</strong> — análise de utilização agregada da aplicação
-            (servidores na União Europeia).
-          </li>
+          {SUBPROCESSORS.map((s) => (
+            <li key={s.name}>
+              <strong>{s.name}</strong> — {s.purpose} ({s.location}).
+            </li>
+          ))}
         </ul>
         <p>
           Todos os subcontratantes estão obrigados, contratualmente, a tratar os
