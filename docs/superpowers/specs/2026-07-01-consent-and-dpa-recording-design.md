@@ -123,18 +123,24 @@ model ConsentRecord {
   - Version snapshots always taken from `LEGAL_VERSIONS` server-side (never trusted from client).
 - IP capture: extend `createTRPCContext` to expose the request IP; `consent.accept` reads it.
 
-## Flow — one-time blocking gate
+## Flow — two-tier gate (revised 2026-07-01)
 
-Server-side check in the dashboard layout (`src/app/(dashboard)/layout.tsx`) via the
-existing SSR path, hydrated to a small client gate component:
+A `consent.status` query in the dashboard layout (`src/app/(dashboard)/layout.tsx`)
+drives a small client component (`src/app/(dashboard)/_components/consent-gate.tsx`),
+mounted for all roles. **Intrusiveness is tiered by legal necessity** (revised from the
+original "blocking for everyone" after review):
 
-- On entry, call `consent.status`.
-- If `needsControllerDpa` → show the **controller** interstitial: "Aceitar Termos e
-  Contrato de Subcontratação (RGPD)", with links to both docs; accept → `consent.accept({type:"CONTROLLER_DPA"})`.
-- Else if `needsUserTerms` → show the **user** interstitial: "Aceitar Termos e Política
-  de Privacidade"; accept → `consent.accept({type:"USER_TERMS"})`.
-- The gate blocks dashboard interaction until accepted (a one-time action). Logout remains
-  available. Component lives in `src/app/(dashboard)/_components/consent-gate.tsx`.
+- **`needsControllerDpa` (school admin — Art. 28 DPA): a blocking accept-to-continue
+  modal.** The DPA is contract formation, so an explicit "Aceito" is warranted; it's rare
+  (once per school). Accept → `consent.accept({type:"CONTROLLER_DPA"})` (also records the
+  admin's own `USER_TERMS`, so they're never prompted again).
+- **`needsUserTerms` (student / instructor / secretary — Terms + Privacy): a NON-blocking,
+  dismissible banner** at the top of the dashboard, not a wall. Rationale: the privacy
+  policy is an *information* duty (RGPD Art. 13/14), and the processing's legal basis is
+  contract + legitimate interest, **not consent** — so forcing acceptance is unnecessary
+  (and forcing a consent-style click can muddy the basis). "Aceitar" records
+  `consent.accept({type:"USER_TERMS"})` and clears the banner; the dismiss "X" hides it for
+  the session (it returns on next load until accepted). Acceptance is still recorded.
 - All copy via `next-intl` keys in `messages/pt-PT.json` (PT-PT only).
 
 ## Testing

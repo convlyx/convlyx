@@ -977,6 +977,9 @@
         "dpa": "Contrato de Subcontratação (DPA)",
         "accept": "Aceitar e continuar",
         "accepting": "A registar...",
-        "error": "Não foi possível registar a aceitação. Tente novamente."
+        "error": "Não foi possível registar a aceitação. Tente novamente.",
+        "bannerBody": "Ao continuar a utilizar a plataforma, aceita os seguintes documentos:",
+        "ack": "Aceitar",
+        "dismiss": "Dispensar"
     }
 }
