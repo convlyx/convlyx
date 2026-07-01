@@ -7,7 +7,7 @@ import { useUrlParam, useUrlParamInt, useDebouncedUrlParam } from "@/hooks/use-u
 import { trpc } from "@/lib/trpc";
 import { keepPreviousData } from "@tanstack/react-query";
 import Link from "next/link";
-import { Users, ChevronRight, Search, Pencil } from "lucide-react";
+import { Users, ChevronRight, Search, Pencil, BadgeCheck, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -138,7 +138,14 @@ export function InstructorsPageClient() {
                       {instructor.status === "ACTIVE" ? t("common.active") : t("common.inactive")}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground truncate mt-0.5">{instructor.email}</p>
+                  <p className="text-sm text-muted-foreground truncate mt-0.5 flex items-center gap-1">
+                    {instructor.emailConfirmed ? (
+                      <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-success" aria-label={t("users.emailConfirmed")} />
+                    ) : (
+                      <Clock className="h-3.5 w-3.5 shrink-0 text-warning" aria-label={t("users.emailPending")} />
+                    )}
+                    <span className="truncate">{instructor.email}</span>
+                  </p>
                   {!instructor.anonymized && (
                     <div className="mt-2 flex gap-2 sm:hidden">
                       <Button variant="outline" size="sm" onClick={(e) => { e.preventDefault(); setEditInstructor(instructor); }}>
@@ -200,7 +207,16 @@ export function InstructorsPageClient() {
                       {instructor.name}
                     </Link>
                   </TableCell>
-                  <TableCell>{instructor.email}</TableCell>
+                  <TableCell>
+                    <span className="flex items-center gap-1.5">
+                      {instructor.emailConfirmed ? (
+                        <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-success" aria-label={t("users.emailConfirmed")} />
+                      ) : (
+                        <Clock className="h-3.5 w-3.5 shrink-0 text-warning" aria-label={t("users.emailPending")} />
+                      )}
+                      {instructor.email}
+                    </span>
+                  </TableCell>
                   <TableCell>{instructor.school.name}</TableCell>
                   <TableCell>
                     <Badge variant={instructor.status === "ACTIVE" ? "default" : "destructive"}>
