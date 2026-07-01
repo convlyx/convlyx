@@ -87,3 +87,12 @@ production path). Task 5 (reconcile migration state) is already satisfied — th
 migration is present on the app's instance. Before re-enabling automated `migrate deploy`
 (Task 6), still (a) run the Task 3 marker test to empirically confirm write-through on
 the production path, and (b) confirm the Vercel `DATABASE_URL` above.
+
+## Pipeline confirmed (2026-07-01)
+
+`20260701120000_add_consent_records` was applied to prod via `pnpm db:migrate:deploy:prod`
+(prisma migrate deploy, DIRECT_URL/5432 → the live instance) — **no dashboard hand-paste,
+no manual `_prisma_migrations` insert**. `db:migrate:status:prod` beforehand showed 11 prior
+migrations applied + only this one pending (no checksum-drift complaint on the prod path).
+This is the end-to-end confirmation that the automated migration path reaches the DB the app
+uses. The manual hand-paste workflow is retired.

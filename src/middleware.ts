@@ -20,6 +20,7 @@ const MARKETING_EXACT_PATHS = [
   "/politica-de-privacidade",
   "/termos-e-condicoes",
   "/politica-de-cookies",
+  "/contrato-de-subcontratacao",
 ];
 function isMarketingPath(pathname: string): boolean {
   return (
