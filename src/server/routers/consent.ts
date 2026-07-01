@@ -25,13 +25,21 @@ export const consentRouter = router({
         : Promise.resolve(null),
     ]);
 
+    const needsUserTerms = !userTermsSatisfied(
+      (userRec?.documentVersions as StoredVersions) ?? null,
+    );
+    const needsControllerDpa =
+      ctx.user.role === "ADMIN" &&
+      !controllerDpaSatisfied((dpaRec?.documentVersions as StoredVersions) ?? null);
+
     return {
-      needsUserTerms: !userTermsSatisfied(
-        (userRec?.documentVersions as StoredVersions) ?? null,
-      ),
-      needsControllerDpa:
-        ctx.user.role === "ADMIN" &&
-        !controllerDpaSatisfied((dpaRec?.documentVersions as StoredVersions) ?? null),
+      needsUserTerms,
+      needsControllerDpa,
+      // isUpdate: a prior acceptance record exists but its version is now stale —
+      // i.e. a re-prompt after a document version bump, not a first acceptance.
+      // Lets the gate say "we updated our terms" instead of first-time copy.
+      userTermsIsUpdate: needsUserTerms && userRec !== null,
+      controllerDpaIsUpdate: needsControllerDpa && dpaRec !== null,
     };
   }),
 

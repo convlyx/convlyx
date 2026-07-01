@@ -980,6 +980,9 @@
         "error": "Não foi possível registar a aceitação. Tente novamente.",
         "bannerBody": "Ao continuar a utilizar a plataforma, aceita os seguintes documentos:",
         "ack": "Aceitar",
-        "dismiss": "Dispensar"
+        "dismiss": "Dispensar",
+        "controllerUpdateTitle": "Atualizámos os Termos e o Contrato de Subcontratação",
+        "controllerUpdateBody": "Atualizámos os Termos e Condições e o Contrato de Subcontratação (DPA). Reveja e aceite a nova versão para continuar.",
+        "bannerUpdateBody": "Atualizámos os nossos Termos e Política de Privacidade. Reveja e aceite a nova versão:"
     }
 }

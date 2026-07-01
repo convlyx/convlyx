@@ -47,8 +47,12 @@ export function ConsentGate() {
         className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
       >
         <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-lg space-y-4">
-          <h2 id="consent-title" className="text-lg font-semibold">{t("controllerTitle")}</h2>
-          <p className="text-sm text-muted-foreground">{t("controllerBody")}</p>
+          <h2 id="consent-title" className="text-lg font-semibold">
+            {data.controllerDpaIsUpdate ? t("controllerUpdateTitle") : t("controllerTitle")}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {data.controllerDpaIsUpdate ? t("controllerUpdateBody") : t("controllerBody")}
+          </p>
           <ul className="text-sm space-y-1">
             <li>
               <Link href="/termos-e-condicoes" target="_blank" className="text-primary hover:underline">
@@ -82,7 +86,7 @@ export function ConsentGate() {
         className="mb-4 flex flex-col gap-3 rounded-xl border bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:p-4"
       >
         <p className="flex-1 text-sm text-muted-foreground">
-          {t("bannerBody")}{" "}
+          {data.userTermsIsUpdate ? t("bannerUpdateBody") : t("bannerBody")}{" "}
           <Link href="/termos-e-condicoes" target="_blank" className="text-primary hover:underline">
             {t("terms")}
           </Link>

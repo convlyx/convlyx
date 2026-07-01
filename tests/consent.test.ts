@@ -45,4 +45,34 @@ describe("consent router", () => {
     expect(status.needsUserTerms).toBe(false);
     expect(status.needsControllerDpa).toBe(false); // students never need the DPA
   });
+
+  it("userTermsIsUpdate: false with no prior record, true once a stale one exists", async () => {
+    const asInstructor = createCaller({
+      db,
+      tenantId: A.tenantId,
+      ip: null,
+      user: { id: A.instructorUserId, role: "INSTRUCTOR", tenantId: A.tenantId, schoolId: A.schoolId },
+    });
+
+    // Fresh: needs acceptance, but it's a first-time prompt — not an update.
+    const before = await asInstructor.consent.status();
+    expect(before.needsUserTerms).toBe(true);
+    expect(before.userTermsIsUpdate).toBe(false);
+
+    // Simulate a previously-accepted-but-now-stale version (as after a doc bump).
+    await db.consentRecord.create({
+      data: {
+        tenantId: A.tenantId,
+        userId: A.instructorUserId,
+        type: "USER_TERMS",
+        documentVersions: { terms: "1999-01-01", privacy: "1999-01-01" },
+        acceptedByEmail: "old@test.local",
+        acceptedByName: "Old",
+      },
+    });
+
+    const after = await asInstructor.consent.status();
+    expect(after.needsUserTerms).toBe(true); // stale version still needs re-acceptance
+    expect(after.userTermsIsUpdate).toBe(true); // ...and now reads as an update
+  });
 });

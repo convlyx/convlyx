@@ -6,7 +6,12 @@
 export const LEGAL_VERSIONS = {
   terms: "2026-07-01", // bumped: §9 now incorporates the DPA
   privacy: "2026-06-04", // ← set to the value currently in politica-de-privacidade/page.tsx
-  dpa: "2026-07-01", // new document
+  // DRAFT pending legal review ("carece de revisão jurídica" banner). Consent
+  // acceptances collected now are against the DRAFT. ⚠️ REMINDER: once the DPA
+  // wording is legally signed off, BUMP this date — that re-prompts every school
+  // (and user, if `terms` also changes) to accept the FINAL version, superseding
+  // the draft acceptances.
+  dpa: "2026-07-01",
 } as const;
 
 /**
