@@ -71,6 +71,6 @@ Last reviewed: 2026-05-11.
 
 Already shipped — clean up the doc:
 
-- ~~Privacy policy / Terms of service / Cookie consent banner~~ (shipped `9fd250d`, `5c18c14`).
+- ~~Privacy policy / Terms of service / Cookie policy pages~~ (shipped `5c18c14`, which also scoped PostHog to the authenticated dashboard). NOTE: a cookie **consent banner** was NOT shipped — only the legal pages. Analytics cookies (PostHog) run only inside the logged-in dashboard; the public site sets no non-essential cookies. Genuine remaining compliance gap is the DPA + recorded acceptance (see item in §5 and `docs/superpowers/specs/2026-06-24-pre-launch-hardening-and-cross-tenant-identity-design.md`, workstream C).
 - ~~Move from `prisma db push` to proper migrations~~ (done; we use `prisma migrate` with the known prod-routing manual-paste workflow).
 - ~~Tenant-level feature flag for practical self-booking~~ (already marked done in FUTURE.md, just needs to drop off the list).

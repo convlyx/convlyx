@@ -18,6 +18,8 @@
         "db:migrate:resolve:prod": "dotenv -e .env.prod -- prisma migrate resolve",
         "db:migrate:status": "dotenv -e .env -- prisma migrate status",
         "db:migrate:status:prod": "dotenv -e .env.prod -- prisma migrate status",
+        "db:fingerprint:prod": "dotenv -e .env.prod -- tsx scripts/db-fingerprint.ts",
+        "db:fingerprint:prod:direct": "dotenv -e .env.prod -- tsx scripts/db-fingerprint.ts --direct",
         "db:generate": "dotenv -e .env -- prisma generate",
         "db:studio": "dotenv -e .env -- prisma studio",
         "db:seed": "dotenv -e .env -- tsx prisma/seed.ts",
