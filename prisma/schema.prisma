@@ -83,6 +83,11 @@ enum ExamResult {
   CANCELLED
 }
 
+enum ConsentType {
+  CONTROLLER_DPA
+  USER_TERMS
+}
+
 // ──────────────────────────────────────────
 // Models
 // ──────────────────────────────────────────
@@ -94,8 +99,9 @@ model Tenant {
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
 
-  schools School[]
-  users   User[]
+  schools        School[]
+  users          User[]
+  consentRecords ConsentRecord[]
 
   @@map("tenants")
 }
@@ -155,6 +161,7 @@ model User {
   enrollments       Enrollment[]
   notifications     Notification[]
   pushSubscriptions PushSubscription[]
+  consentRecords    ConsentRecord[]
 
   // Classes where this user is the instructor
   instructedSessions ClassSession[] @relation("InstructorSessions")
@@ -333,6 +340,30 @@ model PushSubscription {
   @@index([userId])
   @@index([tenantId])
   @@map("push_subscriptions")
+}
+
+model ConsentRecord {
+  id               String      @id @default(uuid()) @db.Uuid
+  tenantId         String      @map("tenant_id") @db.Uuid
+  // Nullable + SetNull: a consent log must stay legible even if the person is
+  // later deleted/anonymised. The email/name snapshots preserve who accepted.
+  userId           String?     @map("user_id") @db.Uuid
+  type             ConsentType
+  // Snapshot of accepted document versions, e.g.
+  // {"terms":"2026-07-01","dpa":"2026-07-01"} or {"terms":"...","privacy":"..."}.
+  documentVersions Json        @map("document_versions")
+  acceptedByEmail  String      @map("accepted_by_email")
+  acceptedByName   String      @map("accepted_by_name")
+  ipAddress        String?     @map("ip_address")
+  acceptedAt       DateTime    @default(now()) @map("accepted_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([tenantId, type])
+  @@map("consent_records")
 }
 
 // Platform-admin audit trail. Each row is one action performed by an

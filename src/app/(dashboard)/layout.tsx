@@ -8,6 +8,7 @@ import { InstructorLayout } from "./_components/instructor-layout";
 import { PageTitle } from "@/components/page-title";
 import { AnalyticsIdentifier } from "@/components/analytics-identifier";
 import { PostHogInit, PostHogPageviews } from "@/components/posthog-provider";
+import { ConsentGate } from "./_components/consent-gate";
 
 
 export default async function DashboardLayout({
@@ -32,6 +33,7 @@ export default async function DashboardLayout({
     <>
       <PageTitle title={pageTitle} />
       <AnalyticsIdentifier {...analyticsProps} />
+      <ConsentGate />
       <PostHogInit />
       <Suspense fallback={null}>
         <PostHogPageviews />
@@ -84,6 +86,7 @@ export default async function DashboardLayout({
         />
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 space-y-4">
           <AnalyticsIdentifier {...analyticsProps} />
+          <ConsentGate />
           <PostHogInit />
           <Suspense fallback={null}>
             <PostHogPageviews />

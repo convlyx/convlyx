@@ -8,6 +8,7 @@ import { novidadesRouter } from "./novidades";
 import { courseRouter } from "./course";
 import { examRouter } from "./exam";
 import { analyticsRouter } from "./analytics";
+import { consentRouter } from "./consent";
 
 export const appRouter = router({
   school: schoolRouter,
@@ -19,6 +20,7 @@ export const appRouter = router({
   course: courseRouter,
   exam: examRouter,
   analytics: analyticsRouter,
+  consent: consentRouter,
 });
 
 export type AppRouter = typeof appRouter;

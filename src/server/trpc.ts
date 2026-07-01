@@ -8,6 +8,7 @@ import type { UserRole } from "@/generated/prisma/enums";
 export type TRPCContext = {
   db: typeof db;
   tenantId: string | null;
+  ip: string | null;
   user: {
     id: string;
     role: UserRole;
@@ -19,13 +20,15 @@ export type TRPCContext = {
 export const createTRPCContext = async (opts: {
   headers: Headers;
 }): Promise<TRPCContext> => {
+  const ip = opts.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+
   const supabase = await createClient();
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser();
 
   if (!authUser) {
-    return { db, tenantId: null, user: null };
+    return { db, tenantId: null, ip, user: null };
   }
 
   // Look up our User record (extends Supabase auth.users with tenant/role info)
@@ -42,18 +45,19 @@ export const createTRPCContext = async (opts: {
   });
 
   if (!user || user.status !== "ACTIVE") {
-    return { db, tenantId: null, user: null };
+    return { db, tenantId: null, ip, user: null };
   }
 
   // Validate subdomain matches user's tenant (if subdomain is present)
   const subdomain = opts.headers.get("x-tenant-subdomain");
   if (subdomain && user.school.subdomain !== subdomain) {
-    return { db, tenantId: null, user: null };
+    return { db, tenantId: null, ip, user: null };
   }
 
   return {
     db,
     tenantId: user.tenantId,
+    ip,
     user: {
       id: user.id,
       role: user.role,

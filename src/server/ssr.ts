@@ -30,6 +30,7 @@ export const getSsrHelpers = cache(async () => {
   const ctx = {
     db,
     tenantId: user?.tenantId ?? null,
+    ip: null,
     user: user
       ? {
           id: user.id,

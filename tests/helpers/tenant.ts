@@ -119,6 +119,7 @@ export async function createTestTenant(label: string): Promise<TestTenant> {
   const asAdmin = createCaller({
     db,
     tenantId,
+    ip: null,
     user: {
       id: adminUserId,
       role: "ADMIN",
@@ -150,6 +151,7 @@ export async function cleanupTenants(...tenantIds: string[]) {
     db.studentCourse.deleteMany({ where: { tenantId: { in: tenantIds } } }),
     db.notification.deleteMany({ where: { tenantId: { in: tenantIds } } }),
     db.pushSubscription.deleteMany({ where: { tenantId: { in: tenantIds } } }),
+    db.consentRecord.deleteMany({ where: { tenantId: { in: tenantIds } } }),
     db.user.deleteMany({ where: { tenantId: { in: tenantIds } } }),
     db.school.deleteMany({ where: { tenantId: { in: tenantIds } } }),
     db.tenant.deleteMany({ where: { id: { in: tenantIds } } }),

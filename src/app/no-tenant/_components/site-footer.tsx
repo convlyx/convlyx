@@ -121,6 +121,9 @@ export function SiteFooter({ onRequestDemo }: { onRequestDemo?: () => void } = {
             <Link href="/politica-de-cookies" className="hover:text-primary transition-colors">
               Política de Cookies
             </Link>
+            <Link href="/contrato-de-subcontratacao" className="hover:text-primary transition-colors">
+              Contrato de Subcontratação
+            </Link>
           </div>
 
           {/* Copyright */}

@@ -966,5 +966,17 @@
         "week": "Semana",
         "day": "Dia",
         "list": "Lista"
+    },
+    "consent": {
+        "userTitle": "Termos e Política de Privacidade",
+        "userBody": "Para continuar, confirme que leu e aceita os nossos Termos e Condições e a Política de Privacidade.",
+        "controllerTitle": "Termos e Contrato de Subcontratação (RGPD)",
+        "controllerBody": "Como responsável pela escola, confirme que leu e aceita os Termos e Condições e o Contrato de Subcontratação (DPA), que regula o tratamento de dados dos seus alunos e colaboradores.",
+        "terms": "Termos e Condições",
+        "privacy": "Política de Privacidade",
+        "dpa": "Contrato de Subcontratação (DPA)",
+        "accept": "Aceitar e continuar",
+        "accepting": "A registar...",
+        "error": "Não foi possível registar a aceitação. Tente novamente."
     }
 }

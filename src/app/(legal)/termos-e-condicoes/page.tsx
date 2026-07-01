@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage, LegalSection as Section } from "../_components/legal-page";
 import { COMPANY, formatLegalEntity } from "@/lib/company";
+import { LEGAL_VERSIONS } from "@/lib/legal";
 
 const URL = "https://convlyx.com/termos-e-condicoes";
 const TITLE = "Termos e Condições | Convlyx";
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <LegalPage title="Termos e Condições" lastUpdated="2026-06-04">
+    <LegalPage title="Termos e Condições" lastUpdated={LEGAL_VERSIONS.terms}>
       <Section title="1. Aceitação dos termos">
         <p>
           Ao criar uma conta no Convlyx ou ao utilizar a plataforma de qualquer
@@ -115,16 +116,13 @@ export default function Page() {
           subcontratante (processador) ao abrigo do artigo 28.º do RGPD.
         </p>
         <p>
-          Mediante pedido em{" "}
-          <a
-            href={`mailto:${COMPANY.contactEmail}`}
-            className="text-primary hover:underline"
-          >
-            {COMPANY.contactEmail}
-          </a>
-          , disponibilizamos um <strong>Contrato de Subcontratação (DPA)</strong>{" "}
-          que regula este tratamento, incluindo a lista de subcontratantes
-          autorizados e o regime de notificação de incidentes.
+          O{" "}
+          <Link href="/contrato-de-subcontratacao" className="text-primary hover:underline">
+            Contrato de Subcontratação (DPA)
+          </Link>{" "}
+          regula esse tratamento — incluindo a lista de subcontratantes autorizados, as
+          transferências internacionais e o regime de notificação de incidentes — e{" "}
+          <strong>faz parte integrante destes Termos, sendo aceite com eles</strong>.
         </p>
       </Section>
 

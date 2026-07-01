@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage, LegalSection as Section } from "../_components/legal-page";
 import { COMPANY, formatLegalEntity } from "@/lib/company";
+import { LEGAL_VERSIONS } from "@/lib/legal";
 
 const URL = "https://convlyx.com/politica-de-privacidade";
 const TITLE = "Política de Privacidade | Convlyx";
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <LegalPage title="Política de Privacidade" lastUpdated="2026-06-04">
+    <LegalPage title="Política de Privacidade" lastUpdated={LEGAL_VERSIONS.privacy}>
       <Section title="1. Quem somos">
         <p>
           O {COMPANY.brandName} é um software de gestão para escolas de condução

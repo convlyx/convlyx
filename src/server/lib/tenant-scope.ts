@@ -47,6 +47,7 @@ const TENANT_SCOPED_MODELS = new Set<string>([
   "StudentCourse",
   "Exam",
   "PushSubscription",
+  "ConsentRecord",
 ]);
 
 // Operations whose `where` we merge tenantId into.
