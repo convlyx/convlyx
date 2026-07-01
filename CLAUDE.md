@@ -102,11 +102,11 @@ See `docs/decisions/2026-06-01-performance-optimization.md` for full context.
 npm run dev                                       # Start dev server
 npm run lint                                      # ESLint
 npm run type-check                                # TypeScript check
-npm run build                                     # Production build (`prisma generate && next build` — see "KNOWN ISSUE" below for why migrate deploy is intentionally NOT here)
+npm run build                                     # Production build (`prisma generate && next build` — migrate deploy kept out deliberately; see "PROD DB ROUTING" note below)
 npm run db:migrate -- --name <descriptive_name>   # Create + apply a new migration locally
 npm run db:migrate:status                         # See applied vs. pending migrations (dev)
-npm run db:migrate:status:prod                    # Same against prod DB
-npm run db:migrate:deploy:prod                    # Manual emergency prod migration (rare)
+npm run db:migrate:status:prod                    # Same against prod DB (trustworthy — uses DIRECT_URL/5432)
+npm run db:migrate:deploy:prod                    # Apply pending migrations to prod (standard path — uses DIRECT_URL/5432)
 npm run db:generate                               # Regenerate Prisma client
 npm run db:studio                                 # DB browser
 npm run db:seed                                   # Seed data
@@ -120,31 +120,23 @@ Workflow for any schema change:
 1. Edit `prisma/schema.prisma`
 2. Run `npm run db:migrate -- --name <descriptive_name>` — generates a numbered folder under `prisma/migrations/` (a reviewable `.sql` file) and applies it to the dev DB
 3. Commit the schema change + the new migration folder together in the same PR — reviewers see the SQL diff
-4. **Apply to prod manually via the Supabase SQL Editor** — see "KNOWN ISSUE" below. Until the prod-routing problem is resolved, the auto-deploy step doesn't work, so step 4 is a manual paste of the migration `.sql` content into https://supabase.com/dashboard/project/idvupzweddgjcolgrluz/sql/new
-5. Insert a row into `_prisma_migrations` so the migration is recorded as applied:
-   ```sql
-   INSERT INTO _prisma_migrations (id, checksum, finished_at, migration_name, applied_steps_count)
-   VALUES (gen_random_uuid()::text, 'manual', now(), '<migration_folder_name>', 1);
-   ```
+4. **Apply to prod with `npm run db:migrate:deploy:prod`** — runs `prisma migrate deploy` via `DIRECT_URL` (session pooler, 5432), which reaches the same physical instance the live app uses (see "PROD DB ROUTING" below). This both applies the migration and records it in `_prisma_migrations`. No hand-pasting into the dashboard, no manual `_prisma_migrations` insert.
 
 The repo is baselined to `prisma/migrations/0_init/migration.sql` representing the schema at the time of the switch from `db push` to migrate. Both dev and prod DBs already have it marked applied.
 
-If migration state diverges (e.g. someone runs raw SQL on prod): `npm run db:migrate:resolve:prod -- --applied <name>` (or `--rolled-back <name>`) to reconcile — but note this only works on whichever DB `.env.prod` actually routes to, which (per the known issue) isn't always the dashboard's view.
+If migration state diverges (e.g. someone runs raw SQL on prod): `npm run db:migrate:resolve:prod -- --applied <name>` (or `--rolled-back <name>`) to reconcile — this uses `DIRECT_URL`/5432, the same trustworthy path as deploy.
 
-### KNOWN ISSUE: prod auto-migration is disabled
+### PROD DB ROUTING (investigated & resolved 2026-07-01)
 
-`prisma migrate deploy` is **intentionally absent** from the `build` script. We removed it on 2026-05-02 after discovering that the prod project (`idvupzweddgjcolgrluz`) has a routing inconsistency: connections via `postgres.idvupzweddgjcolgrluz` (pooler URL in `.env.prod` and presumably Vercel's `DATABASE_URL`) land on a different physical Postgres than the dashboard SQL Editor displays for the same project. We confirmed this by writing a marker table via Prisma — it was visible to Prisma but not to the dashboard. Password reset didn't change it. No branching is enabled.
+Full write-up: `docs/decisions/2026-06-24-prod-db-routing-investigation.md`.
 
-Symptoms if you forget this and re-enable migrate deploy in build:
-- Vercel deploys succeed but apply migrations to the *wrong* DB
-- Dashboard view of prod stays missing tables/columns
-- `_prisma_migrations` and the live app's `DATABASE_URL` drift further apart
+**Diagnosis:** the live app (Vercel), the `DIRECT_URL`/5432 migration path, and the Supabase dashboard all read/write the **same** physical Postgres instance. Migrations applied via `DIRECT_URL` reach exactly the DB the app uses. The earlier "migrations land on a different physical DB" belief was a **local-machine artifact**: Supabase's **6543 transaction pooler routes the same connection string to different backends by network origin** — from Vercel (Dublin, co-located) it reaches the live primary; from a local machine it reached a leftover "ghost" instance from an Apr-2026 compute change. The original marker-table test was run locally via 6543 (→ ghost) and compared to the dashboard (→ primary), producing the false "two databases" conclusion.
 
-Until resolved (Supabase support ticket recommended), the workflow is:
-1. Migrations on dev: normal `npm run db:migrate` flow
-2. Migrations on prod: hand-paste the migration `.sql` via the prod Supabase SQL Editor + record it in `_prisma_migrations` manually as above
-3. Do NOT add `prisma migrate deploy` back to the `build` script
-4. Do NOT trust `npm run db:migrate:status:prod` or `npm run db:migrate:deploy:prod` — they go through the broken-routing URL
+**Rules that follow:**
+- `npm run db:migrate:deploy:prod` / `db:migrate:status:prod` / `db:migrate:resolve:prod` **are trustworthy** — they use `DIRECT_URL`/5432 (via `prisma.config.ts`), which consistently reaches the live instance. Prod migration = this command.
+- **Never run prod scripts locally via the 6543 pooler (`DATABASE_URL`).** From a local machine the 6543 pooler may hit the ghost instance. Any local prod tooling (one-off scripts, `db:seed:prod`, etc.) must use `DIRECT_URL`/5432. Prisma migrate commands already do.
+- `prisma migrate deploy` is still **kept out of the `build` script** — not for the routing myth, but as deliberate separation (a failed migration shouldn't be tangled up with a frontend build). Re-enabling it as a dedicated CI step on `main` is a future option (workstream A in `docs/superpowers/specs/2026-06-24-pre-launch-hardening-and-cross-tenant-identity-design.md`).
+- Optional hygiene: the ghost instance is harmless to production (Vercel never routes to it), but a Supabase support ticket to decommission it would remove the local-6543 footgun entirely.
 
 Preview deployments still have a separate unresolved issue: their `*.vercel.app` URLs don't match the `*.convlyx.com` tenant subdomain pattern, so tenant resolution doesn't work for preview testing. Migrations *are* applied (against the dev/preview Supabase), but exercising the running app against a tenant requires either local testing with `demo.localhost:3000` or setting up a wildcard preview domain — separate from the migration workflow.
 

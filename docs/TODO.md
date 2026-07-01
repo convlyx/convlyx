@@ -72,5 +72,5 @@ Last reviewed: 2026-05-11.
 Already shipped — clean up the doc:
 
 - ~~Privacy policy / Terms of service / Cookie policy pages~~ (shipped `5c18c14`, which also scoped PostHog to the authenticated dashboard). NOTE: a cookie **consent banner** was NOT shipped — only the legal pages. Analytics cookies (PostHog) run only inside the logged-in dashboard; the public site sets no non-essential cookies. Genuine remaining compliance gap is the DPA + recorded acceptance (see item in §5 and `docs/superpowers/specs/2026-06-24-pre-launch-hardening-and-cross-tenant-identity-design.md`, workstream C).
-- ~~Move from `prisma db push` to proper migrations~~ (done; we use `prisma migrate` with the known prod-routing manual-paste workflow).
+- ~~Move from `prisma db push` to proper migrations~~ (done; `prisma migrate`). Prod-routing "known issue" **investigated & resolved 2026-07-01** — was a local-6543-pooler artifact, not a production problem; `db:migrate:deploy:prod` (DIRECT_URL/5432) is the trustworthy prod path. See `docs/decisions/2026-06-24-prod-db-routing-investigation.md`. Optional follow-up: Supabase ticket to decommission the leftover "ghost" instance the local 6543 pooler reaches.
 - ~~Tenant-level feature flag for practical self-booking~~ (already marked done in FUTURE.md, just needs to drop off the list).
