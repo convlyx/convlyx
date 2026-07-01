@@ -35,14 +35,14 @@
 
 **Files:**
 - Create: `scripts/db-fingerprint.ts`
-- Create: `src/app/api/_diag/db-fingerprint/route.ts`
+- Create: `src/app/api/diag/db-fingerprint/route.ts`
 - Modify: `package.json:15-27` (add two scripts)
 
 **Interfaces:**
 - Produces: a **fingerprint object** shape reused by every later task —
   `{ path: string, system_identifier: string, server_addr: string | null, server_port: number | null, database: string, postmaster_start_time: string, has_school_time_zone: boolean, timezone_migration_recorded: number }`.
 - Produces: `pnpm db:fingerprint:prod` (pooler / `DATABASE_URL`) and `pnpm db:fingerprint:prod:direct` (`DIRECT_URL`).
-- Produces: `GET /api/_diag/db-fingerprint` (Bearer `CRON_SECRET`) returning the same shape with `path: "vercel-runtime"`.
+- Produces: `GET /api/diag/db-fingerprint` (Bearer `CRON_SECRET`) returning the same shape with `path: "vercel-runtime"`.
 
 - [ ] **Step 1 [agent]: Create the local fingerprint script**
 
@@ -59,7 +59,7 @@ const which = useDirect ? "local-direct(5432)" : "local-pooler(6543)";
 const url = useDirect ? process.env.DIRECT_URL : process.env.DATABASE_URL;
 
 // Shared fingerprint query — MUST stay identical to the one in
-// src/app/api/_diag/db-fingerprint/route.ts so all paths are comparable.
+// src/app/api/diag/db-fingerprint/route.ts so all paths are comparable.
 const FINGERPRINT_SQL = `
   SELECT
     (SELECT system_identifier::text FROM pg_control_system())                 AS system_identifier,
@@ -99,7 +99,7 @@ main().catch((e) => {
 
 - [ ] **Step 2 [agent]: Create the secret-gated runtime endpoint**
 
-Create `src/app/api/_diag/db-fingerprint/route.ts` (mirrors the cron route's Bearer-auth pattern in `src/app/api/cron/reminders/route.ts`):
+Create `src/app/api/diag/db-fingerprint/route.ts` (mirrors the cron route's Bearer-auth pattern in `src/app/api/cron/reminders/route.ts`):
 
 ```ts
 import { NextRequest, NextResponse } from "next/server";
@@ -188,7 +188,7 @@ in the routing-fix cleanup task.
 - Create: `docs/decisions/2026-06-24-prod-db-routing-investigation.md`
 
 **Interfaces:**
-- Consumes: `pnpm db:fingerprint:prod[:direct]` and `GET /api/_diag/db-fingerprint` from Task 1.
+- Consumes: `pnpm db:fingerprint:prod[:direct]` and `GET /api/diag/db-fingerprint` from Task 1.
 - Produces: a filled comparison table + the raw `system_identifier` values used by Tasks 4–5.
 
 - [ ] **Step 1 [operator]: Deploy the endpoint to production**
@@ -211,7 +211,7 @@ Record both JSON outputs. Expected: two objects; note whether their `system_iden
 PowerShell (apex domain; if middleware/tenant routing intercepts it, retry against the raw production `*.vercel.app` deployment URL):
 
 ```powershell
-curl.exe -s -H "Authorization: Bearer <CRON_SECRET>" https://convlyx.com/api/_diag/db-fingerprint
+curl.exe -s -H "Authorization: Bearer <CRON_SECRET>" https://convlyx.com/api/diag/db-fingerprint
 ```
 
 Expected: a JSON object with `path: "vercel-runtime"`. This is the **source of truth** — it is the DB the live app actually reads and writes.
@@ -364,7 +364,7 @@ ON CONFLICT DO NOTHING;
 Re-run the runtime fingerprint:
 
 ```powershell
-curl.exe -s -H "Authorization: Bearer <CRON_SECRET>" https://convlyx.com/api/_diag/db-fingerprint
+curl.exe -s -H "Authorization: Bearer <CRON_SECRET>" https://convlyx.com/api/diag/db-fingerprint
 ```
 
 Expected: `has_school_time_zone: true`, `timezone_migration_recorded: 1`. Also load a page that reads `school.timeZone` in prod and confirm no error.
@@ -378,7 +378,7 @@ Expected: `has_school_time_zone: true`, `timezone_migration_recorded: 1`. Also l
 **Files:**
 - Modify: `CLAUDE.md` ("KNOWN ISSUE" section, ~lines 128-159)
 - Modify: `docs/TODO.md`
-- Delete or gate: `src/app/api/_diag/db-fingerprint/route.ts`
+- Delete or gate: `src/app/api/diag/db-fingerprint/route.ts`
 - Delete: `scripts/db-fingerprint.ts` (and its `package.json` scripts) unless kept intentionally
 
 **Interfaces:**
@@ -407,9 +407,9 @@ Confirm gone from both perspectives.
 
 - [ ] **Step 5 [agent]: Remove or gate the diagnostic tooling**
 
-Preferred: delete `src/app/api/_diag/db-fingerprint/route.ts`, delete `scripts/db-fingerprint.ts`, and remove the two `db:fingerprint:prod*` scripts from `package.json`. (If keeping for future ops, leave them but confirm the endpoint stays Bearer-gated and add a one-line note in `CLAUDE.md`.)
+Preferred: delete `src/app/api/diag/db-fingerprint/route.ts`, delete `scripts/db-fingerprint.ts`, and remove the two `db:fingerprint:prod*` scripts from `package.json`. (If keeping for future ops, leave them but confirm the endpoint stays Bearer-gated and add a one-line note in `CLAUDE.md`.)
 
-- [ ] **Step 6 [operator]: Deploy** the cleanup and confirm `GET /api/_diag/db-fingerprint` returns 404 (if removed).
+- [ ] **Step 6 [operator]: Deploy** the cleanup and confirm `GET /api/diag/db-fingerprint` returns 404 (if removed).
 
 - [ ] **Step 7: Commit** (message below)
 

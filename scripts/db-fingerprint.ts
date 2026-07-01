@@ -8,7 +8,7 @@ const which = useDirect ? "local-direct(5432)" : "local-pooler(6543)";
 const url = useDirect ? process.env.DIRECT_URL : process.env.DATABASE_URL;
 
 // Shared fingerprint query — MUST stay identical to the one in
-// src/app/api/_diag/db-fingerprint/route.ts so all paths are comparable.
+// src/app/api/diag/db-fingerprint/route.ts so all paths are comparable.
 const FINGERPRINT_SQL = `
   SELECT
     (SELECT system_identifier::text FROM pg_control_system())                 AS system_identifier,
