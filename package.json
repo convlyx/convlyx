@@ -24,7 +24,13 @@
         "db:seed:prod": "dotenv -e .env.prod -- tsx prisma/seed.ts",
         "db:seed-demo": "dotenv -e .env -- tsx prisma/seed-demo.ts",
         "db:seed-demo:prod": "dotenv -e .env.prod -- tsx prisma/seed-demo.ts",
-        "db:wipe-dev": "dotenv -e .env -- tsx prisma/wipe-dev.ts"
+        "db:wipe-dev": "dotenv -e .env -- tsx prisma/wipe-dev.ts",
+        "db:tenant-export": "dotenv -e .env -- tsx scripts/tenant-export.ts",
+        "db:tenant-export:prod": "dotenv -e .env.prod -- tsx scripts/tenant-export.ts",
+        "db:tenant-restore": "dotenv -e .env -- tsx scripts/tenant-restore.ts",
+        "db:tenant-restore:prod": "dotenv -e .env.prod -- tsx scripts/tenant-restore.ts",
+        "db:backup": "dotenv -e .env -- tsx scripts/db-backup.ts",
+        "db:backup:prod": "dotenv -e .env.prod -- tsx scripts/db-backup.ts"
     },
     "dependencies": {
         "@base-ui/react": "^1.4.0",

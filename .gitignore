@@ -53,3 +53,7 @@ next-env.d.ts
 
 # superpowers brainstorm / visual-companion scratch files
 .superpowers/
+
+# DR artifacts — contain personal data + auth password hashes. NEVER commit.
+tenant-*.json
+db-backup-*.dump
