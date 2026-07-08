@@ -25,7 +25,12 @@ import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { createClient } from "@supabase/supabase-js";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Seeding is a bulk/admin operation — connect via the session pooler
+// (DIRECT_URL/5432) like migrations do, NOT the 6543 transaction pooler. From a
+// local machine the 6543 pooler can route to a leftover "ghost" prod instance
+// (see CLAUDE.md "PROD DB ROUTING"); DIRECT_URL/5432 consistently reaches the
+// real DB. Falls back to DATABASE_URL for envs without DIRECT_URL (e.g. CI).
+const pool = new Pool({ connectionString: process.env.DIRECT_URL ?? process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const db = new PrismaClient({ adapter });
 
