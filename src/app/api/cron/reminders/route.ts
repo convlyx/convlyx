@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
-import { createNotification, createNotifications, formatClassTime } from "@/server/lib/notifications";
+import { recordNotification, recordNotifications, dispatchPush, formatClassTime, type PushJob } from "@/server/lib/notifications";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 // Pin to Dublin (eu-west-1) to co-locate with Supabase — avoids transatlantic DB latency.
@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
     },
   });
 
+  const jobs: (PushJob | null)[] = [];
   let notificationCount = 0;
 
   for (const cls of tomorrowClasses) {
@@ -55,32 +56,34 @@ export async function GET(request: NextRequest) {
 
     // Notify students
     if (studentIds.length > 0) {
-      await createNotifications({
-        db,
-        tenantId: cls.tenantId,
-        userIds: studentIds,
-        type: "reminder.class",
-        titleKey: "notifications.classReminder",
-        messageKey: "notifications.classReminderMessage",
-        params: { title: cls.title, time: timeStr },
-        pushTitle: "Lembrete de aula",
-        pushBody: `Amanhã: ${cls.title} · ${timeStr}`,
-      });
+      jobs.push(
+        await recordNotifications(db, {
+          tenantId: cls.tenantId,
+          userIds: studentIds,
+          type: "reminder.class",
+          titleKey: "notifications.classReminder",
+          messageKey: "notifications.classReminderMessage",
+          params: { title: cls.title, time: timeStr },
+          pushTitle: "Lembrete de aula",
+          pushBody: `Amanhã: ${cls.title} · ${timeStr}`,
+        }),
+      );
       notificationCount += studentIds.length;
     }
 
     // Notify instructor
-    await createNotification({
-      db,
-      tenantId: cls.tenantId,
-      userId: cls.instructorId,
-      type: "reminder.class",
-      titleKey: "notifications.classReminder",
-      messageKey: "notifications.classReminderInstructor",
-      params: { title: cls.title, time: timeStr },
-      pushTitle: "Lembrete de aula",
-      pushBody: `Amanhã: ${cls.title} · ${timeStr}`,
-    });
+    jobs.push(
+      await recordNotification(db, {
+        tenantId: cls.tenantId,
+        userId: cls.instructorId,
+        type: "reminder.class",
+        titleKey: "notifications.classReminder",
+        messageKey: "notifications.classReminderInstructor",
+        params: { title: cls.title, time: timeStr },
+        pushTitle: "Lembrete de aula",
+        pushBody: `Amanhã: ${cls.title} · ${timeStr}`,
+      }),
+    );
     notificationCount += 1;
   }
 
@@ -109,38 +112,42 @@ export async function GET(request: NextRequest) {
     const examTypeLabel = exam.type === "THEORY" ? "teórico" : "prático";
 
     // Notify student
-    await createNotification({
-      db,
-      tenantId: exam.tenantId,
-      userId: exam.course.student.id,
-      type: "reminder.exam",
-      titleKey:
-        exam.type === "THEORY"
-          ? "notifications.theoryExamScheduledTitle"
-          : "notifications.practicalExamScheduledTitle",
-      messageKey: "notifications.examReminderStudent",
-      params: { examType: examTypeLabel, time: timeStr },
-      pushTitle: "Lembrete de exame",
-      pushBody: `Amanhã: exame ${examTypeLabel} · ${timeStr}`,
-    });
+    jobs.push(
+      await recordNotification(db, {
+        tenantId: exam.tenantId,
+        userId: exam.course.student.id,
+        type: "reminder.exam",
+        titleKey:
+          exam.type === "THEORY"
+            ? "notifications.theoryExamScheduledTitle"
+            : "notifications.practicalExamScheduledTitle",
+        messageKey: "notifications.examReminderStudent",
+        params: { examType: examTypeLabel, time: timeStr },
+        pushTitle: "Lembrete de exame",
+        pushBody: `Amanhã: exame ${examTypeLabel} · ${timeStr}`,
+      }),
+    );
     examNotificationCount += 1;
 
     // Notify accompanying instructor (if any)
     if (exam.instructorId) {
-      await createNotification({
-        db,
-        tenantId: exam.tenantId,
-        userId: exam.instructorId,
-        type: "reminder.exam",
-        titleKey: "notifications.examAccompanyTitle",
-        messageKey: "notifications.examReminderInstructor",
-        params: { student: exam.course.student.name, time: timeStr },
-        pushTitle: "Lembrete de exame",
-        pushBody: `Amanhã: exame de ${exam.course.student.name} · ${timeStr}`,
-      });
+      jobs.push(
+        await recordNotification(db, {
+          tenantId: exam.tenantId,
+          userId: exam.instructorId,
+          type: "reminder.exam",
+          titleKey: "notifications.examAccompanyTitle",
+          messageKey: "notifications.examReminderInstructor",
+          params: { student: exam.course.student.name, time: timeStr },
+          pushTitle: "Lembrete de exame",
+          pushBody: `Amanhã: exame de ${exam.course.student.name} · ${timeStr}`,
+        }),
+      );
       examNotificationCount += 1;
     }
   }
+
+  dispatchPush(db, jobs);
 
   return NextResponse.json({
     success: true,

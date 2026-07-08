@@ -35,20 +35,28 @@ export async function sendPushToUser(
     select: { id: true, endpoint: true, p256dh: true, auth: true },
   });
 
+  const MAX_PUSH_ATTEMPTS = 3;
+
   for (const sub of subscriptions) {
-    try {
-      await webpush.sendNotification(
-        {
-          endpoint: sub.endpoint,
-          keys: { p256dh: sub.p256dh, auth: sub.auth },
-        },
-        JSON.stringify(payload)
-      );
-    } catch (error: unknown) {
-      const statusCode = (error as { statusCode?: number })?.statusCode;
-      if (statusCode === 404 || statusCode === 410) {
-        await db.pushSubscription.delete({ where: { id: sub.id } })
-          .catch((e) => logger.warn("push subscription cleanup failed", { error: e, subscriptionId: sub.id }));
+    for (let attempt = 1; attempt <= MAX_PUSH_ATTEMPTS; attempt++) {
+      try {
+        await webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          JSON.stringify(payload)
+        );
+        break; // delivered
+      } catch (error: unknown) {
+        const statusCode = (error as { statusCode?: number })?.statusCode;
+        if (statusCode === 404 || statusCode === 410) {
+          await db.pushSubscription.delete({ where: { id: sub.id } })
+            .catch((e) => logger.warn("push subscription cleanup failed", { error: e, subscriptionId: sub.id }));
+          break; // dead subscription — do not retry
+        }
+        if (attempt === MAX_PUSH_ATTEMPTS) {
+          logger.warn("push send failed after retries", { error, subscriptionId: sub.id, attempts: attempt });
+          break;
+        }
+        await new Promise((r) => setTimeout(r, attempt * 500)); // backoff: 500ms, 1000ms
       }
     }
   }

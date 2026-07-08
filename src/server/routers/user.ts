@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { createClient } from "@supabase/supabase-js";
 import { router, protectedProcedure, roleProtectedProcedure } from "../trpc";
 import { createUserSchema, updateUserSchema, listUsersSchema, listStudentEnrollmentsSchema, listInstructorSessionsSchema, bulkCreateStudentsSchema, checkExistingEmailsSchema } from "@/lib/validations/user";
-import { createNotification } from "../lib/notifications";
+import { recordNotification, dispatchPush, type PushJob } from "../lib/notifications";
 import { logger } from "@/lib/logger";
 import { Prisma } from "@/generated/prisma/client";
 import { createUserAccount, mapSupabaseAuthError } from "../lib/create-user";
@@ -473,20 +473,27 @@ export const userRouter = router({
         }
       }
 
-      const result = await ctx.db.user.updateMany({
-        where: { id: input.id, tenantId: ctx.tenantId },
-        data: { status: "INACTIVE" },
-      });
+      const jobs: (PushJob | null)[] = [];
+      const result = await ctx.db.$transaction(async (tx) => {
+        const updated = await tx.user.updateMany({
+          where: { id: input.id, tenantId: ctx.tenantId },
+          data: { status: "INACTIVE" },
+        });
 
-      // Notify the deactivated user
-      createNotification({
-        db: ctx.db,
-        tenantId: ctx.tenantId,
-        userId: input.id,
-        type: "user.deactivated",
-        titleKey: "notifications.accountWasDeactivated",
-        messageKey: "notifications.accountDeactivated",
-      }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
+        // Notify the deactivated user
+        jobs.push(
+          await recordNotification(tx, {
+            tenantId: ctx.tenantId,
+            userId: input.id,
+            type: "user.deactivated",
+            titleKey: "notifications.accountWasDeactivated",
+            messageKey: "notifications.accountDeactivated",
+          }),
+        );
+
+        return updated;
+      });
+      dispatchPush(ctx.db, jobs);
 
       return result;
     }),

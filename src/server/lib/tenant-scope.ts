@@ -129,11 +129,32 @@ export function withTenant(db: PrismaClient, tenantId: string) {
 export type TenantScopedDb = ReturnType<typeof withTenant>;
 
 /**
- * Either the raw Prisma client OR a tenant-scoped one. Helper functions
- * that accept a `db` parameter and are called from BOTH places (e.g.
- * notifications, audit log) should use this type so they accept either.
+ * The client type Prisma hands to an interactive `$transaction(async (tx) => ...)`
+ * callback for a given client `Client` — the same shape minus the methods that
+ * aren't valid inside a transaction (`$transaction` itself, `$connect`,
+ * `$disconnect`, `$extends`, `$use`). Extracted via inference against the
+ * client's own interactive-transaction overload rather than hand-duplicated,
+ * so it stays correct if Prisma's generated deny-list changes.
  */
-export type DbClient = PrismaClient | TenantScopedDb;
+type InteractiveTxClient<Client> = Client extends {
+  $transaction(fn: (tx: infer TX) => unknown, options?: unknown): unknown;
+}
+  ? TX
+  : never;
+
+/**
+ * Either the raw Prisma client OR a tenant-scoped one — OR the `tx` client
+ * passed into an interactive transaction callback on either of those.
+ * Helper functions that accept a `db`/`client` parameter and are called from
+ * BOTH places (e.g. notifications, audit log), including from inside a
+ * `$transaction(async (tx) => ...)` block, should use this type so they
+ * accept any of them.
+ */
+export type DbClient =
+  | PrismaClient
+  | TenantScopedDb
+  | InteractiveTxClient<PrismaClient>
+  | InteractiveTxClient<TenantScopedDb>;
 
 // Re-export the Prisma namespace for callers that need its types.
 export { Prisma };

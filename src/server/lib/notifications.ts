@@ -1,5 +1,6 @@
+import { after } from "next/server";
 import type { DbClient } from "./tenant-scope";
-import { sendPushToUser, sendPushToUsers } from "./push";
+import { sendPushToUsers } from "./push";
 import { logger } from "@/lib/logger";
 import messages from "@/../messages/pt-PT.json";
 
@@ -58,115 +59,119 @@ export function formatClassTime(startsAt: Date, timeZone: string): string {
   return `${get("day")}/${get("month")} às ${hours}:${get("minute")}`;
 }
 
-type CreateNotificationParams = {
-  db: DbClient;
+export type PushJob = {
+  tenantId: string;
+  userIds: string[];
+  title: string;
+  body: string;
+  url?: string;
+};
+
+type RecordParams = {
   tenantId: string;
   userId: string;
   type: string;
   titleKey: string;
   messageKey: string;
   params?: Record<string, string>;
-  /** Plain-text title for push notification (OS-rendered, not i18n) */
   pushTitle?: string;
-  /** Plain-text body for push notification */
   pushBody?: string;
 };
 
-/**
- * Create a notification for a user.
- * Stores translation keys + params, NOT pre-rendered text.
- * The client renders the translated text via next-intl.
- *
- * The recipient's `schoolId` is derived from their User row so callers
- * don't have to plumb it through.
- */
-export async function createNotification({
-  db,
-  tenantId,
-  userId,
-  type,
-  titleKey,
-  messageKey,
-  params,
-  pushTitle,
-  pushBody,
-}: CreateNotificationParams) {
-  try {
-    const user = await db.user.findFirst({
-      where: { id: userId },
-      select: { schoolId: true },
-    });
-    if (!user) return null;
+/** Insert ONE notification row via `client` (a tx or db). Returns a PushJob to
+ *  dispatch after commit, or null if the user was not found. Sends no push. */
+export async function recordNotification(
+  client: DbClient,
+  p: RecordParams,
+): Promise<PushJob | null> {
+  const user = await client.user.findFirst({
+    where: { id: p.userId },
+    select: { schoolId: true },
+  });
+  if (!user) return null;
 
-    const result = await db.notification.create({
-      data: {
-        tenantId,
-        schoolId: user.schoolId,
-        userId,
-        type,
-        title: titleKey,
-        message: messageKey,
-        ...(params && { data: params as object }),
-      },
-    });
+  await client.notification.create({
+    data: {
+      tenantId: p.tenantId,
+      schoolId: user.schoolId,
+      userId: p.userId,
+      type: p.type,
+      title: p.titleKey,
+      message: p.messageKey,
+      ...(p.params && { data: p.params as object }),
+    },
+  });
 
-    // Send push notification (resolve text from translation keys if not provided)
-    sendPushToUser(db, tenantId, userId, {
-      title: pushTitle ?? resolveTranslation(titleKey, params),
-      body: pushBody ?? resolveTranslation(messageKey, params),
-      url: "/",
-    }).catch((e) => logger.warn("push send failed", { error: e, kind: "sendPushToUser" }));
-
-    return result;
-  } catch (error) {
-    logger.error("notification create failed", { error });
-    throw error;
-  }
+  return {
+    tenantId: p.tenantId,
+    userIds: [p.userId],
+    title: p.pushTitle ?? resolveTranslation(p.titleKey, p.params),
+    body: p.pushBody ?? resolveTranslation(p.messageKey, p.params),
+    url: "/",
+  };
 }
 
-export async function createNotifications({
-  db,
-  tenantId,
-  userIds,
-  type,
-  titleKey,
-  messageKey,
-  params,
-  pushTitle,
-  pushBody,
-}: Omit<CreateNotificationParams, "userId"> & { userIds: string[] }) {
-  if (userIds.length === 0) return;
+/** Insert notification rows for many users via `client`. Returns a PushJob or null. */
+export async function recordNotifications(
+  client: DbClient,
+  p: Omit<RecordParams, "userId"> & { userIds: string[] },
+): Promise<PushJob | null> {
+  if (p.userIds.length === 0) return null;
+  const users = await client.user.findMany({
+    where: { id: { in: p.userIds } },
+    select: { id: true, schoolId: true },
+  });
+  const schoolByUserId = new Map(users.map((u) => [u.id, u.schoolId]));
+  const recipients = p.userIds.filter((id) => schoolByUserId.has(id));
+  if (recipients.length === 0) return null;
+
+  await client.notification.createMany({
+    data: recipients.map((userId) => ({
+      tenantId: p.tenantId,
+      schoolId: schoolByUserId.get(userId)!,
+      userId,
+      type: p.type,
+      title: p.titleKey,
+      message: p.messageKey,
+      ...(p.params && { data: p.params as object }),
+    })),
+  });
+
+  return {
+    tenantId: p.tenantId,
+    userIds: recipients,
+    title: p.pushTitle ?? resolveTranslation(p.titleKey, p.params),
+    body: p.pushBody ?? resolveTranslation(p.messageKey, p.params),
+    url: "/",
+  };
+}
+
+/** Fire push for the given jobs as guaranteed background work (runs after the
+ *  HTTP response, within the same invocation). Best-effort — never throws. */
+export function dispatchPush(db: DbClient, jobs: (PushJob | null)[]): void {
+  const real = jobs.filter((j): j is PushJob => j !== null);
+  if (real.length === 0) return;
+  const run = async () => {
+    for (const job of real) {
+      try {
+        await sendPushToUsers(db, job.tenantId, job.userIds, {
+          title: job.title,
+          body: job.body,
+          url: job.url,
+        });
+      } catch (e) {
+        logger.warn("push dispatch failed", { error: e });
+      }
+    }
+  };
   try {
-    const users = await db.user.findMany({
-      where: { id: { in: userIds } },
-      select: { id: true, schoolId: true },
-    });
-    const schoolByUserId = new Map(users.map((u) => [u.id, u.schoolId]));
-
-    const result = await db.notification.createMany({
-      data: userIds
-        .filter((userId) => schoolByUserId.has(userId))
-        .map((userId) => ({
-          tenantId,
-          schoolId: schoolByUserId.get(userId)!,
-          userId,
-          type,
-          title: titleKey,
-          message: messageKey,
-          ...(params && { data: params as object }),
-        })),
-    });
-
-    // Send push notifications (resolve text from translation keys if not provided)
-    sendPushToUsers(db, tenantId, userIds, {
-      title: pushTitle ?? resolveTranslation(titleKey, params),
-      body: pushBody ?? resolveTranslation(messageKey, params),
-      url: "/",
-    }).catch((e) => logger.warn("push send failed", { error: e, kind: "sendPushToUsers" }));
-
-    return result;
-  } catch (error) {
-    logger.error("notification createMany failed", { error });
-    throw error;
+    // Guaranteed background work after the HTTP response (Fluid Compute keeps
+    // the invocation alive to finish it). Requires an active request scope.
+    after(run);
+  } catch {
+    // No request scope — e.g. unit/integration tests calling procedures via a
+    // direct tRPC caller. Fall back to a detached best-effort promise (the
+    // pre-refactor behavior); push is best-effort either way.
+    void run();
   }
 }

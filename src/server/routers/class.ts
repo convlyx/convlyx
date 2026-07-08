@@ -7,11 +7,16 @@ import {
   cancelClassSchema,
   listClassesSchema,
 } from "@/lib/validations/class";
-import { createNotification, createNotifications, formatClassTime } from "../lib/notifications";
+import {
+  recordNotification,
+  recordNotifications,
+  dispatchPush,
+  formatClassTime,
+  type PushJob,
+} from "../lib/notifications";
 import { getStudentClassAccess } from "../lib/student-access";
 import { hasInstructorScheduleConflict, hasStudentScheduleConflict } from "../lib/schedule-conflict";
 import { wallClockToUTC } from "@/lib/dates";
-import { logger } from "@/lib/logger";
 import { checkInSessionSchema } from "@/lib/validations/checkin";
 import { generateSecret, currentToken, CHECKIN_WINDOW_MS } from "../lib/checkin-token";
 
@@ -386,58 +391,68 @@ export const classRouter = router({
         }
       }
 
-      // One-off creation
-      const session = await ctx.db.classSession.create({
-        data: {
-          tenantId: ctx.tenantId,
-          schoolId: input.schoolId,
-          classType: input.classType,
-          category: input.classType === "THEORY" ? null : input.category,
-          instructorId: input.instructorId,
-          title: input.title,
-          startsAt: new Date(input.startsAt),
-          endsAt: new Date(input.endsAt),
-          capacity: input.capacity,
-          createdById: ctx.user.id,
-          updatedById: ctx.user.id,
-        },
-        select: { id: true, title: true, startsAt: true },
-      });
-
-      const timeStr = formatClassTime(new Date(input.startsAt), school.timeZone);
-
-      // Notify instructor about new class
-      createNotification({
-        db: ctx.db,
-        tenantId: ctx.tenantId,
-        userId: input.instructorId,
-        type: "class.created",
-        titleKey: "notifications.newClassAssigned",
-        messageKey: "notifications.classCreatedInstructor",
-        params: { title: session.title, time: timeStr },
-      }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
-
-      // Auto-enroll assigned students (practical classes)
-      if (input.studentIds && input.studentIds.length > 0) {
-        await ctx.db.enrollment.createMany({
-          data: input.studentIds.map((studentId) => ({
+      // One-off creation: class row + auto-enroll + notification inserts all
+      // in one transaction so a notification-write failure rolls back the
+      // whole thing instead of leaving a class with no instructor notice.
+      const jobs: (PushJob | null)[] = [];
+      const session = await ctx.db.$transaction(async (tx) => {
+        const created = await tx.classSession.create({
+          data: {
             tenantId: ctx.tenantId,
             schoolId: input.schoolId,
-            sessionId: session.id,
-            studentId,
-          })),
+            classType: input.classType,
+            category: input.classType === "THEORY" ? null : input.category,
+            instructorId: input.instructorId,
+            title: input.title,
+            startsAt: new Date(input.startsAt),
+            endsAt: new Date(input.endsAt),
+            capacity: input.capacity,
+            createdById: ctx.user.id,
+            updatedById: ctx.user.id,
+          },
+          select: { id: true, title: true, startsAt: true },
         });
 
-        createNotifications({
-          db: ctx.db,
-          tenantId: ctx.tenantId,
-          userIds: input.studentIds,
-          type: "class.assigned",
-          titleKey: "notifications.newClass",
-          messageKey: "notifications.classAssigned",
-          params: { title: session.title, time: timeStr },
-        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
-      }
+        const timeStr = formatClassTime(new Date(input.startsAt), school.timeZone);
+
+        // Notify instructor about new class
+        jobs.push(
+          await recordNotification(tx, {
+            tenantId: ctx.tenantId,
+            userId: input.instructorId,
+            type: "class.created",
+            titleKey: "notifications.newClassAssigned",
+            messageKey: "notifications.classCreatedInstructor",
+            params: { title: created.title, time: timeStr },
+          }),
+        );
+
+        // Auto-enroll assigned students (practical classes)
+        if (input.studentIds && input.studentIds.length > 0) {
+          await tx.enrollment.createMany({
+            data: input.studentIds.map((studentId) => ({
+              tenantId: ctx.tenantId,
+              schoolId: input.schoolId,
+              sessionId: created.id,
+              studentId,
+            })),
+          });
+
+          jobs.push(
+            await recordNotifications(tx, {
+              tenantId: ctx.tenantId,
+              userIds: input.studentIds,
+              type: "class.assigned",
+              titleKey: "notifications.newClass",
+              messageKey: "notifications.classAssigned",
+              params: { title: created.title, time: timeStr },
+            }),
+          );
+        }
+
+        return created;
+      });
+      dispatchPush(ctx.db, jobs);
 
       return session;
     }),
@@ -521,91 +536,103 @@ export const classRouter = router({
         toMinutes(input.startsAt) !== toMinutes(session.startsAt) ||
         toMinutes(input.endsAt) !== toMinutes(session.endsAt);
 
-      await ctx.db.classSession.updateMany({
-        where: { id: input.id, tenantId: ctx.tenantId },
-        data: {
-          instructorId: input.instructorId,
-          category: session.classType === "THEORY" ? null : input.category,
-          title: input.title,
-          capacity: input.capacity,
-          startsAt: new Date(input.startsAt),
-          endsAt: new Date(input.endsAt),
-          updatedById: ctx.user.id,
-        },
-      });
-
-      // Notify on instructor change
-      if (instructorChanged) {
-        const timeStr = formatClassTime(new Date(input.startsAt), session.school.timeZone);
-        const newInstructor = await ctx.db.user.findFirst({
-          where: { id: input.instructorId },
-          select: { name: true },
+      // The update + any resulting notifications (instructor reassignment OR
+      // schedule change — mutually exclusive below) all land in one
+      // transaction so a notification-write failure rolls back the update.
+      const jobs: (PushJob | null)[] = [];
+      await ctx.db.$transaction(async (tx) => {
+        await tx.classSession.updateMany({
+          where: { id: input.id, tenantId: ctx.tenantId },
+          data: {
+            instructorId: input.instructorId,
+            category: session.classType === "THEORY" ? null : input.category,
+            title: input.title,
+            capacity: input.capacity,
+            startsAt: new Date(input.startsAt),
+            endsAt: new Date(input.endsAt),
+            updatedById: ctx.user.id,
+          },
         });
-        const newInstructorName = newInstructor?.name ?? "";
 
-        // Notify old instructor (removed)
-        createNotification({
-          db: ctx.db,
-          tenantId: ctx.tenantId,
-          userId: session.instructorId,
-          type: "class.instructorChanged",
-          titleKey: "notifications.removedFromClass",
-          messageKey: "notifications.removedFromClassMessage",
-          params: { title: input.title, time: timeStr },
-        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
+        // Notify on instructor change
+        if (instructorChanged) {
+          const timeStr = formatClassTime(new Date(input.startsAt), session.school.timeZone);
+          const newInstructor = await tx.user.findFirst({
+            where: { id: input.instructorId },
+            select: { name: true },
+          });
+          const newInstructorName = newInstructor?.name ?? "";
 
-        // Notify new instructor (assigned)
-        createNotification({
-          db: ctx.db,
-          tenantId: ctx.tenantId,
-          userId: input.instructorId,
-          type: "class.instructorChanged",
-          titleKey: "notifications.assignedToClass",
-          messageKey: "notifications.assignedToClassMessage",
-          params: { title: input.title, time: timeStr },
-        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
+          // Notify old instructor (removed)
+          jobs.push(
+            await recordNotification(tx, {
+              tenantId: ctx.tenantId,
+              userId: session.instructorId,
+              type: "class.instructorChanged",
+              titleKey: "notifications.removedFromClass",
+              messageKey: "notifications.removedFromClassMessage",
+              params: { title: input.title, time: timeStr },
+            }),
+          );
 
-        // Notify enrolled students
-        const studentIds = session.enrollments.map((e) => e.studentId);
-        if (studentIds.length > 0) {
-          createNotifications({
-            db: ctx.db,
-            tenantId: ctx.tenantId,
-            userIds: studentIds,
-            type: "class.instructorChanged",
-            titleKey: "notifications.instructorChanged",
-            messageKey: "notifications.instructorChangedMessage",
-            params: { title: input.title, time: timeStr, instructor: newInstructorName },
-          }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
+          // Notify new instructor (assigned)
+          jobs.push(
+            await recordNotification(tx, {
+              tenantId: ctx.tenantId,
+              userId: input.instructorId,
+              type: "class.instructorChanged",
+              titleKey: "notifications.assignedToClass",
+              messageKey: "notifications.assignedToClassMessage",
+              params: { title: input.title, time: timeStr },
+            }),
+          );
+
+          // Notify enrolled students
+          const studentIds = session.enrollments.map((e) => e.studentId);
+          if (studentIds.length > 0) {
+            jobs.push(
+              await recordNotifications(tx, {
+                tenantId: ctx.tenantId,
+                userIds: studentIds,
+                type: "class.instructorChanged",
+                titleKey: "notifications.instructorChanged",
+                messageKey: "notifications.instructorChangedMessage",
+                params: { title: input.title, time: timeStr, instructor: newInstructorName },
+              }),
+            );
+          }
         }
-      }
 
-      // Notify on schedule change (only students not already notified about instructor change)
-      if (scheduleChanged && !instructorChanged) {
-        const studentIds = session.enrollments.map((e) => e.studentId);
-        const newTimeStr = formatClassTime(new Date(input.startsAt), session.school.timeZone);
-        if (studentIds.length > 0) {
-          createNotifications({
-            db: ctx.db,
-            tenantId: ctx.tenantId,
-            userIds: studentIds,
-            type: "class.scheduleChanged",
-            titleKey: "notifications.scheduleChanged",
-            messageKey: "notifications.scheduleChangedMessage",
-            params: { title: input.title, time: newTimeStr },
-          }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
+        // Notify on schedule change (only students not already notified about instructor change)
+        if (scheduleChanged && !instructorChanged) {
+          const studentIds = session.enrollments.map((e) => e.studentId);
+          const newTimeStr = formatClassTime(new Date(input.startsAt), session.school.timeZone);
+          if (studentIds.length > 0) {
+            jobs.push(
+              await recordNotifications(tx, {
+                tenantId: ctx.tenantId,
+                userIds: studentIds,
+                type: "class.scheduleChanged",
+                titleKey: "notifications.scheduleChanged",
+                messageKey: "notifications.scheduleChangedMessage",
+                params: { title: input.title, time: newTimeStr },
+              }),
+            );
+          }
+          // Notify instructor about schedule change
+          jobs.push(
+            await recordNotification(tx, {
+              tenantId: ctx.tenantId,
+              userId: input.instructorId,
+              type: "class.scheduleChanged",
+              titleKey: "notifications.scheduleChanged",
+              messageKey: "notifications.scheduleChangedMessage",
+              params: { title: input.title, time: newTimeStr },
+            }),
+          );
         }
-        // Notify instructor about schedule change
-        createNotification({
-          db: ctx.db,
-          tenantId: ctx.tenantId,
-          userId: input.instructorId,
-          type: "class.scheduleChanged",
-          titleKey: "notifications.scheduleChanged",
-          messageKey: "notifications.scheduleChangedMessage",
-          params: { title: input.title, time: newTimeStr },
-        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
-      }
+      });
+      dispatchPush(ctx.db, jobs);
 
       return { id: input.id, title: input.title };
     }),
@@ -642,37 +669,41 @@ export const classRouter = router({
       const enrolledStudentIds = session.enrollments.map((e) => e.studentId);
       const timeStr = formatClassTime(new Date(session.startsAt), session.school.timeZone);
 
-      await ctx.db.$transaction([
-        ctx.db.classSession.updateMany({
+      const jobs: (PushJob | null)[] = [];
+      await ctx.db.$transaction(async (tx) => {
+        await tx.classSession.updateMany({
           where: { id: input.id, tenantId: ctx.tenantId },
           data: { status: "CANCELLED", updatedById: ctx.user.id },
-        }),
-        ctx.db.enrollment.deleteMany({
+        });
+        await tx.enrollment.deleteMany({
           where: { sessionId: input.id, tenantId: ctx.tenantId },
-        }),
-      ]);
+        });
 
-      if (enrolledStudentIds.length > 0) {
-        createNotifications({
-          db: ctx.db,
-          tenantId: ctx.tenantId,
-          userIds: enrolledStudentIds,
-          type: "class.cancelled",
-          titleKey: "notifications.classWasCancelled",
-          messageKey: "notifications.classCancelled",
-          params: { title: session.title, time: timeStr },
-        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
-      }
+        if (enrolledStudentIds.length > 0) {
+          jobs.push(
+            await recordNotifications(tx, {
+              tenantId: ctx.tenantId,
+              userIds: enrolledStudentIds,
+              type: "class.cancelled",
+              titleKey: "notifications.classWasCancelled",
+              messageKey: "notifications.classCancelled",
+              params: { title: session.title, time: timeStr },
+            }),
+          );
+        }
 
-      createNotification({
-        db: ctx.db,
-        tenantId: ctx.tenantId,
-        userId: session.instructorId,
-        type: "class.cancelled",
-        titleKey: "notifications.classWasCancelled",
-        messageKey: "notifications.classCancelledInstructor",
-        params: { title: session.title, time: timeStr },
-      }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
+        jobs.push(
+          await recordNotification(tx, {
+            tenantId: ctx.tenantId,
+            userId: session.instructorId,
+            type: "class.cancelled",
+            titleKey: "notifications.classWasCancelled",
+            messageKey: "notifications.classCancelledInstructor",
+            params: { title: session.title, time: timeStr },
+          }),
+        );
+      });
+      dispatchPush(ctx.db, jobs);
 
       return { success: true };
     }),
@@ -710,30 +741,8 @@ export const classRouter = router({
       const enrolledStudentIds = session.enrollments.map((e) => e.studentId);
       const timeStr = formatClassTime(new Date(session.startsAt), session.school.timeZone);
 
-      await ctx.db.$transaction([
-        ctx.db.classSession.updateMany({
-          where: { id: input.id, tenantId: ctx.tenantId },
-          data: { status: "CANCELLED", updatedById: ctx.user.id },
-        }),
-        ctx.db.enrollment.deleteMany({
-          where: { sessionId: input.id, tenantId: ctx.tenantId },
-        }),
-      ]);
-
-      if (enrolledStudentIds.length > 0) {
-        createNotifications({
-          db: ctx.db,
-          tenantId: ctx.tenantId,
-          userIds: enrolledStudentIds,
-          type: "class.cancelled",
-          titleKey: "notifications.classWasCancelled",
-          messageKey: "notifications.classCancelledByInstructor",
-          params: { title: session.title, time: timeStr },
-        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
-      }
-
       // Notify admins/secretaries
-      Promise.all([
+      const [instructor, admins] = await Promise.all([
         ctx.db.user.findFirst({
           where: { id: ctx.user.id },
           select: { name: true },
@@ -746,23 +755,47 @@ export const classRouter = router({
           },
           select: { id: true },
         }),
-      ])
-        .then(([instructor, admins]) => {
-          const adminIds = admins.map((a) => a.id);
-          if (adminIds.length > 0) {
-            const instructorName = instructor?.name ?? "Instrutor";
-            createNotifications({
-              db: ctx.db,
+      ]);
+      const adminIds = admins.map((a) => a.id);
+      const instructorName = instructor?.name ?? "Instrutor";
+
+      const jobs: (PushJob | null)[] = [];
+      await ctx.db.$transaction(async (tx) => {
+        await tx.classSession.updateMany({
+          where: { id: input.id, tenantId: ctx.tenantId },
+          data: { status: "CANCELLED", updatedById: ctx.user.id },
+        });
+        await tx.enrollment.deleteMany({
+          where: { sessionId: input.id, tenantId: ctx.tenantId },
+        });
+
+        if (enrolledStudentIds.length > 0) {
+          jobs.push(
+            await recordNotifications(tx, {
+              tenantId: ctx.tenantId,
+              userIds: enrolledStudentIds,
+              type: "class.cancelled",
+              titleKey: "notifications.classWasCancelled",
+              messageKey: "notifications.classCancelledByInstructor",
+              params: { title: session.title, time: timeStr },
+            }),
+          );
+        }
+
+        if (adminIds.length > 0) {
+          jobs.push(
+            await recordNotifications(tx, {
               tenantId: ctx.tenantId,
               userIds: adminIds,
               type: "class.instructorUnavailable",
               titleKey: "notifications.instructorWasUnavailable",
               messageKey: "notifications.instructorUnavailable",
               params: { instructor: instructorName, title: session.title, time: timeStr },
-            }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
-          }
-        })
-        .catch((e) => logger.warn("notification dispatch failed", { error: e, kind: "class.instructorUnavailable" }));
+            }),
+          );
+        }
+      });
+      dispatchPush(ctx.db, jobs);
 
       return { success: true };
     }),

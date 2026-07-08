@@ -9,10 +9,9 @@ import {
   bulkMarkAttendanceSchema,
   listByStudentSchema,
 } from "@/lib/validations/enrollment";
-import { createNotification, formatClassTime } from "../lib/notifications";
+import { recordNotification, dispatchPush, formatClassTime, type PushJob } from "../lib/notifications";
 import { hasStudentScheduleConflict } from "../lib/schedule-conflict";
 import { getStudentClassAccess } from "../lib/student-access";
-import { logger } from "@/lib/logger";
 import { studentCheckInSchema } from "@/lib/validations/checkin";
 import { verifyToken } from "../lib/checkin-token";
 
@@ -173,29 +172,39 @@ export const enrollmentRouter = router({
 
       const enrollStatus = session.status === "COMPLETED" ? "ATTENDED" : "ENROLLED";
 
-      const result = await ctx.db.enrollment.create({
-        data: {
-          tenantId: ctx.tenantId,
-          schoolId: session.schoolId,
-          sessionId: input.sessionId,
-          studentId,
-          status: enrollStatus,
-        },
-        select: { id: true, status: true },
-      });
+      // The enrollment insert + notification (when enrolled by someone else)
+      // land in one transaction so a notification-write failure rolls back
+      // the whole thing instead of leaving a silent enrollment.
+      const jobs: (PushJob | null)[] = [];
+      const result = await ctx.db.$transaction(async (tx) => {
+        const created = await tx.enrollment.create({
+          data: {
+            tenantId: ctx.tenantId,
+            schoolId: session.schoolId,
+            sessionId: input.sessionId,
+            studentId,
+            status: enrollStatus,
+          },
+          select: { id: true, status: true },
+        });
 
-      // Notify student if enrolled by someone else
-      if (studentId !== ctx.user.id) {
-        createNotification({
-          db: ctx.db,
-          tenantId: ctx.tenantId,
-          userId: studentId,
-          type: "enrollment.created",
-          titleKey: "notifications.enrollmentWasConfirmed",
-          messageKey: "notifications.classAssigned",
-          params: { title: session.title, time: formatClassTime(new Date(session.startsAt), session.school.timeZone) },
-        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
-      }
+        // Notify student if enrolled by someone else
+        if (studentId !== ctx.user.id) {
+          jobs.push(
+            await recordNotification(tx, {
+              tenantId: ctx.tenantId,
+              userId: studentId,
+              type: "enrollment.created",
+              titleKey: "notifications.enrollmentWasConfirmed",
+              messageKey: "notifications.classAssigned",
+              params: { title: session.title, time: formatClassTime(new Date(session.startsAt), session.school.timeZone) },
+            }),
+          );
+        }
+
+        return created;
+      });
+      dispatchPush(ctx.db, jobs);
 
       return result;
     }),
@@ -264,22 +273,30 @@ export const enrollmentRouter = router({
         }
       }
 
-      await ctx.db.enrollment.delete({
-        where: { id: input.enrollmentId },
-      });
+      // The enrollment delete + notification (when cancelled by someone else)
+      // land in one transaction so a notification-write failure rolls back
+      // the whole thing instead of leaving a silent cancellation.
+      const jobs: (PushJob | null)[] = [];
+      await ctx.db.$transaction(async (tx) => {
+        await tx.enrollment.delete({
+          where: { id: input.enrollmentId },
+        });
 
-      // Notify student if removed by admin/secretary (not self-cancellation)
-      if (enrollment.studentId !== ctx.user.id) {
-        createNotification({
-          db: ctx.db,
-          tenantId: ctx.tenantId,
-          userId: enrollment.studentId,
-          type: "enrollment.cancelled",
-          titleKey: "notifications.enrollmentWasCancelled",
-          messageKey: "notifications.enrollmentCancelled",
-          params: { title: enrollment.session.title, time: formatClassTime(new Date(enrollment.session.startsAt), enrollment.session.school.timeZone) },
-        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
-      }
+        // Notify student if removed by admin/secretary (not self-cancellation)
+        if (enrollment.studentId !== ctx.user.id) {
+          jobs.push(
+            await recordNotification(tx, {
+              tenantId: ctx.tenantId,
+              userId: enrollment.studentId,
+              type: "enrollment.cancelled",
+              titleKey: "notifications.enrollmentWasCancelled",
+              messageKey: "notifications.enrollmentCancelled",
+              params: { title: enrollment.session.title, time: formatClassTime(new Date(enrollment.session.startsAt), enrollment.session.school.timeZone) },
+            }),
+          );
+        }
+      });
+      dispatchPush(ctx.db, jobs);
 
       return { success: true };
     }),

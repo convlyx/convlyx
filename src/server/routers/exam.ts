@@ -7,9 +7,8 @@ import {
   recordExamResultSchema,
   cancelExamSchema,
 } from "@/lib/validations/exam";
-import { createNotification, formatClassTime } from "../lib/notifications";
+import { recordNotification, dispatchPush, formatClassTime, type PushJob } from "../lib/notifications";
 import { hasInstructorScheduleConflict, hasStudentScheduleConflict } from "../lib/schedule-conflict";
-import { logger } from "@/lib/logger";
 
 // Exams occupy a 60-min slot starting at `scheduledAt` (UI convention).
 const EXAM_DURATION_MS = 60 * 60 * 1000;
@@ -228,59 +227,67 @@ export const examRouter = router({
         });
       }
 
-      const exam = await ctx.db.exam.create({
-        data: {
-          tenantId: ctx.tenantId,
-          schoolId: course.student.schoolId,
-          courseId: course.id,
-          type: input.type,
-          scheduledAt: new Date(input.scheduledAt),
-          location: input.location,
-          instructorId: input.instructorId,
-          createdById: ctx.user.id,
-          updatedById: ctx.user.id,
-        },
-        select: {
-          id: true,
-          type: true,
-          scheduledAt: true,
-          course: {
-            select: { student: { select: { id: true, name: true } } },
+      const jobs: (PushJob | null)[] = [];
+      const exam = await ctx.db.$transaction(async (tx) => {
+        const created = await tx.exam.create({
+          data: {
+            tenantId: ctx.tenantId,
+            schoolId: course.student.schoolId,
+            courseId: course.id,
+            type: input.type,
+            scheduledAt: new Date(input.scheduledAt),
+            location: input.location,
+            instructorId: input.instructorId,
+            createdById: ctx.user.id,
+            updatedById: ctx.user.id,
           },
-        },
+          select: {
+            id: true,
+            type: true,
+            scheduledAt: true,
+            course: {
+              select: { student: { select: { id: true, name: true } } },
+            },
+          },
+        });
+
+        const timeStr = formatClassTime(created.scheduledAt, course.student.school.timeZone);
+
+        // Notify student
+        jobs.push(
+          await recordNotification(tx, {
+            tenantId: ctx.tenantId,
+            userId: course.student.id,
+            type: "exam.scheduled",
+            titleKey:
+              created.type === "THEORY"
+                ? "notifications.theoryExamScheduledTitle"
+                : "notifications.practicalExamScheduledTitle",
+            messageKey:
+              created.type === "THEORY"
+                ? "notifications.theoryExamScheduledMessage"
+                : "notifications.practicalExamScheduledMessage",
+            params: { time: timeStr },
+          }),
+        );
+
+        // Notify accompanying instructor if any
+        if (input.instructorId) {
+          jobs.push(
+            await recordNotification(tx, {
+              tenantId: ctx.tenantId,
+              userId: input.instructorId,
+              type: "exam.scheduled",
+              titleKey: "notifications.examAccompanyTitle",
+              messageKey: "notifications.examAccompanyMessage",
+              params: { student: created.course.student.name, time: timeStr },
+            }),
+          );
+        }
+
+        return created;
       });
-
-      const timeStr = formatClassTime(exam.scheduledAt, course.student.school.timeZone);
-
-      // Notify student
-      createNotification({
-        db: ctx.db,
-        tenantId: ctx.tenantId,
-        userId: course.student.id,
-        type: "exam.scheduled",
-        titleKey:
-          exam.type === "THEORY"
-            ? "notifications.theoryExamScheduledTitle"
-            : "notifications.practicalExamScheduledTitle",
-        messageKey:
-          exam.type === "THEORY"
-            ? "notifications.theoryExamScheduledMessage"
-            : "notifications.practicalExamScheduledMessage",
-        params: { time: timeStr },
-      }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
-
-      // Notify accompanying instructor if any
-      if (input.instructorId) {
-        createNotification({
-          db: ctx.db,
-          tenantId: ctx.tenantId,
-          userId: input.instructorId,
-          type: "exam.scheduled",
-          titleKey: "notifications.examAccompanyTitle",
-          messageKey: "notifications.examAccompanyMessage",
-          params: { student: exam.course.student.name, time: timeStr },
-        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
-      }
+      dispatchPush(ctx.db, jobs);
 
       return exam;
     }),
@@ -413,44 +420,51 @@ export const examRouter = router({
         });
       }
 
-      const updated = await ctx.db.exam.update({
-        where: { id: input.id },
-        data: {
-          result: input.result,
-          examinerNotes: input.examinerNotes,
-          updatedById: ctx.user.id,
-        },
-        select: { id: true, type: true, result: true },
+      const jobs: (PushJob | null)[] = [];
+      const updated = await ctx.db.$transaction(async (tx) => {
+        const updatedExam = await tx.exam.update({
+          where: { id: input.id },
+          data: {
+            result: input.result,
+            examinerNotes: input.examinerNotes,
+            updatedById: ctx.user.id,
+          },
+          select: { id: true, type: true, result: true },
+        });
+
+        // Notify student of result
+        const titleKey =
+          input.result === "PASSED"
+            ? "notifications.examPassedTitle"
+            : input.result === "FAILED"
+              ? "notifications.examFailedTitle"
+              : "notifications.examResultTitle";
+        const messageKey =
+          input.result === "PASSED"
+            ? "notifications.examPassedMessage"
+            : input.result === "FAILED"
+              ? "notifications.examFailedMessage"
+              : "notifications.examResultMessage";
+
+        jobs.push(
+          await recordNotification(tx, {
+            tenantId: ctx.tenantId,
+            userId: exam.course.student.id,
+            type: "exam.result",
+            titleKey,
+            messageKey,
+            params: {
+              examType:
+                exam.type === "THEORY"
+                  ? "teórico"
+                  : "prático",
+            },
+          }),
+        );
+
+        return updatedExam;
       });
-
-      // Notify student of result
-      const titleKey =
-        input.result === "PASSED"
-          ? "notifications.examPassedTitle"
-          : input.result === "FAILED"
-            ? "notifications.examFailedTitle"
-            : "notifications.examResultTitle";
-      const messageKey =
-        input.result === "PASSED"
-          ? "notifications.examPassedMessage"
-          : input.result === "FAILED"
-            ? "notifications.examFailedMessage"
-            : "notifications.examResultMessage";
-
-      createNotification({
-        db: ctx.db,
-        tenantId: ctx.tenantId,
-        userId: exam.course.student.id,
-        type: "exam.result",
-        titleKey,
-        messageKey,
-        params: {
-          examType:
-            exam.type === "THEORY"
-              ? "teórico"
-              : "prático",
-        },
-      }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
+      dispatchPush(ctx.db, jobs);
 
       return updated;
     }),
@@ -481,35 +495,43 @@ export const examRouter = router({
         });
       }
 
-      const updated = await ctx.db.exam.update({
-        where: { id: input.id },
-        data: { result: "CANCELLED", updatedById: ctx.user.id },
-        select: { id: true },
+      const jobs: (PushJob | null)[] = [];
+      const updated = await ctx.db.$transaction(async (tx) => {
+        const updatedExam = await tx.exam.update({
+          where: { id: input.id },
+          data: { result: "CANCELLED", updatedById: ctx.user.id },
+          select: { id: true },
+        });
+
+        const timeStr = formatClassTime(exam.scheduledAt, exam.course.student.school.timeZone);
+
+        jobs.push(
+          await recordNotification(tx, {
+            tenantId: ctx.tenantId,
+            userId: exam.course.student.id,
+            type: "exam.cancelled",
+            titleKey: "notifications.examCancelledTitle",
+            messageKey: "notifications.examCancelledMessage",
+            params: { time: timeStr },
+          }),
+        );
+
+        if (exam.instructorId) {
+          jobs.push(
+            await recordNotification(tx, {
+              tenantId: ctx.tenantId,
+              userId: exam.instructorId,
+              type: "exam.cancelled",
+              titleKey: "notifications.examCancelledTitle",
+              messageKey: "notifications.examCancelledInstructorMessage",
+              params: { time: timeStr },
+            }),
+          );
+        }
+
+        return updatedExam;
       });
-
-      const timeStr = formatClassTime(exam.scheduledAt, exam.course.student.school.timeZone);
-
-      createNotification({
-        db: ctx.db,
-        tenantId: ctx.tenantId,
-        userId: exam.course.student.id,
-        type: "exam.cancelled",
-        titleKey: "notifications.examCancelledTitle",
-        messageKey: "notifications.examCancelledMessage",
-        params: { time: timeStr },
-      }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
-
-      if (exam.instructorId) {
-        createNotification({
-          db: ctx.db,
-          tenantId: ctx.tenantId,
-          userId: exam.instructorId,
-          type: "exam.cancelled",
-          titleKey: "notifications.examCancelledTitle",
-          messageKey: "notifications.examCancelledInstructorMessage",
-          params: { time: timeStr },
-        }).catch((e) => logger.warn("notification dispatch failed", { error: e }));
-      }
+      dispatchPush(ctx.db, jobs);
 
       return updated;
     }),
