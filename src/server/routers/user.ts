@@ -87,67 +87,91 @@ export const userRouter = router({
   list: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
     .input(listUsersSchema)
     .query(async ({ ctx, input }) => {
-      const where = {
+      // Approach 1a: the roster is driven by Membership — role/status/school
+      // are per-tenant and live there, not on the (soon-to-be-dropped) User
+      // columns. We join the User for identity fields (name/email/phone) and
+      // for relation-based filters (search, current course, instructor scoping).
+      const isInstructor = ctx.membership.role === "INSTRUCTOR";
+
+      // Conditions that apply to the joined User. They all live under a single
+      // `user` key (combined with AND) so they don't clobber one another —
+      // unlike the old User-model query where they were sibling top-level keys.
+      const userConditions: Prisma.UserWhereInput[] = [];
+      if (input?.search) {
+        userConditions.push({
+          OR: [
+            { name: { contains: input.search, mode: "insensitive" } },
+            { email: { contains: input.search, mode: "insensitive" } },
+          ],
+        });
+      }
+      if (input?.category) {
+        userConditions.push({
+          studentCourses: {
+            some: { status: "IN_PROGRESS", category: input.category },
+          },
+        });
+      }
+      // Instructors only ever see STUDENTs they teach (read-only; management
+      // stays admin/secretary). GDPR data-minimisation.
+      if (isInstructor) {
+        userConditions.push({
+          enrollments: { some: { session: { instructorId: ctx.user.id } } },
+        });
+      }
+
+      const where: Prisma.MembershipWhereInput = {
         tenantId: ctx.tenantId,
         ...(input?.schoolId && { schoolId: input.schoolId }),
-        ...(input?.role
-          ? { role: input.role }
-          : input?.roles && input.roles.length > 0
-            ? { role: { in: input.roles } }
-            : {}),
+        // Instructor role filter overrides any requested role.
+        ...(isInstructor
+          ? { role: "STUDENT" }
+          : input?.role
+            ? { role: input.role }
+            : input?.roles && input.roles.length > 0
+              ? { role: { in: input.roles } }
+              : {}),
         ...(input?.status && { status: input.status }),
-        ...(input?.search && {
-          OR: [
-            { name: { contains: input.search, mode: "insensitive" as const } },
-            { email: { contains: input.search, mode: "insensitive" as const } },
-          ],
-        }),
-        ...(input?.category && {
-          studentCourses: {
-            some: { status: "IN_PROGRESS" as const, category: input.category },
-          },
-        }),
-        // Instructors only ever see STUDENTs, and only those enrolled in a class
-        // they teach (read-only; management actions stay admin/secretary). Spread
-        // last so it overrides any requested role filter. GDPR data-minimisation.
-        ...(ctx.membership.role === "INSTRUCTOR" && {
-          role: "STUDENT" as const,
-          enrollments: { some: { session: { instructorId: ctx.user.id } } },
-        }),
+        ...(userConditions.length > 0 && { user: { AND: userConditions } }),
       };
 
       const select = {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
         role: true,
         status: true,
         qualifiedCategories: true,
-        createdAt: true,
         school: { select: { id: true, name: true } },
-        // Current course for students (used to display category badge in lists)
-        studentCourses: {
-          where: { status: "IN_PROGRESS" as const },
-          select: { id: true, category: true },
-          take: 1,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            createdAt: true,
+            // Current course for students (drives the category badge in lists)
+            studentCourses: {
+              where: { status: "IN_PROGRESS" as const },
+              select: { id: true, category: true },
+              take: 1,
+            },
+          },
         },
       } as const;
 
       const paginated = !!(input?.page && input?.pageSize);
-      const [usersRaw, total] = paginated
+      const [rows, total] = paginated
         ? await ctx.db.$transaction([
-            ctx.db.user.findMany({
+            ctx.db.membership.findMany({
               where,
               select,
-              orderBy: { name: "asc" },
+              orderBy: { user: { name: "asc" } },
               skip: (input!.page! - 1) * input!.pageSize!,
               take: input!.pageSize!,
             }),
-            ctx.db.user.count({ where }),
+            ctx.db.membership.count({ where }),
           ])
-        : await ctx.db.user.findMany({ where, select, orderBy: { name: "asc" } })
-            .then((u) => [u, u.length] as const);
+        : await ctx.db.membership
+            .findMany({ where, select, orderBy: { user: { name: "asc" } } })
+            .then((r) => [r, r.length] as const);
 
       // Merge email-confirmation status from Supabase Auth so the UI can
       // hide the "resend invite" button for users who already set a password.
@@ -166,11 +190,19 @@ export const userRouter = router({
         }
       }
 
-      const items = usersRaw.map(({ studentCourses, ...u }) => ({
-        ...u,
-        currentCategory: studentCourses[0]?.category ?? null,
-        emailConfirmed: confirmedById.get(u.id) ?? false,
-        anonymized: isAnonymizedEmail(u.email),
+      const items = rows.map((m) => ({
+        id: m.user.id,
+        name: m.user.name,
+        email: m.user.email,
+        phone: m.user.phone,
+        role: m.role,
+        status: m.status,
+        qualifiedCategories: m.qualifiedCategories,
+        createdAt: m.user.createdAt,
+        school: m.school,
+        currentCategory: m.user.studentCourses[0]?.category ?? null,
+        emailConfirmed: confirmedById.get(m.user.id) ?? false,
+        anonymized: isAnonymizedEmail(m.user.email),
       }));
 
       return { items, total };
@@ -189,16 +221,19 @@ export const userRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const count = await ctx.db.user.count({
+      // Membership-driven to match `list` (role/status are per-tenant).
+      const isInstructor = ctx.membership.role === "INSTRUCTOR";
+      const count = await ctx.db.membership.count({
         where: {
           tenantId: ctx.tenantId,
-          role: input.role,
+          // Instructor scoping forces STUDENT so the count badge agrees with
+          // the visible (own-students-only) roster.
+          role: isInstructor ? "STUDENT" : input.role,
           ...(input.status && { status: input.status }),
-          // Match the instructor scoping in `list` so the count badge agrees
-          // with the visible (own-students-only) roster.
-          ...(ctx.membership.role === "INSTRUCTOR" && {
-            role: "STUDENT" as const,
-            enrollments: { some: { session: { instructorId: ctx.user.id } } },
+          ...(isInstructor && {
+            user: {
+              enrollments: { some: { session: { instructorId: ctx.user.id } } },
+            },
           }),
         },
       });

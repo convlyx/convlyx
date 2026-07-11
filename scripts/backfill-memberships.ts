@@ -17,11 +17,14 @@ import { Pool } from "pg";
  * (see CLAUDE.md "PROD DB ROUTING").
  *
  *   pnpm dotenv -e .env.prod -- tsx scripts/backfill-memberships.ts          # dry run (report only)
- *   pnpm dotenv -e .env.prod -- tsx scripts/backfill-memberships.ts --apply  # perform the insert
+ *
+ * To actually apply, pass `--apply` OR set APPLY=1 (the env-var form avoids the
+ * pnpm/dotenv `--` arg-forwarding gotcha that can swallow the flag). PowerShell:
+ *   $env:APPLY="1"; pnpm dotenv -e .env.prod -- tsx scripts/backfill-memberships.ts
  */
 
 const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
-const apply = process.argv.includes("--apply");
+const apply = process.argv.includes("--apply") || process.env.APPLY === "1";
 
 const SELECT_MISSING = `
   SELECT u.id, u.email, u.role, u.status, u.tenant_id, u.school_id
