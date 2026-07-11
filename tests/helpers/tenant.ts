@@ -72,6 +72,13 @@ export async function createTestTenant(label: string): Promise<TestTenant> {
         role: "STUDENT",
       },
     }),
+    db.membership.createMany({
+      data: [
+        { tenantId, userId: adminUserId, schoolId, role: "ADMIN" },
+        { tenantId, userId: instructorUserId, schoolId, role: "INSTRUCTOR", qualifiedCategories: ["B"] },
+        { tenantId, userId: studentUserId, schoolId, role: "STUDENT" },
+      ],
+    }),
   ]);
 
   // Add a future class taught by the instructor, an enrollment, and an
@@ -152,6 +159,7 @@ export async function cleanupTenants(...tenantIds: string[]) {
     db.notification.deleteMany({ where: { tenantId: { in: tenantIds } } }),
     db.pushSubscription.deleteMany({ where: { tenantId: { in: tenantIds } } }),
     db.consentRecord.deleteMany({ where: { tenantId: { in: tenantIds } } }),
+    db.membership.deleteMany({ where: { tenantId: { in: tenantIds } } }),
     db.user.deleteMany({ where: { tenantId: { in: tenantIds } } }),
     db.school.deleteMany({ where: { tenantId: { in: tenantIds } } }),
     db.tenant.deleteMany({ where: { id: { in: tenantIds } } }),

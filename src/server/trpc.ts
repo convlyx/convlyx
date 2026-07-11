@@ -107,12 +107,31 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   // Replace ctx.db with a tenant-scoped client — every query against a
   // tenant-scoped model automatically carries the request's tenantId,
   // even if the procedure forgets to filter on it. See `tenant-scope.ts`.
+  const db = withTenant(ctx.db, ctx.tenantId);
+
+  // Approach 1a (cross-tenant identity) — PHASE 1 (additive bridge): prefer the
+  // caller's Membership in THIS tenant for role/school. Existing users are
+  // backfilled; any user without a membership yet (e.g. brand-new users, until
+  // the phase-2 `user.create` rework) falls back to their User row so nobody is
+  // locked out and deploy ordering can't brick access. Phase 2 makes membership
+  // authoritative (no membership ⇒ no access) and drops this fallback.
+  const found = await db.membership.findFirst({
+    where: { userId: ctx.user.id, tenantId: ctx.tenantId },
+    select: { role: true, schoolId: true, tenantId: true },
+  });
+  const membership = found ?? {
+    role: ctx.user.role,
+    schoolId: ctx.user.schoolId,
+    tenantId: ctx.tenantId,
+  };
+
   return next({
     ctx: {
       ...ctx,
       user: ctx.user,
       tenantId: ctx.tenantId,
-      db: withTenant(ctx.db, ctx.tenantId),
+      db,
+      membership,
     },
   });
 });
@@ -123,7 +142,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
  */
 export const roleProtectedProcedure = (allowedRoles: UserRole[]) =>
   protectedProcedure.use(async ({ ctx, next }) => {
-    if (!allowedRoles.includes(ctx.user.role)) {
+    if (!allowedRoles.includes(ctx.membership.role)) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "auth.insufficientPermissions",
