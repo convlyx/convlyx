@@ -15,8 +15,8 @@ export const novidadesRouter = router({
       });
 
       const seenAt = me?.novidadesSeenAt ?? null;
-      const all = getPostsForRole(ctx.user.role);
-      const unreadCount = countUnreadForRole(ctx.user.role, seenAt);
+      const all = getPostsForRole(ctx.membership.role);
+      const unreadCount = countUnreadForRole(ctx.membership.role, seenAt);
       const threshold = seenAt ? seenAt.getTime() : 0;
 
       const posts = all.slice(0, input?.limit ?? 8).map((p) => ({

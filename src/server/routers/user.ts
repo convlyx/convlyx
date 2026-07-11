@@ -110,7 +110,7 @@ export const userRouter = router({
         // Instructors only ever see STUDENTs, and only those enrolled in a class
         // they teach (read-only; management actions stay admin/secretary). Spread
         // last so it overrides any requested role filter. GDPR data-minimisation.
-        ...(ctx.user.role === "INSTRUCTOR" && {
+        ...(ctx.membership.role === "INSTRUCTOR" && {
           role: "STUDENT" as const,
           enrollments: { some: { session: { instructorId: ctx.user.id } } },
         }),
@@ -196,7 +196,7 @@ export const userRouter = router({
           ...(input.status && { status: input.status }),
           // Match the instructor scoping in `list` so the count badge agrees
           // with the visible (own-students-only) roster.
-          ...(ctx.user.role === "INSTRUCTOR" && {
+          ...(ctx.membership.role === "INSTRUCTOR" && {
             role: "STUDENT" as const,
             enrollments: { some: { session: { instructorId: ctx.user.id } } },
           }),
@@ -231,7 +231,7 @@ export const userRouter = router({
       // Only admins can create staff (admins or secretaries). Secretaries
       // are limited to creating students and instructors.
       if (
-        ctx.user.role !== "ADMIN" &&
+        ctx.membership.role !== "ADMIN" &&
         (input.role === "ADMIN" || input.role === "SECRETARY")
       ) {
         throw new TRPCError({
@@ -402,7 +402,7 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       // Only admins can edit staff (admins or secretaries) or promote anyone
       // to a staff role.
-      if (ctx.user.role !== "ADMIN") {
+      if (ctx.membership.role !== "ADMIN") {
         if (input.role === "ADMIN" || input.role === "SECRETARY") {
           throw new TRPCError({
             code: "FORBIDDEN",
@@ -460,7 +460,7 @@ export const userRouter = router({
 
       // Secretaries can deactivate students/instructors only — never other
       // ADMINs or SECRETARIES. Same rule as user.update.
-      if (ctx.user.role !== "ADMIN") {
+      if (ctx.membership.role !== "ADMIN") {
         const target = await ctx.db.user.findFirst({
           where: { id: input.id, tenantId: ctx.tenantId },
           select: { role: true },
@@ -502,7 +502,7 @@ export const userRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       // Same SECRETARY guard as deactivate.
-      if (ctx.user.role !== "ADMIN") {
+      if (ctx.membership.role !== "ADMIN") {
         const target = await ctx.db.user.findFirst({
           where: { id: input.id, tenantId: ctx.tenantId },
           select: { role: true },
@@ -820,7 +820,7 @@ export const userRouter = router({
           tenantId: ctx.tenantId,
           role: "STUDENT",
           // Instructors may only view students they teach.
-          ...(ctx.user.role === "INSTRUCTOR" && {
+          ...(ctx.membership.role === "INSTRUCTOR" && {
             enrollments: { some: { session: { instructorId: ctx.user.id } } },
           }),
         },
@@ -870,7 +870,7 @@ export const userRouter = router({
           tenantId: ctx.tenantId,
           role: "STUDENT",
           // Instructors may only view students they teach.
-          ...(ctx.user.role === "INSTRUCTOR" && {
+          ...(ctx.membership.role === "INSTRUCTOR" && {
             enrollments: { some: { session: { instructorId: ctx.user.id } } },
           }),
         },
@@ -990,7 +990,7 @@ export const userRouter = router({
           tenantId: ctx.tenantId,
           role: "STUDENT",
           // Instructors may only view students they teach.
-          ...(ctx.user.role === "INSTRUCTOR" && {
+          ...(ctx.membership.role === "INSTRUCTOR" && {
             enrollments: { some: { session: { instructorId: ctx.user.id } } },
           }),
         },
@@ -1048,7 +1048,7 @@ export const userRouter = router({
           tenantId: ctx.tenantId,
           role: "STUDENT",
           // Instructors may only view students they teach.
-          ...(ctx.user.role === "INSTRUCTOR" && {
+          ...(ctx.membership.role === "INSTRUCTOR" && {
             enrollments: { some: { session: { instructorId: ctx.user.id } } },
           }),
         },

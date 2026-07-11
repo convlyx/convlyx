@@ -30,7 +30,7 @@ export const classRouter = router({
       // Instructors see only their classes, students see available + enrolled.
       // The role-level instructor pin always wins over an explicit input filter.
       const instructorFilter =
-        ctx.user.role === "INSTRUCTOR"
+        ctx.membership.role === "INSTRUCTOR"
           ? { instructorId: ctx.user.id }
           : input?.instructorId
             ? { instructorId: input.instructorId }
@@ -41,7 +41,7 @@ export const classRouter = router({
       // hidden once they've passed the theory exam for that category. Without
       // an active course, no classes are visible.
       let studentFilter: object = {};
-      if (ctx.user.role === "STUDENT") {
+      if (ctx.membership.role === "STUDENT") {
         const { activeCategory, canSeeTheory } = await getStudentClassAccess(
           ctx.db,
           ctx.tenantId,
@@ -162,7 +162,7 @@ export const classRouter = router({
       });
 
       // Students only see their own enrollment, with notes stripped
-      if (result && ctx.user.role === "STUDENT") {
+      if (result && ctx.membership.role === "STUDENT") {
         return {
           ...result,
           enrollments: result.enrollments
@@ -182,7 +182,7 @@ export const classRouter = router({
         where: {
           id: input.sessionId,
           tenantId: ctx.tenantId,
-          ...(ctx.user.role === "INSTRUCTOR" && { instructorId: ctx.user.id }),
+          ...(ctx.membership.role === "INSTRUCTOR" && { instructorId: ctx.user.id }),
         },
         select: { id: true, classType: true, status: true },
       });
@@ -215,7 +215,7 @@ export const classRouter = router({
         where: {
           id: input.sessionId,
           tenantId: ctx.tenantId,
-          ...(ctx.user.role === "INSTRUCTOR" && { instructorId: ctx.user.id }),
+          ...(ctx.membership.role === "INSTRUCTOR" && { instructorId: ctx.user.id }),
         },
         select: { id: true },
       });
@@ -241,7 +241,7 @@ export const classRouter = router({
         where: {
           id: input.sessionId,
           tenantId: ctx.tenantId,
-          ...(ctx.user.role === "INSTRUCTOR" && { instructorId: ctx.user.id }),
+          ...(ctx.membership.role === "INSTRUCTOR" && { instructorId: ctx.user.id }),
         },
         select: {
           id: true,
@@ -281,7 +281,7 @@ export const classRouter = router({
     .input(createClassSchema)
     .mutation(async ({ ctx, input }) => {
       // Instructors can only schedule classes for themselves
-      if (ctx.user.role === "INSTRUCTOR" && input.instructorId !== ctx.user.id) {
+      if (ctx.membership.role === "INSTRUCTOR" && input.instructorId !== ctx.user.id) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "auth.insufficientPermissions",

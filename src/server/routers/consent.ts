@@ -16,7 +16,7 @@ export const consentRouter = router({
         orderBy: { acceptedAt: "desc" },
         select: { documentVersions: true },
       }),
-      ctx.user.role === "ADMIN"
+      ctx.membership.role === "ADMIN"
         ? ctx.db.consentRecord.findFirst({
             where: { tenantId: ctx.tenantId, type: "CONTROLLER_DPA" },
             orderBy: { acceptedAt: "desc" },
@@ -29,7 +29,7 @@ export const consentRouter = router({
       (userRec?.documentVersions as StoredVersions) ?? null,
     );
     const needsControllerDpa =
-      ctx.user.role === "ADMIN" &&
+      ctx.membership.role === "ADMIN" &&
       !controllerDpaSatisfied((dpaRec?.documentVersions as StoredVersions) ?? null);
 
     return {
@@ -46,7 +46,7 @@ export const consentRouter = router({
   accept: protectedProcedure
     .input(z.object({ type: z.enum(["CONTROLLER_DPA", "USER_TERMS"]) }))
     .mutation(async ({ ctx, input }) => {
-      if (input.type === "CONTROLLER_DPA" && ctx.user.role !== "ADMIN") {
+      if (input.type === "CONTROLLER_DPA" && ctx.membership.role !== "ADMIN") {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "auth.insufficientPermissions",

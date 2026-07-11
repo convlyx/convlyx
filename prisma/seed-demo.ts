@@ -204,6 +204,18 @@ async function getOrCreateUser({
     },
   });
 
+  // Phase 1 (Approach 1a): per-tenant membership carries role/school.
+  await db.membership.create({
+    data: {
+      tenantId,
+      userId: authUserId,
+      schoolId,
+      role,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      qualifiedCategories: qualifiedCategories as any,
+    },
+  });
+
   console.log(`  Created: ${name} (${role})`);
   return authUserId;
 }

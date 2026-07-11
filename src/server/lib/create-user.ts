@@ -98,6 +98,30 @@ export async function createUserAccount({
         select: { id: true, name: true, email: true, role: true },
       });
 
+      // Phase 1 (Approach 1a): keep the Membership in sync with the reactivation
+      // (role/school may differ from before). Create if missing, else update.
+      const existingMembership = await tx.membership.findFirst({
+        where: { tenantId, userId: existing.id },
+        select: { id: true },
+      });
+      const membershipData = {
+        schoolId: input.schoolId,
+        role: input.role,
+        status: "ACTIVE" as const,
+        qualifiedCategories:
+          input.role === "INSTRUCTOR" ? input.qualifiedCategories ?? [] : [],
+      };
+      if (existingMembership) {
+        await tx.membership.updateMany({
+          where: { tenantId, userId: existing.id },
+          data: membershipData,
+        });
+      } else {
+        await tx.membership.create({
+          data: { tenantId, userId: existing.id, ...membershipData },
+        });
+      }
+
       if (input.role === "STUDENT" && input.initialCategory) {
         // Only start a fresh course if there isn't already an in-progress
         // one for this category (the deactivated student may still have
@@ -177,6 +201,20 @@ export async function createUserAccount({
             input.role === "INSTRUCTOR" ? input.qualifiedCategories ?? [] : [],
         },
         select: { id: true, name: true, email: true, role: true },
+      });
+
+      // Phase 1 (Approach 1a): also create the per-tenant Membership — role/school
+      // live here now. (User columns are still written above during the additive
+      // phase; Phase 2 drops them.)
+      await tx.membership.create({
+        data: {
+          tenantId,
+          userId: created.id,
+          schoolId: input.schoolId,
+          role: input.role,
+          qualifiedCategories:
+            input.role === "INSTRUCTOR" ? input.qualifiedCategories ?? [] : [],
+        },
       });
 
       if (input.role === "STUDENT" && input.initialCategory) {

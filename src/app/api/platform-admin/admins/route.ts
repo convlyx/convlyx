@@ -92,17 +92,29 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const user = await db.user.create({
-      data: {
-        id: authData.user.id,
-        tenantId: school.tenantId,
-        schoolId: school.id,
-        email,
-        name,
-        phone: phone || null,
-        role: "ADMIN",
-      },
-      select: { id: true, name: true, email: true, role: true },
+    const user = await db.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          id: authData.user.id,
+          tenantId: school.tenantId,
+          schoolId: school.id,
+          email,
+          name,
+          phone: phone || null,
+          role: "ADMIN",
+        },
+        select: { id: true, name: true, email: true, role: true },
+      });
+      // Phase 1 (Approach 1a): platform-admin-created admins also get a Membership.
+      await tx.membership.create({
+        data: {
+          tenantId: school.tenantId,
+          userId: created.id,
+          schoolId: school.id,
+          role: "ADMIN",
+        },
+      });
+      return created;
     });
 
     await audit({

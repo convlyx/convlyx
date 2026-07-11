@@ -28,9 +28,9 @@ export const examRouter = router({
     .query(async ({ ctx, input }) => {
       // Students see only their own exams; instructors see exams they accompany.
       const roleFilter =
-        ctx.user.role === "STUDENT"
+        ctx.membership.role === "STUDENT"
           ? { course: { studentId: ctx.user.id } }
-          : ctx.user.role === "INSTRUCTOR"
+          : ctx.membership.role === "INSTRUCTOR"
             ? { instructorId: ctx.user.id }
             : {};
 
@@ -98,7 +98,7 @@ export const examRouter = router({
 
       // Authorization: students can only view their own exams
       if (
-        ctx.user.role === "STUDENT" &&
+        ctx.membership.role === "STUDENT" &&
         exam.course.student.id !== ctx.user.id
       ) {
         throw new TRPCError({
@@ -398,7 +398,7 @@ export const examRouter = router({
       }
 
       // Instructors can only mark NO_SHOW on exams they accompany
-      if (ctx.user.role === "INSTRUCTOR") {
+      if (ctx.membership.role === "INSTRUCTOR") {
         if (input.result !== "NO_SHOW") {
           throw new TRPCError({
             code: "FORBIDDEN",

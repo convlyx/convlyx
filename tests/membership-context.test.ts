@@ -11,13 +11,16 @@ afterAll(async () => {
 });
 
 describe("membership-aware protectedProcedure", () => {
-  it("phase-1 bridge: falls back to the User row when no membership exists (no lockout)", async () => {
+  it("rejects a caller with no membership in the tenant (no fallback)", async () => {
     A = await createTestTenant("mem-ctx");
-    // Remove the admin's membership → simulate a user without one yet.
-    await db.membership.deleteMany({ where: { tenantId: A.tenantId, userId: A.adminUserId } });
-    // protectedProcedure must fall back to ctx.user, so the call still works.
-    // (novidades.feed is a plain protectedProcedure — exercises the gate itself.)
+    // Sanity: with a membership, the call works.
     await expect(A.asAdmin.novidades.feed()).resolves.toBeDefined();
+    // Remove the admin's membership → simulate a user who is not a member here.
+    await db.membership.deleteMany({ where: { tenantId: A.tenantId, userId: A.adminUserId } });
+    // Membership is authoritative: no membership ⇒ unauthorized, even though a
+    // valid User row still exists (the phase-1 fallback has been removed).
+    // (novidades.feed is a plain protectedProcedure — exercises the gate itself.)
+    await expect(A.asAdmin.novidades.feed()).rejects.toThrow();
   });
 
   it("role checks read membership.role, not the caller-supplied ctx.user.role", async () => {

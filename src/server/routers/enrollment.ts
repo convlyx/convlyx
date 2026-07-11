@@ -22,9 +22,9 @@ export const enrollmentRouter = router({
     .mutation(async ({ ctx, input }) => {
       // Students can only enroll themselves
       const studentId =
-        ctx.user.role === "STUDENT" ? ctx.user.id : (input.studentId ?? ctx.user.id);
+        ctx.membership.role === "STUDENT" ? ctx.user.id : (input.studentId ?? ctx.user.id);
 
-      if (ctx.user.role === "STUDENT" && input.studentId && input.studentId !== ctx.user.id) {
+      if (ctx.membership.role === "STUDENT" && input.studentId && input.studentId !== ctx.user.id) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "auth.insufficientPermissions",
@@ -59,7 +59,7 @@ export const enrollmentRouter = router({
       }
 
       // Instructors can only enroll students into their own classes
-      if (ctx.user.role === "INSTRUCTOR" && session.instructorId !== ctx.user.id) {
+      if (ctx.membership.role === "INSTRUCTOR" && session.instructorId !== ctx.user.id) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "auth.insufficientPermissions",
@@ -77,7 +77,7 @@ export const enrollmentRouter = router({
         }
       }
 
-      const isStaff = ["ADMIN", "SECRETARY", "INSTRUCTOR"].includes(ctx.user.role);
+      const isStaff = ["ADMIN", "SECRETARY", "INSTRUCTOR"].includes(ctx.membership.role);
       const allowedStatuses = isStaff
         ? ["SCHEDULED", "IN_PROGRESS", "COMPLETED"]
         : ["SCHEDULED"];
@@ -92,7 +92,7 @@ export const enrollmentRouter = router({
       // Domain rules for student self-enrollment: class must match active
       // course's category (practical) or be theory (only if not yet passed).
       // Staff bypass these checks since they enrol students operationally.
-      if (ctx.user.role === "STUDENT" && studentId === ctx.user.id) {
+      if (ctx.membership.role === "STUDENT" && studentId === ctx.user.id) {
         const { activeCategory, canSeeTheory } = await getStudentClassAccess(
           ctx.db,
           ctx.tenantId,
@@ -239,7 +239,7 @@ export const enrollmentRouter = router({
       }
 
       // Instructors can only cancel enrollments in their own classes
-      if (ctx.user.role === "INSTRUCTOR" && enrollment.session.instructorId !== ctx.user.id) {
+      if (ctx.membership.role === "INSTRUCTOR" && enrollment.session.instructorId !== ctx.user.id) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "auth.insufficientPermissions",
@@ -248,7 +248,7 @@ export const enrollmentRouter = router({
 
       // Students can only cancel their own, only while ENROLLED, and only outside
       // the school's cancellation notice window (default 24h, configurable).
-      if (ctx.user.role === "STUDENT") {
+      if (ctx.membership.role === "STUDENT") {
         if (enrollment.studentId !== ctx.user.id) {
           throw new TRPCError({
             code: "FORBIDDEN",
@@ -312,7 +312,7 @@ export const enrollmentRouter = router({
           id: input.enrollmentId,
           tenantId: ctx.tenantId,
           status: { in: ["ENROLLED", "ATTENDED", "NO_SHOW"] },
-          ...(ctx.user.role === "INSTRUCTOR" && {
+          ...(ctx.membership.role === "INSTRUCTOR" && {
             session: { instructorId: ctx.user.id },
           }),
         },
@@ -409,7 +409,7 @@ export const enrollmentRouter = router({
         where: {
           id: input.sessionId,
           tenantId: ctx.tenantId,
-          ...(ctx.user.role === "INSTRUCTOR" && { instructorId: ctx.user.id }),
+          ...(ctx.membership.role === "INSTRUCTOR" && { instructorId: ctx.user.id }),
         },
         select: { id: true },
       });
@@ -447,7 +447,7 @@ export const enrollmentRouter = router({
         where: {
           id: input.sessionId,
           tenantId: ctx.tenantId,
-          ...(ctx.user.role === "INSTRUCTOR" && { instructorId: ctx.user.id }),
+          ...(ctx.membership.role === "INSTRUCTOR" && { instructorId: ctx.user.id }),
         },
         select: { id: true },
       });
@@ -473,7 +473,7 @@ export const enrollmentRouter = router({
     .input(listByStudentSchema)
     .query(async ({ ctx, input }) => {
       const studentId =
-        ctx.user.role === "STUDENT" ? ctx.user.id : input?.studentId;
+        ctx.membership.role === "STUDENT" ? ctx.user.id : input?.studentId;
 
       const now = new Date();
       const timeFilter =
@@ -544,7 +544,7 @@ export const enrollmentRouter = router({
     .input(listByStudentSchema)
     .query(async ({ ctx, input }) => {
       const studentId =
-        ctx.user.role === "STUDENT" ? ctx.user.id : input?.studentId;
+        ctx.membership.role === "STUDENT" ? ctx.user.id : input?.studentId;
       const base = { tenantId: ctx.tenantId, ...(studentId && { studentId }) };
       const [scheduled, attended, noShow] = await ctx.db.$transaction([
         ctx.db.enrollment.count({
@@ -587,7 +587,7 @@ export const enrollmentRouter = router({
       if (session.classType !== "THEORY") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "checkin.notTheory" });
       }
-      if (session.schoolId !== ctx.user.schoolId) {
+      if (session.schoolId !== ctx.membership.schoolId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "checkin.differentSchool" });
       }
       if (!session.checkInOpenedAt || !session.checkInSecret) {
@@ -642,7 +642,7 @@ export const enrollmentRouter = router({
       const session = await ctx.db.classSession.findFirst({
         where: {
           tenantId: ctx.tenantId,
-          schoolId: ctx.user.schoolId,
+          schoolId: ctx.membership.schoolId,
           classType: "THEORY",
           status: { not: "CANCELLED" },
           startsAt: { lte: now },

@@ -14,7 +14,7 @@ export const courseRouter = router({
     .input(z.object({ studentId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       // Students can only see their own courses
-      if (ctx.user.role === "STUDENT" && ctx.user.id !== input.studentId) {
+      if (ctx.membership.role === "STUDENT" && ctx.user.id !== input.studentId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "auth.insufficientPermissions",
@@ -47,7 +47,7 @@ export const courseRouter = router({
   currentForStudent: protectedProcedure
     .input(z.object({ studentId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      if (ctx.user.role === "STUDENT" && ctx.user.id !== input.studentId) {
+      if (ctx.membership.role === "STUDENT" && ctx.user.id !== input.studentId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "auth.insufficientPermissions",

@@ -109,21 +109,21 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   // even if the procedure forgets to filter on it. See `tenant-scope.ts`.
   const db = withTenant(ctx.db, ctx.tenantId);
 
-  // Approach 1a (cross-tenant identity) — PHASE 1 (additive bridge): prefer the
-  // caller's Membership in THIS tenant for role/school. Existing users are
-  // backfilled; any user without a membership yet (e.g. brand-new users, until
-  // the phase-2 `user.create` rework) falls back to their User row so nobody is
-  // locked out and deploy ordering can't brick access. Phase 2 makes membership
-  // authoritative (no membership ⇒ no access) and drops this fallback.
-  const found = await db.membership.findFirst({
+  // Approach 1a (cross-tenant identity): the caller's role + school live on their
+  // Membership in THIS tenant, and it is authoritative — no membership ⇒ not a
+  // member of this school ⇒ unauthorized (don't leak the tenant's existence).
+  // Every user-creation path creates a membership, and existing users were
+  // backfilled, so a missing one genuinely means "not a member here".
+  const membership = await db.membership.findFirst({
     where: { userId: ctx.user.id, tenantId: ctx.tenantId },
     select: { role: true, schoolId: true, tenantId: true },
   });
-  const membership = found ?? {
-    role: ctx.user.role,
-    schoolId: ctx.user.schoolId,
-    tenantId: ctx.tenantId,
-  };
+  if (!membership) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "auth.notAuthenticated",
+    });
+  }
 
   return next({
     ctx: {

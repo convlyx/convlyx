@@ -69,6 +69,14 @@ describe("user.create", () => {
       select: { status: true },
     });
     expect(course?.status).toBe("IN_PROGRESS");
+
+    // Phase 1: a matching Membership must be created for the new user.
+    const membership = await db.membership.findFirst({
+      where: { userId: created.id, tenantId: t.tenantId },
+      select: { role: true, schoolId: true },
+    });
+    expect(membership?.role).toBe("STUDENT");
+    expect(membership?.schoolId).toBe(t.schoolId);
   });
 
   test("ACTIVE duplicate email → CONFLICT, no Supabase call", async () => {
@@ -155,6 +163,14 @@ describe("user.create", () => {
       select: { status: true },
     });
     expect(courses.some((c) => c.status === "IN_PROGRESS")).toBe(true);
+
+    // Phase 1: reactivation creates the membership if it was missing.
+    const mem = await db.membership.findFirst({
+      where: { userId: originalId, tenantId: t.tenantId },
+      select: { role: true, status: true },
+    });
+    expect(mem?.role).toBe("STUDENT");
+    expect(mem?.status).toBe("ACTIVE");
   });
 
   test("INACTIVE duplicate with existing in-progress course → does not duplicate the course", async () => {
