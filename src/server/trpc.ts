@@ -3,18 +3,16 @@ import superjson from "superjson";
 import { db } from "./db";
 import { withTenant } from "./lib/tenant-scope";
 import { createClient } from "@/lib/supabase/server";
+import { extractSubdomain } from "@/lib/subdomain";
 import type { UserRole } from "@/generated/prisma/enums";
 
 export type TRPCContext = {
   db: typeof db;
   tenantId: string | null;
   ip: string | null;
-  user: {
-    id: string;
-    role: UserRole;
-    tenantId: string;
-    schoolId: string;
-  } | null;
+  // Global identity only. The caller's per-tenant role/school are resolved
+  // from their Membership in `protectedProcedure` (see `ctx.membership`).
+  user: { id: string } | null;
 };
 
 export const createTRPCContext = async (opts: {
@@ -31,40 +29,23 @@ export const createTRPCContext = async (opts: {
     return { db, tenantId: null, ip, user: null };
   }
 
-  // Look up our User record (extends Supabase auth.users with tenant/role info)
-  const user = await db.user.findUnique({
-    where: { id: authUser.id },
-    select: {
-      id: true,
-      role: true,
-      tenantId: true,
-      schoolId: true,
-      status: true,
-      school: { select: { subdomain: true } },
-    },
-  });
+  // Tenant is resolved from the subdomain — "which school's site is this".
+  // Middleware doesn't run for /api/*, so `x-tenant-subdomain` is never set for
+  // tRPC calls; derive it from the request Host instead. Access within the
+  // tenant is then gated by the caller's Membership in `protectedProcedure`.
+  const host = opts.headers.get("x-forwarded-host") ?? opts.headers.get("host");
+  const subdomain = extractSubdomain(host);
 
-  if (!user || user.status !== "ACTIVE") {
-    return { db, tenantId: null, ip, user: null };
+  let tenantId: string | null = null;
+  if (subdomain) {
+    const school = await db.school.findUnique({
+      where: { subdomain },
+      select: { tenantId: true },
+    });
+    tenantId = school?.tenantId ?? null;
   }
 
-  // Validate subdomain matches user's tenant (if subdomain is present)
-  const subdomain = opts.headers.get("x-tenant-subdomain");
-  if (subdomain && user.school.subdomain !== subdomain) {
-    return { db, tenantId: null, ip, user: null };
-  }
-
-  return {
-    db,
-    tenantId: user.tenantId,
-    ip,
-    user: {
-      id: user.id,
-      role: user.role,
-      tenantId: user.tenantId,
-      schoolId: user.schoolId,
-    },
-  };
+  return { db, tenantId, ip, user: { id: authUser.id } };
 };
 
 const t = initTRPC.context<TRPCContext>().create({

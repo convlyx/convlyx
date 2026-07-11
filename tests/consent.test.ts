@@ -37,7 +37,7 @@ describe("consent router", () => {
       db,
       tenantId: A.tenantId,
       ip: null,
-      user: { id: A.studentUserId, role: "STUDENT", tenantId: A.tenantId, schoolId: A.schoolId },
+      user: { id: A.studentUserId },
     });
     await expect(asStudent.consent.accept({ type: "CONTROLLER_DPA" })).rejects.toThrow();
     await asStudent.consent.accept({ type: "USER_TERMS" });
@@ -51,7 +51,7 @@ describe("consent router", () => {
       db,
       tenantId: A.tenantId,
       ip: null,
-      user: { id: A.instructorUserId, role: "INSTRUCTOR", tenantId: A.tenantId, schoolId: A.schoolId },
+      user: { id: A.instructorUserId },
     });
 
     // Fresh: needs acceptance, but it's a first-time prompt — not an update.

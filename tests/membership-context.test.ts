@@ -23,16 +23,15 @@ describe("membership-aware protectedProcedure", () => {
     await expect(A.asAdmin.novidades.feed()).rejects.toThrow();
   });
 
-  it("role checks read membership.role, not the caller-supplied ctx.user.role", async () => {
-    // The caller CLAIMS ADMIN in ctx.user, but their Membership is STUDENT.
-    const asStudentClaimingAdmin = createCaller({
+  it("role checks read membership.role (ctx.user carries no role)", async () => {
+    const asStudent = createCaller({
       db,
       tenantId: A.tenantId,
       ip: null,
-      user: { id: A.studentUserId, role: "ADMIN", tenantId: A.tenantId, schoolId: A.schoolId },
+      user: { id: A.studentUserId },
     });
-    // user.list is ADMIN/SECRETARY-only. If the role check read ctx.user.role it
-    // would (wrongly) allow this; reading membership.role (STUDENT) blocks it.
-    await expect(asStudentClaimingAdmin.user.list()).rejects.toThrow();
+    // user.list is ADMIN/SECRETARY/INSTRUCTOR-only. The student's membership
+    // role (STUDENT) is authoritative and blocks it.
+    await expect(asStudent.user.list()).rejects.toThrow();
   });
 });

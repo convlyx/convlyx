@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { extractSubdomain } from "@/lib/subdomain";
 
 const publicPaths = ["/login", "/register", "/reset-password", "/update-password", "/install"];
 
@@ -140,27 +141,6 @@ export async function middleware(request: NextRequest) {
   }
 
   return response;
-}
-
-function extractSubdomain(hostname: string): string | null {
-  // Vercel preview deployments (`*.vercel.app`) don't match the tenant-subdomain
-  // pattern. Returning null here disables tenant verification on previews, so
-  // any user from any tenant can log in for testing. Tenant scoping then falls
-  // back to the user's own tenantId via tRPC/dashboard context.
-  if (hostname.endsWith(".vercel.app")) {
-    return null;
-  }
-
-  if (hostname.startsWith("localhost") || hostname.startsWith("127.0.0.1")) {
-    return null;
-  }
-
-  const parts = hostname.split(".");
-  if (parts.length >= 3) {
-    return parts[0];
-  }
-
-  return null;
 }
 
 export const config = {

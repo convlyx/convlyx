@@ -127,12 +127,8 @@ export async function createTestTenant(label: string): Promise<TestTenant> {
     db,
     tenantId,
     ip: null,
-    user: {
-      id: adminUserId,
-      role: "ADMIN",
-      tenantId,
-      schoolId,
-    },
+    // ctx.user is global identity only; role/school come from the Membership.
+    user: { id: adminUserId },
   });
 
   return {

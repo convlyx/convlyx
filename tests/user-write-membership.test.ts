@@ -59,12 +59,7 @@ describe("user mutations write through to Membership", () => {
       db,
       tenantId: A.tenantId,
       ip: null,
-      user: {
-        id: A.instructorUserId,
-        role: "INSTRUCTOR",
-        tenantId: A.tenantId,
-        schoolId: A.schoolId,
-      },
+      user: { id: A.instructorUserId },
     });
 
     // Active → a plain protectedProcedure works.

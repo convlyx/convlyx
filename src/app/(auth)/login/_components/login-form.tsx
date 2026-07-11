@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
+import { extractSubdomain } from "@/lib/subdomain";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -40,24 +41,19 @@ export function LoginForm() {
       return;
     }
 
-    // Validate user belongs to this tenant (if on a subdomain). Vercel preview
-    // hostnames (*.vercel.app) skip the check entirely so any user can log in
-    // for testing — tenant scoping falls back to the user's own tenantId.
-    const hostname = window.location.hostname;
-    let subdomain: string | null;
-    if (hostname.endsWith(".vercel.app")) {
-      subdomain = null;
-    } else {
-      const parts = hostname.split(".");
-      subdomain = parts.length >= 3 ? parts[0] : null;
-    }
+    // Validate the user is a member of the school whose subdomain they logged
+    // in on. verify-school derives the subdomain from the request Host and
+    // checks Membership, so a person who belongs to several schools passes on
+    // each of their subdomains. Reserved/apex/preview hosts resolve to no
+    // subdomain server-side and return valid:false, so skip the check there.
+    const subdomain = extractSubdomain(window.location.host);
 
     if (subdomain && subdomain !== "admin") {
       try {
         const res = await fetch("/api/auth/verify-school");
-        const { valid, subdomain: userSubdomain } = await res.json();
+        const { valid } = await res.json();
 
-        if (!valid || userSubdomain !== subdomain) {
+        if (!valid) {
           await supabase.auth.signOut();
           setError(t("invalidCredentials"));
           setLoading(false);

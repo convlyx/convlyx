@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { db } from "@/server/db";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/csrf";
+import { extractSubdomain } from "@/lib/subdomain";
 import { logger } from "@/lib/logger";
 
 // Pin to Dublin (eu-west-1) to co-locate with Supabase — avoids transatlantic DB latency.
@@ -29,15 +30,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
     }
 
-    // Look up tenant so push sends can scope by tenant — guards against a
-    // user being moved across tenants and still receiving pushes from the
-    // old one.
-    const profile = await db.user.findUnique({
-      where: { id: user.id },
+    // Scope the subscription to the tenant of the subdomain the PWA is running
+    // on (the SW is per-origin, so each school's app gets its own subscription).
+    // The user must be an active member there.
+    const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+    const subdomain = extractSubdomain(host);
+    if (!subdomain) {
+      return NextResponse.json({ error: "No tenant" }, { status: 400 });
+    }
+    const school = await db.school.findUnique({
+      where: { subdomain },
       select: { tenantId: true },
     });
-    if (!profile) {
-      return NextResponse.json({ error: "User profile not found" }, { status: 404 });
+    if (!school) {
+      return NextResponse.json({ error: "No tenant" }, { status: 404 });
+    }
+    const membership = await db.membership.findFirst({
+      where: { userId: user.id, tenantId: school.tenantId, status: "ACTIVE" },
+      select: { userId: true },
+    });
+    if (!membership) {
+      return NextResponse.json({ error: "Not a member" }, { status: 403 });
     }
 
     // Upsert subscription (user might re-subscribe from same browser)
@@ -49,12 +62,12 @@ export async function POST(request: NextRequest) {
         },
       },
       update: {
-        tenantId: profile.tenantId,
+        tenantId: school.tenantId,
         p256dh: subscription.keys.p256dh,
         auth: subscription.keys.auth,
       },
       create: {
-        tenantId: profile.tenantId,
+        tenantId: school.tenantId,
         userId: user.id,
         endpoint: subscription.endpoint,
         p256dh: subscription.keys.p256dh,
