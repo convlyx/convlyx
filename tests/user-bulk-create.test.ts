@@ -135,16 +135,25 @@ describe("user.checkExistingEmails", () => {
     const inactiveEmail = `check-inactive-${randomUUID().slice(0, 8)}@test.local`;
     const unknownEmail = `check-unknown-${randomUUID().slice(0, 8)}@test.local`;
 
+    const activeId = randomUUID();
+    const inactiveId = randomUUID();
     await db.user.createMany({
       data: [
         {
-          id: randomUUID(), tenantId: t.tenantId, schoolId: t.schoolId,
+          id: activeId, tenantId: t.tenantId, schoolId: t.schoolId,
           email: activeEmail, name: "A", role: "STUDENT", status: "ACTIVE",
         },
         {
-          id: randomUUID(), tenantId: t.tenantId, schoolId: t.schoolId,
+          id: inactiveId, tenantId: t.tenantId, schoolId: t.schoolId,
           email: inactiveEmail, name: "B", role: "STUDENT", status: "INACTIVE",
         },
+      ],
+    });
+    // checkExistingEmails is now Membership-driven — mirror status there.
+    await db.membership.createMany({
+      data: [
+        { tenantId: t.tenantId, userId: activeId, schoolId: t.schoolId, role: "STUDENT", status: "ACTIVE" },
+        { tenantId: t.tenantId, userId: inactiveId, schoolId: t.schoolId, role: "STUDENT", status: "INACTIVE" },
       ],
     });
 

@@ -36,6 +36,16 @@ describe("student schedule conflicts", () => {
         qualifiedCategories: ["B"],
       },
     });
+    // Instructor verification in class.create is Membership-driven now.
+    await db.membership.create({
+      data: {
+        tenantId: a.tenantId,
+        userId: freeInstructorId,
+        schoolId: a.schoolId,
+        role: "INSTRUCTOR",
+        qualifiedCategories: ["B"],
+      },
+    });
   });
 
   afterAll(async () => {

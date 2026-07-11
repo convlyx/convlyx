@@ -68,9 +68,9 @@ export const enrollmentRouter = router({
 
       // Verify student belongs to this tenant (when enrolling someone else)
       if (studentId !== ctx.user.id) {
-        const student = await ctx.db.user.findFirst({
-          where: { id: studentId, tenantId: ctx.tenantId, role: "STUDENT", status: "ACTIVE" },
-          select: { id: true },
+        const student = await ctx.db.membership.findFirst({
+          where: { userId: studentId, tenantId: ctx.tenantId, role: "STUDENT", status: "ACTIVE" },
+          select: { userId: true },
         });
         if (!student) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "users.notFound" });

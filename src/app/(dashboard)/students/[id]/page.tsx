@@ -17,9 +17,9 @@ export default async function StudentPage({
 
   const user = await requireDashboardUser(["ADMIN", "SECRETARY", "INSTRUCTOR"]);
 
-  const studentExists = await db.user.findFirst({
-    where: { id, tenantId: user.tenantId, role: "STUDENT" },
-    select: { id: true },
+  const studentExists = await db.membership.findFirst({
+    where: { userId: id, tenantId: user.tenantId, role: "STUDENT" },
+    select: { userId: true },
   });
   if (!studentExists) notFound();
 

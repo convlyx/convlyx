@@ -66,9 +66,9 @@ export async function POST(request: NextRequest) {
   // Pre-flight: reject duplicates before touching Supabase Auth. Avoids the
   // most common cause of an orphaned auth row — Prisma's unique constraint
   // tripping after the auth user is already created.
-  const existing = await db.user.findFirst({
-    where: { tenantId: school.tenantId, email },
-    select: { id: true },
+  const existing = await db.membership.findFirst({
+    where: { tenantId: school.tenantId, user: { email } },
+    select: { userId: true },
   });
   if (existing) {
     return NextResponse.json(

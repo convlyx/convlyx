@@ -175,14 +175,14 @@ export const examRouter = router({
 
       // Verify accompanying instructor (if provided) belongs to this tenant
       if (input.instructorId) {
-        const instructor = await ctx.db.user.findFirst({
+        const instructor = await ctx.db.membership.findFirst({
           where: {
-            id: input.instructorId,
+            userId: input.instructorId,
             tenantId: ctx.tenantId,
             role: "INSTRUCTOR",
             status: "ACTIVE",
           },
-          select: { id: true },
+          select: { userId: true },
         });
         if (!instructor) {
           throw new TRPCError({
@@ -312,14 +312,14 @@ export const examRouter = router({
       }
 
       if (input.instructorId) {
-        const instructor = await ctx.db.user.findFirst({
+        const instructor = await ctx.db.membership.findFirst({
           where: {
-            id: input.instructorId,
+            userId: input.instructorId,
             tenantId: ctx.tenantId,
             role: "INSTRUCTOR",
             status: "ACTIVE",
           },
-          select: { id: true },
+          select: { userId: true },
         });
         if (!instructor) {
           throw new TRPCError({

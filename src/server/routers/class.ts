@@ -294,14 +294,14 @@ export const classRouter = router({
           where: { id: input.schoolId, tenantId: ctx.tenantId },
           select: { id: true, timeZone: true },
         }),
-        ctx.db.user.findFirst({
+        ctx.db.membership.findFirst({
           where: {
-            id: input.instructorId,
+            userId: input.instructorId,
             tenantId: ctx.tenantId,
             role: "INSTRUCTOR",
             status: "ACTIVE",
           },
-          select: { id: true },
+          select: { userId: true },
         }),
       ]);
 
@@ -747,16 +747,16 @@ export const classRouter = router({
           where: { id: ctx.user.id },
           select: { name: true },
         }),
-        ctx.db.user.findMany({
+        ctx.db.membership.findMany({
           where: {
             tenantId: ctx.tenantId,
             role: { in: ["ADMIN", "SECRETARY"] },
             status: "ACTIVE",
           },
-          select: { id: true },
+          select: { userId: true },
         }),
       ]);
-      const adminIds = admins.map((a) => a.id);
+      const adminIds = admins.map((a) => a.userId);
       const instructorName = instructor?.name ?? "Instrutor";
 
       const jobs: (PushJob | null)[] = [];

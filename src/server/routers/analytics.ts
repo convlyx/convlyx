@@ -126,11 +126,14 @@ export const analyticsRouter = router({
         examsCurrent,
         examsPrev,
       ] = await Promise.all([
-        ctx.db.user.count({
-          where: { tenantId: ctx.tenantId, ...schoolFilter, role: "STUDENT", createdAt: { gte: periodStart } },
+        // Students are counted via Membership (role is per-tenant). Filter on
+        // the joined User.createdAt — membership.createdAt is the backfill
+        // timestamp, not the historical join date.
+        ctx.db.membership.count({
+          where: { tenantId: ctx.tenantId, ...schoolFilter, role: "STUDENT", user: { createdAt: { gte: periodStart } } },
         }),
-        ctx.db.user.count({
-          where: { tenantId: ctx.tenantId, ...schoolFilter, role: "STUDENT", createdAt: { gte: prevStart, lt: periodStart } },
+        ctx.db.membership.count({
+          where: { tenantId: ctx.tenantId, ...schoolFilter, role: "STUDENT", user: { createdAt: { gte: prevStart, lt: periodStart } } },
         }),
         ctx.db.enrollment.count({
           where: { tenantId: ctx.tenantId, ...schoolFilter, enrolledAt: { gte: periodStart } },

@@ -9,8 +9,9 @@ export const novidadesRouter = router({
   feed: protectedProcedure
     .input(z.object({ limit: z.number().int().min(1).max(50).optional() }).optional())
     .query(async ({ ctx, input }) => {
-      const me = await ctx.db.user.findFirst({
-        where: { id: ctx.user.id, tenantId: ctx.tenantId },
+      // "Seen" is per-tenant → stamped on the Membership.
+      const me = await ctx.db.membership.findFirst({
+        where: { tenantId: ctx.tenantId, userId: ctx.user.id },
         select: { novidadesSeenAt: true },
       });
 
@@ -32,8 +33,8 @@ export const novidadesRouter = router({
 
   /** Mark all Novidades as seen for the current user (clears the unread badge). */
   markSeen: protectedProcedure.mutation(async ({ ctx }) => {
-    await ctx.db.user.updateMany({
-      where: { id: ctx.user.id, tenantId: ctx.tenantId },
+    await ctx.db.membership.updateMany({
+      where: { tenantId: ctx.tenantId, userId: ctx.user.id },
       data: { novidadesSeenAt: new Date() },
     });
     return { success: true };

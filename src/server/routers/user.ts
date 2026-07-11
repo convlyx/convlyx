@@ -243,21 +243,40 @@ export const userRouter = router({
   getById: roleProtectedProcedure(["ADMIN", "SECRETARY"])
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      return ctx.db.user.findFirst({
-        where: { id: input.id, tenantId: ctx.tenantId },
+      // Role/status/school/qualifications are per-tenant → read from Membership,
+      // joining User for identity fields.
+      const m = await ctx.db.membership.findFirst({
+        where: { tenantId: ctx.tenantId, userId: input.id },
         select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
           role: true,
           status: true,
           schoolId: true,
           qualifiedCategories: true,
           school: { select: { id: true, name: true } },
-          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              createdAt: true,
+            },
+          },
         },
       });
+      if (!m) return null;
+      return {
+        id: m.user.id,
+        name: m.user.name,
+        email: m.user.email,
+        phone: m.user.phone,
+        role: m.role,
+        status: m.status,
+        schoolId: m.schoolId,
+        qualifiedCategories: m.qualifiedCategories,
+        school: m.school,
+        createdAt: m.user.createdAt,
+      };
     }),
 
   create: roleProtectedProcedure(["ADMIN", "SECRETARY"])
@@ -387,27 +406,36 @@ export const userRouter = router({
     .query(async ({ ctx, input }) => {
       if (input.emails.length === 0) return { existing: [] };
 
-      const rows = await ctx.db.user.findMany({
-        where: { tenantId: ctx.tenantId, email: { in: input.emails } },
-        select: { email: true, status: true },
+      // "Exists in this tenant" = has a Membership here (status is per-tenant).
+      // An email that exists only in another tenant has no membership here and
+      // is correctly reported as new (invitable).
+      const rows = await ctx.db.membership.findMany({
+        where: { tenantId: ctx.tenantId, user: { email: { in: input.emails } } },
+        select: { status: true, user: { select: { email: true } } },
       });
 
       return {
-        existing: rows.map((r) => ({ email: r.email, status: r.status })),
+        existing: rows.map((r) => ({ email: r.user.email, status: r.status })),
       };
     }),
 
   resendInvite: roleProtectedProcedure(["ADMIN", "SECRETARY"])
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findFirst({
-        where: { id: input.id, tenantId: ctx.tenantId },
-        select: { email: true, school: { select: { subdomain: true } } },
+      // Membership scopes to this tenant + gives the school (subdomain lives on
+      // the membership's school now); User supplies the email.
+      const m = await ctx.db.membership.findFirst({
+        where: { tenantId: ctx.tenantId, userId: input.id },
+        select: {
+          school: { select: { subdomain: true } },
+          user: { select: { email: true } },
+        },
       });
 
-      if (!user) {
+      if (!m) {
         throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
       }
+      const user = { email: m.user.email, school: m.school };
 
       const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
       const tenantHost = `${user.school.subdomain}.${siteUrl.host}`;
@@ -707,20 +735,31 @@ export const userRouter = router({
   exportData: roleProtectedProcedure(["ADMIN"])
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
+      // Per-tenant fields (role/status/qualifications) live on the Membership,
+      // which also confirms the subject belongs to this tenant.
+      const m = await ctx.db.membership.findFirst({
+        where: { tenantId: ctx.tenantId, userId: input.id },
+        select: {
+          role: true,
+          status: true,
+          qualifiedCategories: true,
+          school: { select: { id: true, name: true, subdomain: true } },
+          tenant: { select: { id: true, name: true } },
+        },
+      });
+      if (!m) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
+      }
+
       const user = await ctx.db.user.findFirst({
-        where: { id: input.id, tenantId: ctx.tenantId },
+        where: { id: input.id },
         select: {
           id: true,
           name: true,
           email: true,
           phone: true,
-          role: true,
-          status: true,
-          qualifiedCategories: true,
           createdAt: true,
           updatedAt: true,
-          school: { select: { id: true, name: true, subdomain: true } },
-          tenant: { select: { id: true, name: true } },
           studentCourses: {
             select: {
               id: true,
@@ -829,8 +868,19 @@ export const userRouter = router({
         accompaniedExams,
         notifications,
         pushSubscriptions,
-        ...profile
+        ...profileBase
       } = user;
+
+      // Re-attach the per-tenant fields (from Membership) to the profile so the
+      // export shape is unchanged.
+      const profile = {
+        ...profileBase,
+        role: m.role,
+        status: m.status,
+        qualifiedCategories: m.qualifiedCategories,
+        school: m.school,
+        tenant: m.tenant,
+      };
 
       return {
         exportedAt: new Date().toISOString(),
@@ -846,18 +896,26 @@ export const userRouter = router({
     }),
 
   me: protectedProcedure.query(async ({ ctx }) => {
-      const user = await ctx.db.user.findFirst({
-        where: { id: ctx.user.id },
+      // Role + school are per-tenant (from the caller's Membership in the
+      // current tenant); identity comes from the joined User.
+      const m = await ctx.db.membership.findFirst({
+        where: { tenantId: ctx.tenantId, userId: ctx.user.id },
         select: {
-          id: true,
-          name: true,
-          email: true,
           role: true,
           school: { select: { id: true, name: true, address: true, phone: true } },
           tenant: { select: { id: true, name: true } },
+          user: { select: { id: true, name: true, email: true } },
         },
       });
-      return user;
+      if (!m) return null;
+      return {
+        id: m.user.id,
+        name: m.user.name,
+        email: m.user.email,
+        role: m.role,
+        school: m.school,
+        tenant: m.tenant,
+      };
     }),
 
   updateProfile: protectedProcedure
@@ -879,30 +937,43 @@ export const userRouter = router({
   studentHeader: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const student = await ctx.db.user.findFirst({
+      const m = await ctx.db.membership.findFirst({
         where: {
-          id: input.id,
           tenantId: ctx.tenantId,
+          userId: input.id,
           role: "STUDENT",
           // Instructors may only view students they teach.
           ...(ctx.membership.role === "INSTRUCTOR" && {
-            enrollments: { some: { session: { instructorId: ctx.user.id } } },
+            user: { enrollments: { some: { session: { instructorId: ctx.user.id } } } },
           }),
         },
         select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
           status: true,
-          createdAt: true,
           school: { select: { id: true, name: true, timeZone: true } },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              createdAt: true,
+            },
+          },
         },
       });
 
-      if (!student) {
+      if (!m) {
         throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
       }
+      const student = {
+        id: m.user.id,
+        name: m.user.name,
+        email: m.user.email,
+        phone: m.user.phone,
+        status: m.status,
+        createdAt: m.user.createdAt,
+        school: m.school,
+      };
 
       // emailConfirmed lives on the auth side — used by EditUserDialog to
       // show "send confirmation" affordances. Best-effort; failure is
@@ -929,17 +1000,17 @@ export const userRouter = router({
   studentOverview: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const studentExists = await ctx.db.user.findFirst({
+      const studentExists = await ctx.db.membership.findFirst({
         where: {
-          id: input.id,
           tenantId: ctx.tenantId,
+          userId: input.id,
           role: "STUDENT",
           // Instructors may only view students they teach.
           ...(ctx.membership.role === "INSTRUCTOR" && {
-            enrollments: { some: { session: { instructorId: ctx.user.id } } },
+            user: { enrollments: { some: { session: { instructorId: ctx.user.id } } } },
           }),
         },
-        select: { id: true },
+        select: { userId: true },
       });
       if (!studentExists) {
         throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
@@ -1049,17 +1120,17 @@ export const userRouter = router({
     .query(async ({ ctx, input }) => {
       const { id, page, pageSize } = input;
 
-      const studentExists = await ctx.db.user.findFirst({
+      const studentExists = await ctx.db.membership.findFirst({
         where: {
-          id,
           tenantId: ctx.tenantId,
+          userId: id,
           role: "STUDENT",
           // Instructors may only view students they teach.
           ...(ctx.membership.role === "INSTRUCTOR" && {
-            enrollments: { some: { session: { instructorId: ctx.user.id } } },
+            user: { enrollments: { some: { session: { instructorId: ctx.user.id } } } },
           }),
         },
-        select: { id: true },
+        select: { userId: true },
       });
       if (!studentExists) {
         throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
@@ -1107,71 +1178,86 @@ export const userRouter = router({
   studentProfile: roleProtectedProcedure(["ADMIN", "SECRETARY", "INSTRUCTOR"])
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const student = await ctx.db.user.findFirst({
+      const m = await ctx.db.membership.findFirst({
         where: {
-          id: input.id,
           tenantId: ctx.tenantId,
+          userId: input.id,
           role: "STUDENT",
           // Instructors may only view students they teach.
           ...(ctx.membership.role === "INSTRUCTOR" && {
-            enrollments: { some: { session: { instructorId: ctx.user.id } } },
+            user: { enrollments: { some: { session: { instructorId: ctx.user.id } } } },
           }),
         },
         select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
           status: true,
-          createdAt: true,
           school: { select: { id: true, name: true } },
-          studentCourses: {
+          user: {
             select: {
               id: true,
-              category: true,
-              status: true,
-              startedAt: true,
-              completedAt: true,
-              exams: {
+              name: true,
+              email: true,
+              phone: true,
+              createdAt: true,
+              studentCourses: {
                 select: {
                   id: true,
-                  type: true,
-                  scheduledAt: true,
-                  result: true,
-                  location: true,
-                  instructor: { select: { id: true, name: true } },
-                },
-                orderBy: { scheduledAt: "desc" },
-              },
-            },
-            orderBy: { startedAt: "desc" },
-          },
-          enrollments: {
-            select: {
-              id: true,
-              status: true,
-              enrolledAt: true,
-              session: {
-                select: {
-                  id: true,
-                  title: true,
-                  classType: true,
                   category: true,
-                  startsAt: true,
-                  endsAt: true,
                   status: true,
-                  instructor: { select: { name: true } },
+                  startedAt: true,
+                  completedAt: true,
+                  exams: {
+                    select: {
+                      id: true,
+                      type: true,
+                      scheduledAt: true,
+                      result: true,
+                      location: true,
+                      instructor: { select: { id: true, name: true } },
+                    },
+                    orderBy: { scheduledAt: "desc" },
+                  },
                 },
+                orderBy: { startedAt: "desc" },
+              },
+              enrollments: {
+                select: {
+                  id: true,
+                  status: true,
+                  enrolledAt: true,
+                  session: {
+                    select: {
+                      id: true,
+                      title: true,
+                      classType: true,
+                      category: true,
+                      startsAt: true,
+                      endsAt: true,
+                      status: true,
+                      instructor: { select: { name: true } },
+                    },
+                  },
+                },
+                orderBy: { enrolledAt: "desc" },
               },
             },
-            orderBy: { enrolledAt: "desc" },
           },
         },
       });
 
-      if (!student) {
+      if (!m) {
         throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
       }
+      const student = {
+        id: m.user.id,
+        name: m.user.name,
+        email: m.user.email,
+        phone: m.user.phone,
+        status: m.status,
+        createdAt: m.user.createdAt,
+        school: m.school,
+        studentCourses: m.user.studentCourses,
+        enrollments: m.user.enrollments,
+      };
 
       const enrollments = student.enrollments;
       const now = new Date();
@@ -1204,23 +1290,37 @@ export const userRouter = router({
   instructorHeader: roleProtectedProcedure(["ADMIN", "SECRETARY"])
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const instructor = await ctx.db.user.findFirst({
-        where: { id: input.id, tenantId: ctx.tenantId, role: "INSTRUCTOR" },
+      const m = await ctx.db.membership.findFirst({
+        where: { tenantId: ctx.tenantId, userId: input.id, role: "INSTRUCTOR" },
         select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
           status: true,
           qualifiedCategories: true,
-          createdAt: true,
           school: { select: { id: true, name: true } },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              createdAt: true,
+            },
+          },
         },
       });
 
-      if (!instructor) {
+      if (!m) {
         throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
       }
+      const instructor = {
+        id: m.user.id,
+        name: m.user.name,
+        email: m.user.email,
+        phone: m.user.phone,
+        status: m.status,
+        qualifiedCategories: m.qualifiedCategories,
+        createdAt: m.user.createdAt,
+        school: m.school,
+      };
 
       let emailConfirmed = false;
       try {
@@ -1244,9 +1344,9 @@ export const userRouter = router({
   instructorOverview: roleProtectedProcedure(["ADMIN", "SECRETARY"])
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const instructorExists = await ctx.db.user.findFirst({
-        where: { id: input.id, tenantId: ctx.tenantId, role: "INSTRUCTOR" },
-        select: { id: true },
+      const instructorExists = await ctx.db.membership.findFirst({
+        where: { tenantId: ctx.tenantId, userId: input.id, role: "INSTRUCTOR" },
+        select: { userId: true },
       });
       if (!instructorExists) {
         throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
@@ -1286,9 +1386,9 @@ export const userRouter = router({
     .query(async ({ ctx, input }) => {
       const { id, page, pageSize } = input;
 
-      const instructorExists = await ctx.db.user.findFirst({
-        where: { id, tenantId: ctx.tenantId, role: "INSTRUCTOR" },
-        select: { id: true },
+      const instructorExists = await ctx.db.membership.findFirst({
+        where: { tenantId: ctx.tenantId, userId: id, role: "INSTRUCTOR" },
+        select: { userId: true },
       });
       if (!instructorExists) {
         throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });

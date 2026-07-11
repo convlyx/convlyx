@@ -84,16 +84,18 @@ export async function recordNotification(
   client: DbClient,
   p: RecordParams,
 ): Promise<PushJob | null> {
-  const user = await client.user.findFirst({
-    where: { id: p.userId },
+  // The recipient's school is per-tenant → read it from their Membership in
+  // this notification's tenant.
+  const member = await client.membership.findFirst({
+    where: { tenantId: p.tenantId, userId: p.userId },
     select: { schoolId: true },
   });
-  if (!user) return null;
+  if (!member) return null;
 
   await client.notification.create({
     data: {
       tenantId: p.tenantId,
-      schoolId: user.schoolId,
+      schoolId: member.schoolId,
       userId: p.userId,
       type: p.type,
       title: p.titleKey,
@@ -117,11 +119,11 @@ export async function recordNotifications(
   p: Omit<RecordParams, "userId"> & { userIds: string[] },
 ): Promise<PushJob | null> {
   if (p.userIds.length === 0) return null;
-  const users = await client.user.findMany({
-    where: { id: { in: p.userIds } },
-    select: { id: true, schoolId: true },
+  const members = await client.membership.findMany({
+    where: { tenantId: p.tenantId, userId: { in: p.userIds } },
+    select: { userId: true, schoolId: true },
   });
-  const schoolByUserId = new Map(users.map((u) => [u.id, u.schoolId]));
+  const schoolByUserId = new Map(members.map((m) => [m.userId, m.schoolId]));
   const recipients = p.userIds.filter((id) => schoolByUserId.has(id));
   if (recipients.length === 0) return null;
 

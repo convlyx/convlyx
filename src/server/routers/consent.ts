@@ -55,7 +55,7 @@ export const consentRouter = router({
 
       // Snapshot who accepted (ctx.user has no name/email — look them up).
       const me = await ctx.db.user.findFirst({
-        where: { id: ctx.user.id, tenantId: ctx.tenantId },
+        where: { id: ctx.user.id },
         select: { name: true, email: true },
       });
       if (!me) {

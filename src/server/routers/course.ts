@@ -73,14 +73,15 @@ export const courseRouter = router({
   start: roleProtectedProcedure(["ADMIN", "SECRETARY"])
     .input(startCourseSchema)
     .mutation(async ({ ctx, input }) => {
-      // Verify student belongs to tenant and is actually a student
-      const student = await ctx.db.user.findFirst({
+      // Verify student belongs to tenant and is actually a student (role +
+      // school are per-tenant → read from the Membership).
+      const student = await ctx.db.membership.findFirst({
         where: {
-          id: input.studentId,
+          userId: input.studentId,
           tenantId: ctx.tenantId,
           role: "STUDENT",
         },
-        select: { id: true, schoolId: true },
+        select: { schoolId: true },
       });
 
       if (!student) {
