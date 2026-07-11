@@ -116,9 +116,12 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   // backfilled, so a missing one genuinely means "not a member here".
   const membership = await db.membership.findFirst({
     where: { userId: ctx.user.id, tenantId: ctx.tenantId },
-    select: { role: true, schoolId: true, tenantId: true },
+    select: { role: true, schoolId: true, tenantId: true, status: true },
   });
-  if (!membership) {
+  // No membership ⇒ not a member here. INACTIVE membership ⇒ deactivated in
+  // this tenant (per-tenant status; a person may stay ACTIVE elsewhere). Both
+  // are unauthorized — don't leak the tenant's existence.
+  if (!membership || membership.status !== "ACTIVE") {
     throw new TRPCError({
       code: "UNAUTHORIZED",
       message: "auth.notAuthenticated",

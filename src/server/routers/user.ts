@@ -444,8 +444,8 @@ export const userRouter = router({
             message: "auth.insufficientPermissions",
           });
         }
-        const target = await ctx.db.user.findFirst({
-          where: { id: input.id, tenantId: ctx.tenantId },
+        const target = await ctx.db.membership.findFirst({
+          where: { tenantId: ctx.tenantId, userId: input.id },
           select: { role: true },
         });
         if (target && (target.role === "ADMIN" || target.role === "SECRETARY")) {
@@ -469,17 +469,28 @@ export const userRouter = router({
         });
       }
 
-      return ctx.db.user.updateMany({
-        where: { id: input.id, tenantId: ctx.tenantId },
-        data: {
-          name: input.name,
-          phone: input.phone,
-          role: input.role,
-          schoolId: input.schoolId,
-          ...(input.qualifiedCategories !== undefined && {
-            qualifiedCategories: input.qualifiedCategories,
-          }),
-        },
+      // Role / school / qualifications are per-tenant → authoritative on the
+      // Membership (read by roleProtectedProcedure + the roster). Name/phone are
+      // global identity on User. Write both in one transaction; the User
+      // columns stay in sync for the not-yet-migrated read paths until #4 drops
+      // them.
+      const membershipData = {
+        role: input.role,
+        schoolId: input.schoolId,
+        ...(input.qualifiedCategories !== undefined && {
+          qualifiedCategories: input.qualifiedCategories,
+        }),
+      };
+      return ctx.db.$transaction(async (tx) => {
+        const updated = await tx.user.updateMany({
+          where: { id: input.id, tenantId: ctx.tenantId },
+          data: { name: input.name, phone: input.phone, ...membershipData },
+        });
+        await tx.membership.updateMany({
+          where: { tenantId: ctx.tenantId, userId: input.id },
+          data: membershipData,
+        });
+        return updated;
       });
     }),
 
@@ -496,8 +507,8 @@ export const userRouter = router({
       // Secretaries can deactivate students/instructors only — never other
       // ADMINs or SECRETARIES. Same rule as user.update.
       if (ctx.membership.role !== "ADMIN") {
-        const target = await ctx.db.user.findFirst({
-          where: { id: input.id, tenantId: ctx.tenantId },
+        const target = await ctx.db.membership.findFirst({
+          where: { tenantId: ctx.tenantId, userId: input.id },
           select: { role: true },
         });
         if (target && (target.role === "ADMIN" || target.role === "SECRETARY")) {
@@ -512,6 +523,12 @@ export const userRouter = router({
       const result = await ctx.db.$transaction(async (tx) => {
         const updated = await tx.user.updateMany({
           where: { id: input.id, tenantId: ctx.tenantId },
+          data: { status: "INACTIVE" },
+        });
+        // Status is per-tenant → deactivate the Membership too (the auth gate
+        // now reads membership.status). User.status kept in sync for #4.
+        await tx.membership.updateMany({
+          where: { tenantId: ctx.tenantId, userId: input.id },
           data: { status: "INACTIVE" },
         });
 
@@ -538,8 +555,8 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       // Same SECRETARY guard as deactivate.
       if (ctx.membership.role !== "ADMIN") {
-        const target = await ctx.db.user.findFirst({
-          where: { id: input.id, tenantId: ctx.tenantId },
+        const target = await ctx.db.membership.findFirst({
+          where: { tenantId: ctx.tenantId, userId: input.id },
           select: { role: true },
         });
         if (target && (target.role === "ADMIN" || target.role === "SECRETARY")) {
@@ -550,9 +567,16 @@ export const userRouter = router({
         }
       }
 
-      return ctx.db.user.updateMany({
-        where: { id: input.id, tenantId: ctx.tenantId },
-        data: { status: "ACTIVE" },
+      return ctx.db.$transaction(async (tx) => {
+        const updated = await tx.user.updateMany({
+          where: { id: input.id, tenantId: ctx.tenantId },
+          data: { status: "ACTIVE" },
+        });
+        await tx.membership.updateMany({
+          where: { tenantId: ctx.tenantId, userId: input.id },
+          data: { status: "ACTIVE" },
+        });
+        return updated;
       });
     }),
 
@@ -570,9 +594,9 @@ export const userRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "users.cannotDeleteSelf" });
       }
 
-      const target = await ctx.db.user.findFirst({
-        where: { id: input.id, tenantId: ctx.tenantId },
-        select: { id: true, role: true },
+      const target = await ctx.db.membership.findFirst({
+        where: { tenantId: ctx.tenantId, userId: input.id },
+        select: { userId: true, role: true },
       });
       if (!target) {
         throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
@@ -581,7 +605,7 @@ export const userRouter = router({
         throw new TRPCError({ code: "FORBIDDEN", message: "users.cannotDeleteStaff" });
       }
 
-      const { deletable } = await computeDeletability(ctx.db, ctx.tenantId, target.id, target.role);
+      const { deletable } = await computeDeletability(ctx.db, ctx.tenantId, target.userId, target.role);
       if (!deletable) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "users.cannotDeleteHasData" });
       }
@@ -590,9 +614,9 @@ export const userRouter = router({
       // throw to roll back so we don't leave a Prisma-less but still-loggable
       // auth row in an inconsistent state.
       await ctx.db.$transaction(async (tx) => {
-        await tx.user.delete({ where: { id: target.id } });
+        await tx.user.delete({ where: { id: target.userId } });
         // 404 = auth row already gone, which is the desired end state.
-        const { error } = await supabaseAdmin.auth.admin.deleteUser(target.id);
+        const { error } = await supabaseAdmin.auth.admin.deleteUser(target.userId);
         if (error && error.status !== 404) {
           logger.error("user.delete: supabase auth delete failed", { error });
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "users.deleteFailed" });
@@ -620,9 +644,9 @@ export const userRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "users.cannotAnonymizeSelf" });
       }
 
-      const target = await ctx.db.user.findFirst({
-        where: { id: input.id, tenantId: ctx.tenantId },
-        select: { id: true, role: true },
+      const target = await ctx.db.membership.findFirst({
+        where: { tenantId: ctx.tenantId, userId: input.id },
+        select: { userId: true, role: true },
       });
       if (!target) {
         throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
@@ -635,11 +659,11 @@ export const userRouter = router({
       // the user's UUID make the placeholder unique enough to avoid collisions
       // with other anonymized users in the same tenant, without dragging the
       // full UUID into anything an operator might still see in the UI.
-      const placeholderEmail = `anonimizado-${target.id.slice(0, 8)}@convlyx.invalid`;
+      const placeholderEmail = `anonimizado-${target.userId.slice(0, 8)}@convlyx.invalid`;
 
       await ctx.db.$transaction(async (tx) => {
         await tx.user.update({
-          where: { id: target.id },
+          where: { id: target.userId },
           data: {
             name: "Anonimizado",
             email: placeholderEmail,
@@ -647,16 +671,22 @@ export const userRouter = router({
             status: "INACTIVE",
           },
         });
+        // Deactivate the membership too (per-tenant status; the auth gate reads
+        // membership.status).
+        await tx.membership.updateMany({
+          where: { tenantId: ctx.tenantId, userId: target.userId },
+          data: { status: "INACTIVE" },
+        });
         // Notifications + push subscriptions hold name-adjacent personal data
         // and don't need to survive anonymization. Wipe them explicitly
         // (cascade rules only fire on user delete, which we're not doing).
-        await tx.notification.deleteMany({ where: { userId: target.id } });
-        await tx.pushSubscription.deleteMany({ where: { userId: target.id } });
+        await tx.notification.deleteMany({ where: { userId: target.userId } });
+        await tx.pushSubscription.deleteMany({ where: { userId: target.userId } });
         // Lock the auth account so the person can't log in again. If the
         // auth row is already gone (404), accept that as success — that's
         // the end state we want. Anything else rolls the transaction back
         // so the Prisma row stays identifiable.
-        const { error } = await supabaseAdmin.auth.admin.deleteUser(target.id);
+        const { error } = await supabaseAdmin.auth.admin.deleteUser(target.userId);
         if (error && error.status !== 404) {
           logger.error("user.anonymize: supabase auth delete failed", { error });
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "users.deleteFailed" });
