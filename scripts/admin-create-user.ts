@@ -201,6 +201,19 @@ async function runCreate(
       },
     });
 
+    // Per-tenant Membership (Approach 1a): role/school live here, and
+    // `protectedProcedure` REQUIRES one — without it the user authenticates
+    // but is rejected from every procedure. Mirror the tRPC create path.
+    await tx.membership.create({
+      data: {
+        tenantId: school.tenantId,
+        userId: authUserId!,
+        schoolId: school.id,
+        role,
+        qualifiedCategories: role === "INSTRUCTOR" ? qualifiedCategories : [],
+      },
+    });
+
     if (role === "STUDENT" && initialCategory) {
       await tx.studentCourse.create({
         data: {
