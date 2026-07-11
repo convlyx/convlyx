@@ -9,7 +9,7 @@ export const preferredRegion = "dub1";
 export async function GET(request: NextRequest) {
   // Rate limit: 2 requests per minute
   const ip = getClientIp(request.headers);
-  const { success } = rateLimit({ key: `cron:${ip}`, limit: 2, windowMs: 60000 });
+  const { success } = await rateLimit({ key: `cron:${ip}`, limit: 2, windowMs: 60000 });
   if (!success) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

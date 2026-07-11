@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const ip = getClientIp(request.headers);
-  const { success } = rateLimit({ key: `push-subscribe:${ip}`, limit: 5, windowMs: 60000 });
+  const { success } = await rateLimit({ key: `push-subscribe:${ip}`, limit: 5, windowMs: 60000 });
   if (!success) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

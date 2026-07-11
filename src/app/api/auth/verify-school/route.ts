@@ -9,7 +9,7 @@ export const preferredRegion = "dub1";
 export async function GET(request: NextRequest) {
   // Rate limit: 20 requests per minute per IP
   const ip = getClientIp(request.headers);
-  const { success } = rateLimit({ key: `verify-school:${ip}`, limit: 20, windowMs: 60000 });
+  const { success } = await rateLimit({ key: `verify-school:${ip}`, limit: 20, windowMs: 60000 });
   if (!success) {
     return NextResponse.json({ valid: false }, { status: 429 });
   }
