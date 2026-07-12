@@ -53,10 +53,11 @@ export const consentRouter = router({
         });
       }
 
-      // Snapshot who accepted (ctx.user has no name/email — look them up).
-      const me = await ctx.db.user.findFirst({
-        where: { id: ctx.user.id },
-        select: { name: true, email: true },
+      // Snapshot who accepted. Per-tenant name lives on the membership; email
+      // is the global identity on the user.
+      const me = await ctx.db.membership.findFirst({
+        where: { tenantId: ctx.tenantId, userId: ctx.user.id },
+        select: { name: true, user: { select: { email: true } } },
       });
       if (!me) {
         throw new TRPCError({ code: "NOT_FOUND", message: "users.notFound" });
@@ -65,7 +66,7 @@ export const consentRouter = router({
       const base = {
         tenantId: ctx.tenantId,
         userId: ctx.user.id,
-        acceptedByEmail: me.email,
+        acceptedByEmail: me.user.email,
         acceptedByName: me.name,
         ipAddress: ctx.ip,
       };

@@ -12,6 +12,7 @@ import {
 import { recordNotification, dispatchPush, formatClassTime, type PushJob } from "../lib/notifications";
 import { hasStudentScheduleConflict } from "../lib/schedule-conflict";
 import { getStudentClassAccess } from "../lib/student-access";
+import { userNameSelect, tenantName } from "../lib/tenant-name";
 import { studentCheckInSchema } from "@/lib/validations/checkin";
 import { verifyToken } from "../lib/checkin-token";
 
@@ -385,7 +386,7 @@ export const enrollmentRouter = router({
             where: { status: "ENROLLED" },
             select: {
               id: true,
-              student: { select: { id: true, name: true } },
+              student: { select: { id: true, ...userNameSelect(ctx.tenantId) } },
             },
             orderBy: { student: { name: "asc" } },
           },
@@ -393,7 +394,13 @@ export const enrollmentRouter = router({
         orderBy: { endsAt: "desc" },
       });
 
-      return sessions;
+      return sessions.map((s) => ({
+        ...s,
+        enrollments: s.enrollments.map((e) => ({
+          id: e.id,
+          student: { id: e.student.id, name: tenantName(e.student) },
+        })),
+      }));
     }),
 
   /**
@@ -506,12 +513,26 @@ export const enrollmentRouter = router({
             startsAt: true,
             endsAt: true,
             status: true,
-            instructor: { select: { name: true } },
+            instructor: { select: { ...userNameSelect(ctx.tenantId) } },
             school: { select: { cancellationNoticeHours: true } },
           },
         },
-        student: { select: { id: true, name: true } },
+        student: { select: { id: true, ...userNameSelect(ctx.tenantId) } },
       } as const;
+
+      // Flatten per-tenant names (instructor on the session, and the student).
+      const shape = <
+        T extends {
+          session: { instructor: { name: string; memberships: { name: string }[] } };
+          student: { id: string; name: string; memberships: { name: string }[] };
+        },
+      >(
+        i: T,
+      ) => ({
+        ...i,
+        session: { ...i.session, instructor: { name: tenantName(i.session.instructor) } },
+        student: { id: i.student.id, name: tenantName(i.student) },
+      });
 
       if (input?.page && input?.pageSize) {
         const [items, total] = await ctx.db.$transaction([
@@ -524,7 +545,7 @@ export const enrollmentRouter = router({
           }),
           ctx.db.enrollment.count({ where }),
         ]);
-        return { items, total };
+        return { items: items.map(shape), total };
       }
 
       const items = await ctx.db.enrollment.findMany({
@@ -532,7 +553,7 @@ export const enrollmentRouter = router({
         select,
         orderBy: { enrolledAt: "desc" },
       });
-      return { items, total: items.length };
+      return { items: items.map(shape), total: items.length };
     }),
 
   /**

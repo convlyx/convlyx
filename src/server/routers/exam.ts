@@ -9,6 +9,7 @@ import {
 } from "@/lib/validations/exam";
 import { recordNotification, dispatchPush, formatClassTime, type PushJob } from "../lib/notifications";
 import { hasInstructorScheduleConflict, hasStudentScheduleConflict } from "../lib/schedule-conflict";
+import { userNameSelect, tenantName } from "../lib/tenant-name";
 
 // Exams occupy a 60-min slot starting at `scheduledAt` (UI convention).
 const EXAM_DURATION_MS = 60 * 60 * 1000;
@@ -34,7 +35,7 @@ export const examRouter = router({
             ? { instructorId: ctx.user.id }
             : {};
 
-      return ctx.db.exam.findMany({
+      const rows = await ctx.db.exam.findMany({
         where: {
           tenantId: ctx.tenantId,
           ...roleFilter,
@@ -58,13 +59,24 @@ export const examRouter = router({
             select: {
               id: true,
               category: true,
-              student: { select: { id: true, name: true } },
+              student: { select: { id: true, ...userNameSelect(ctx.tenantId) } },
             },
           },
-          instructor: { select: { id: true, name: true } },
+          instructor: { select: { id: true, ...userNameSelect(ctx.tenantId) } },
         },
         orderBy: { scheduledAt: "asc" },
       });
+
+      return rows.map((e) => ({
+        ...e,
+        course: {
+          ...e.course,
+          student: { id: e.course.student.id, name: tenantName(e.course.student) },
+        },
+        instructor: e.instructor
+          ? { id: e.instructor.id, name: tenantName(e.instructor) }
+          : null,
+      }));
     }),
 
   getById: protectedProcedure
@@ -85,10 +97,10 @@ export const examRouter = router({
             select: {
               id: true,
               category: true,
-              student: { select: { id: true, name: true, email: true } },
+              student: { select: { id: true, email: true, ...userNameSelect(ctx.tenantId) } },
             },
           },
-          instructor: { select: { id: true, name: true } },
+          instructor: { select: { id: true, ...userNameSelect(ctx.tenantId) } },
         },
       });
 
@@ -107,7 +119,20 @@ export const examRouter = router({
         });
       }
 
-      return exam;
+      return {
+        ...exam,
+        course: {
+          ...exam.course,
+          student: {
+            id: exam.course.student.id,
+            email: exam.course.student.email,
+            name: tenantName(exam.course.student),
+          },
+        },
+        instructor: exam.instructor
+          ? { id: exam.instructor.id, name: tenantName(exam.instructor) }
+          : null,
+      };
     }),
 
   schedule: roleProtectedProcedure(["ADMIN", "SECRETARY"])
@@ -246,7 +271,7 @@ export const examRouter = router({
             type: true,
             scheduledAt: true,
             course: {
-              select: { student: { select: { id: true, name: true } } },
+              select: { student: { select: { id: true, ...userNameSelect(ctx.tenantId) } } },
             },
           },
         });
@@ -280,7 +305,7 @@ export const examRouter = router({
               type: "exam.scheduled",
               titleKey: "notifications.examAccompanyTitle",
               messageKey: "notifications.examAccompanyMessage",
-              params: { student: created.course.student.name, time: timeStr },
+              params: { student: tenantName(created.course.student), time: timeStr },
             }),
           );
         }
@@ -289,7 +314,13 @@ export const examRouter = router({
       });
       dispatchPush(ctx.db, jobs);
 
-      return exam;
+      return {
+        ...exam,
+        course: {
+          ...exam.course,
+          student: { id: exam.course.student.id, name: tenantName(exam.course.student) },
+        },
+      };
     }),
 
   update: roleProtectedProcedure(["ADMIN", "SECRETARY"])

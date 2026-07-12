@@ -15,6 +15,7 @@ import {
   type PushJob,
 } from "../lib/notifications";
 import { getStudentClassAccess } from "../lib/student-access";
+import { userNameSelect, tenantName } from "../lib/tenant-name";
 import { hasInstructorScheduleConflict, hasStudentScheduleConflict } from "../lib/schedule-conflict";
 import { wallClockToUTC } from "@/lib/dates";
 import { checkInSessionSchema } from "@/lib/validations/checkin";
@@ -101,10 +102,15 @@ export const classRouter = router({
         endsAt: true,
         capacity: true,
         status: true,
-        instructor: { select: { id: true, name: true } },
+        instructor: { select: { id: true, ...userNameSelect(ctx.tenantId) } },
         school: { select: { id: true, name: true, timeZone: true } },
         _count: { select: { enrollments: true } },
       } as const;
+
+      // Flatten the instructor's per-tenant name onto the shape the client expects.
+      const shape = <T extends { instructor: { id: string; name: string; memberships: { name: string }[] } }>(
+        row: T,
+      ) => ({ ...row, instructor: { id: row.instructor.id, name: tenantName(row.instructor) } });
 
       // When paginating, use a transaction to fetch the page + total in a
       // single round-trip. Otherwise return the full set (calendar/dashboards
@@ -120,7 +126,7 @@ export const classRouter = router({
           }),
           ctx.db.classSession.count({ where }),
         ]);
-        return { items, total };
+        return { items: items.map(shape), total };
       }
 
       const items = await ctx.db.classSession.findMany({
@@ -128,7 +134,7 @@ export const classRouter = router({
         select,
         orderBy: { startsAt: "asc" },
       });
-      return { items, total: items.length };
+      return { items: items.map(shape), total: items.length };
     }),
 
   getById: protectedProcedure
@@ -146,32 +152,47 @@ export const classRouter = router({
           capacity: true,
           status: true,
           createdAt: true,
-          instructor: { select: { id: true, name: true } },
+          instructor: { select: { id: true, ...userNameSelect(ctx.tenantId) } },
           school: { select: { id: true, name: true, cancellationNoticeHours: true, timeZone: true } },
-          createdBy: { select: { id: true, name: true } },
+          createdBy: { select: { id: true, ...userNameSelect(ctx.tenantId) } },
           enrollments: {
             select: {
               id: true,
               status: true,
               notes: true,
               enrolledAt: true,
-              student: { select: { id: true, name: true, email: true } },
+              student: { select: { id: true, email: true, ...userNameSelect(ctx.tenantId) } },
             },
           },
         },
       });
 
+      if (!result) return null;
+
+      // Flatten per-tenant names onto the client-facing shape.
+      const shaped = {
+        ...result,
+        instructor: { id: result.instructor.id, name: tenantName(result.instructor) },
+        createdBy: result.createdBy
+          ? { id: result.createdBy.id, name: tenantName(result.createdBy) }
+          : null,
+        enrollments: result.enrollments.map((e) => ({
+          ...e,
+          student: { id: e.student.id, email: e.student.email, name: tenantName(e.student) },
+        })),
+      };
+
       // Students only see their own enrollment, with notes stripped
-      if (result && ctx.membership.role === "STUDENT") {
+      if (ctx.membership.role === "STUDENT") {
         return {
-          ...result,
-          enrollments: result.enrollments
+          ...shaped,
+          enrollments: shaped.enrollments
             .filter((e) => e.student.id === ctx.user.id)
             .map((e) => ({ ...e, notes: null })),
         };
       }
 
-      return result;
+      return shaped;
     }),
 
   /** Open the QR self-check-in window for a theory class (instructor/staff). */
@@ -251,7 +272,7 @@ export const classRouter = router({
           checkInSecret: true,
           enrollments: {
             where: { checkedInAt: { not: null } },
-            select: { id: true, checkedInAt: true, student: { select: { name: true } } },
+            select: { id: true, checkedInAt: true, student: { select: { ...userNameSelect(ctx.tenantId) } } },
             orderBy: { checkedInAt: "desc" },
           },
         },
@@ -273,7 +294,7 @@ export const classRouter = router({
         attendedCount: session.enrollments.length,
         recentCheckIns: session.enrollments
           .slice(0, 8)
-          .map((e) => ({ id: e.id, name: e.student.name, checkedInAt: e.checkedInAt })),
+          .map((e) => ({ id: e.id, name: tenantName(e.student), checkedInAt: e.checkedInAt })),
       };
     }),
 
@@ -557,8 +578,8 @@ export const classRouter = router({
         // Notify on instructor change
         if (instructorChanged) {
           const timeStr = formatClassTime(new Date(input.startsAt), session.school.timeZone);
-          const newInstructor = await tx.user.findFirst({
-            where: { id: input.instructorId },
+          const newInstructor = await tx.membership.findFirst({
+            where: { tenantId: ctx.tenantId, userId: input.instructorId },
             select: { name: true },
           });
           const newInstructorName = newInstructor?.name ?? "";
@@ -743,8 +764,8 @@ export const classRouter = router({
 
       // Notify admins/secretaries
       const [instructor, admins] = await Promise.all([
-        ctx.db.user.findFirst({
-          where: { id: ctx.user.id },
+        ctx.db.membership.findFirst({
+          where: { tenantId: ctx.tenantId, userId: ctx.user.id },
           select: { name: true },
         }),
         ctx.db.membership.findMany({

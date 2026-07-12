@@ -7,6 +7,7 @@ import { recordNotification, dispatchPush, type PushJob } from "../lib/notificat
 import { logger } from "@/lib/logger";
 import { Prisma } from "@/generated/prisma/client";
 import { createUserAccount, mapSupabaseAuthError } from "../lib/create-user";
+import { userNameSelect, tenantName } from "../lib/tenant-name";
 
 // Construction-time fallback: Supabase JS throws if URL/key are empty,
 // which would crash the module on import in environments where env vars
@@ -767,7 +768,7 @@ export const userRouter = router({
                   result: true,
                   location: true,
                   examinerNotes: true,
-                  instructor: { select: { id: true, name: true } },
+                  instructor: { select: { id: true, ...userNameSelect(ctx.tenantId) } },
                   createdAt: true,
                   updatedAt: true,
                 },
@@ -792,7 +793,7 @@ export const userRouter = router({
                   startsAt: true,
                   endsAt: true,
                   status: true,
-                  instructor: { select: { id: true, name: true } },
+                  instructor: { select: { id: true, ...userNameSelect(ctx.tenantId) } },
                 },
               },
             },
@@ -819,7 +820,7 @@ export const userRouter = router({
               type: true,
               scheduledAt: true,
               result: true,
-              course: { select: { category: true, student: { select: { id: true, name: true } } } },
+              course: { select: { category: true, student: { select: { id: true, ...userNameSelect(ctx.tenantId) } } } },
             },
             orderBy: { scheduledAt: "asc" },
           },
@@ -880,10 +881,34 @@ export const userRouter = router({
         exportedAt: new Date().toISOString(),
         format: "convlyx.gdpr.v1",
         profile,
-        studentCourses,
-        enrollments,
+        // Flatten per-tenant names on nested exam/session instructors + the
+        // accompanied student.
+        studentCourses: studentCourses.map((c) => ({
+          ...c,
+          exams: c.exams.map((ex) => ({
+            ...ex,
+            instructor: ex.instructor
+              ? { id: ex.instructor.id, name: tenantName(ex.instructor) }
+              : null,
+          })),
+        })),
+        enrollments: enrollments.map((e) => ({
+          ...e,
+          session: {
+            ...e.session,
+            instructor: e.session.instructor
+              ? { id: e.session.instructor.id, name: tenantName(e.session.instructor) }
+              : null,
+          },
+        })),
         instructedSessions,
-        accompaniedExams,
+        accompaniedExams: accompaniedExams.map((ex) => ({
+          ...ex,
+          course: {
+            ...ex.course,
+            student: { id: ex.course.student.id, name: tenantName(ex.course.student) },
+          },
+        })),
         notifications,
         pushSubscriptions,
       };
@@ -1047,7 +1072,7 @@ export const userRouter = router({
               scheduledAt: true,
               result: true,
               location: true,
-              instructor: { select: { id: true, name: true } },
+              instructor: { select: { id: true, ...userNameSelect(ctx.tenantId) } },
             },
             orderBy: { scheduledAt: "desc" },
           },
@@ -1080,7 +1105,7 @@ export const userRouter = router({
                     category: true,
                     startsAt: true,
                     endsAt: true,
-                    instructor: { select: { name: true } },
+                    instructor: { select: { ...userNameSelect(ctx.tenantId) } },
                   },
                 },
               },
@@ -1097,10 +1122,20 @@ export const userRouter = router({
         const practicalScheduled = courseEnrollments.filter((e) => e.status === "ENROLLED").length;
         return {
           ...course,
+          // Flatten per-tenant instructor names on exams + practical sessions.
+          exams: course.exams.map((ex) => ({
+            ...ex,
+            instructor: ex.instructor
+              ? { id: ex.instructor.id, name: tenantName(ex.instructor) }
+              : null,
+          })),
           practicalAttended,
           practicalMissed,
           practicalScheduled,
-          practicalEnrollments: courseEnrollments,
+          practicalEnrollments: courseEnrollments.map((e) => ({
+            ...e,
+            session: { ...e.session, instructor: { name: tenantName(e.session.instructor) } },
+          })),
         };
       });
 
@@ -1146,11 +1181,20 @@ export const userRouter = router({
             startsAt: true,
             endsAt: true,
             status: true,
-            instructor: { select: { name: true } },
+            instructor: { select: { ...userNameSelect(ctx.tenantId) } },
           },
         },
       } as const;
       const orderBy = { enrolledAt: "desc" } as const;
+
+      const shape = <
+        T extends { session: { instructor: { name: string; memberships: { name: string }[] } } },
+      >(
+        i: T,
+      ) => ({
+        ...i,
+        session: { ...i.session, instructor: { name: tenantName(i.session.instructor) } },
+      });
 
       if (page && pageSize) {
         const [items, total] = await Promise.all([
@@ -1163,11 +1207,11 @@ export const userRouter = router({
           }),
           ctx.db.enrollment.count({ where }),
         ]);
-        return { items, total };
+        return { items: items.map(shape), total };
       }
 
       const items = await ctx.db.enrollment.findMany({ where, select, orderBy });
-      return { items, total: items.length };
+      return { items: items.map(shape), total: items.length };
     }),
 
   /** Student profile with enrollment stats, course history and exam history */
@@ -1208,7 +1252,7 @@ export const userRouter = router({
                       scheduledAt: true,
                       result: true,
                       location: true,
-                      instructor: { select: { id: true, name: true } },
+                      instructor: { select: { id: true, ...userNameSelect(ctx.tenantId) } },
                     },
                     orderBy: { scheduledAt: "desc" },
                   },
@@ -1229,7 +1273,7 @@ export const userRouter = router({
                       startsAt: true,
                       endsAt: true,
                       status: true,
-                      instructor: { select: { name: true } },
+                      instructor: { select: { ...userNameSelect(ctx.tenantId) } },
                     },
                   },
                 },
@@ -1251,8 +1295,20 @@ export const userRouter = router({
         status: m.status,
         createdAt: m.user.createdAt,
         school: m.school,
-        studentCourses: m.user.studentCourses,
-        enrollments: m.user.enrollments,
+        // Flatten per-tenant instructor names on exam + session history.
+        studentCourses: m.user.studentCourses.map((c) => ({
+          ...c,
+          exams: c.exams.map((ex) => ({
+            ...ex,
+            instructor: ex.instructor
+              ? { id: ex.instructor.id, name: tenantName(ex.instructor) }
+              : null,
+          })),
+        })),
+        enrollments: m.user.enrollments.map((e) => ({
+          ...e,
+          session: { ...e.session, instructor: { name: tenantName(e.session.instructor) } },
+        })),
       };
 
       const enrollments = student.enrollments;

@@ -1,4 +1,5 @@
 import { router, roleProtectedProcedure } from "../trpc";
+import { userNameSelect, tenantName } from "../lib/tenant-name";
 import {
   analyticsRangeSchema,
   attendanceTrendSchema,
@@ -391,7 +392,7 @@ export const analyticsRouter = router({
           startsAt: true,
           endsAt: true,
           instructorId: true,
-          instructor: { select: { name: true } },
+          instructor: { select: { ...userNameSelect(ctx.tenantId) } },
           enrollments: {
             select: { status: true },
             where: { status: { in: ["ATTENDED", "NO_SHOW"] } },
@@ -411,7 +412,7 @@ export const analyticsRouter = router({
       for (const s of sessions) {
         const b = buckets.get(s.instructorId) ?? {
           instructorId: s.instructorId,
-          name: s.instructor.name,
+          name: tenantName(s.instructor),
           classes: 0,
           minutes: 0,
           attended: 0,
