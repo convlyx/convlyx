@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { trpc } from "@/lib/trpc";
+import { pickSchoolIdByHost } from "@/lib/subdomain";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody,
 } from "@/components/ui/dialog";
@@ -28,10 +29,12 @@ export function BulkImportDialog({ buttonLabel }: { buttonLabel?: string } = {})
 
   const { data: schools } = trpc.school.list.useQuery(undefined, { enabled: open });
 
-  // Auto-select the only school (mirrors the single-create dialog).
+  // Default to the current subdomain's school (mirrors the single-create
+  // dialog); a tenant may have several schools.
   useEffect(() => {
-    if (open && !bulk.schoolId && schools?.length === 1) {
-      bulk.setSchoolId(schools[0].id);
+    if (open && !bulk.schoolId) {
+      const id = pickSchoolIdByHost(schools ?? [], typeof window !== "undefined" ? window.location.host : null);
+      if (id) bulk.setSchoolId(id);
     }
   }, [open, schools, bulk]);
 

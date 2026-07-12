@@ -36,3 +36,22 @@ export function extractSubdomain(host: string | null | undefined): string | null
 
   return null;
 }
+
+/**
+ * Pick the school a create form should default to: a tenant can have several
+ * schools (each on its own subdomain), and "the subdomain you're on is the
+ * school you mean". Matches the school whose `subdomain` equals the current
+ * host's, falling back to the sole school for single-school tenants. Returns
+ * "" when it can't be determined (caller should surface an error rather than
+ * submit a blank school). Pass `host` from `window.location.host` client-side.
+ */
+export function pickSchoolIdByHost(
+  schools: ReadonlyArray<{ id: string; subdomain: string }>,
+  host: string | null,
+): string {
+  if (schools.length === 0) return "";
+  const sub = extractSubdomain(host);
+  const match = sub ? schools.find((s) => s.subdomain === sub) : undefined;
+  if (match) return match.id;
+  return schools.length === 1 ? schools[0]!.id : "";
+}

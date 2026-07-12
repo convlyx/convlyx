@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { trpc } from "@/lib/trpc";
+import { pickSchoolIdByHost } from "@/lib/subdomain";
 import { createUserSchema, type CreateUserInput } from "@/lib/validations/user";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogBody,
@@ -48,12 +49,15 @@ export function CreateUserDialog({ fixedRole, allowedRoles, buttonLabel }: Creat
   const visibleRoles = allowedRoles && allowedRoles.length > 0 ? allowedRoles : ROLES;
   const defaultRole = fixedRole ?? visibleRoles[0];
 
+  const pickSchoolId = (list: typeof schools): string =>
+    pickSchoolIdByHost(list ?? [], typeof window !== "undefined" ? window.location.host : null);
+
   const buildDefaults = (): CreateUserInput => ({
     name: "",
     email: "",
     phone: "",
     role: defaultRole,
-    schoolId: schools?.length === 1 ? schools[0].id : "",
+    schoolId: pickSchoolId(schools),
     initialCategory: undefined,
     qualifiedCategories: [],
   });
@@ -63,10 +67,14 @@ export function CreateUserDialog({ fixedRole, allowedRoles, buttonLabel }: Creat
     defaultValues: buildDefaults(),
   });
 
-  // Auto-select when only one school
+  // Default the school to the current subdomain's school once the list loads.
   const schoolId = watch("schoolId");
   useEffect(() => {
-    if (!schoolId && schools?.length === 1) setValue("schoolId", schools[0].id);
+    if (!schoolId) {
+      const id = pickSchoolId(schools);
+      if (id) setValue("schoolId", id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schools, schoolId, setValue]);
 
   // Keep role in sync if fixedRole is set
@@ -151,8 +159,13 @@ export function CreateUserDialog({ fixedRole, allowedRoles, buttonLabel }: Creat
                     {errors.role && <p className="text-sm text-destructive">{errors.role.message}</p>}
                   </div>
                 )}
-                {/* Hidden school field — auto-set */}
+                {/* Hidden school field — defaulted to the current subdomain's
+                    school. Surface an error if it couldn't be resolved so the
+                    submit never fails silently. */}
                 <input type="hidden" {...register("schoolId")} />
+                {errors.schoolId && (
+                  <p className="text-sm text-destructive">{t("users.schoolRequired")}</p>
+                )}
 
                 {role === "STUDENT" && (
                   <div className="grid gap-2">

@@ -6,6 +6,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod/v4";
 import { trpc } from "@/lib/trpc";
+import { pickSchoolIdByHost } from "@/lib/subdomain";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogBody,
 } from "@/components/ui/dialog";
@@ -183,8 +184,12 @@ export function CreateClassDialog({
   const schoolId = watch("schoolId");
   const instructorId = watch("instructorId");
   const category = watch("category");
+  // Default to the current subdomain's school (a tenant may have several).
   useEffect(() => {
-    if (!schoolId && schools?.length === 1) setValue("schoolId", schools[0].id);
+    if (!schoolId) {
+      const id = pickSchoolIdByHost(schools ?? [], typeof window !== "undefined" ? window.location.host : null);
+      if (id) setValue("schoolId", id);
+    }
   }, [schools, schoolId, setValue]);
 
   const filteredInstructors = useQualifiedInstructors({

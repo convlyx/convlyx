@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractSubdomain } from "@/lib/subdomain";
+import { extractSubdomain, pickSchoolIdByHost } from "@/lib/subdomain";
 
 describe("extractSubdomain", () => {
   it("extracts the first label of a production tenant host", () => {
@@ -42,5 +42,34 @@ describe("extractSubdomain", () => {
   it("returns reserved labels as-is (callers filter them)", () => {
     expect(extractSubdomain("admin.convlyx.com")).toBe("admin");
     expect(extractSubdomain("www.convlyx.com")).toBe("www");
+  });
+});
+
+describe("pickSchoolIdByHost", () => {
+  const schools = [
+    { id: "s-demo", subdomain: "demo" },
+    { id: "s-testes", subdomain: "testes" },
+    { id: "s-third", subdomain: "third" },
+  ];
+
+  it("picks the school matching the current subdomain (multi-school tenant)", () => {
+    expect(pickSchoolIdByHost(schools, "testes.convlyx.com")).toBe("s-testes");
+    expect(pickSchoolIdByHost(schools, "demo.convlyx.com:443")).toBe("s-demo");
+    expect(pickSchoolIdByHost(schools, "third.localhost:3000")).toBe("s-third");
+  });
+
+  it("falls back to the sole school for a single-school tenant", () => {
+    expect(pickSchoolIdByHost([{ id: "only", subdomain: "acme" }], "acme.convlyx.com")).toBe("only");
+    // Even if the host doesn't match, one school is unambiguous.
+    expect(pickSchoolIdByHost([{ id: "only", subdomain: "acme" }], "convlyx.com")).toBe("only");
+  });
+
+  it("returns '' when multiple schools and none match the host", () => {
+    expect(pickSchoolIdByHost(schools, "convlyx.com")).toBe("");
+    expect(pickSchoolIdByHost(schools, null)).toBe("");
+  });
+
+  it("returns '' for an empty school list", () => {
+    expect(pickSchoolIdByHost([], "demo.convlyx.com")).toBe("");
   });
 });
