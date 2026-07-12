@@ -2,7 +2,7 @@ import { describe, it, expect, afterAll } from "vitest";
 import { db } from "@/server/db";
 import { createCallerFactory } from "@/server/trpc";
 import { appRouter } from "@/server/routers/_app";
-import { createTestTenant, cleanupTenants, type TestTenant } from "./helpers/tenant";
+import { createTestTenant, cleanupTenants, testLoadMembership, type TestTenant } from "./helpers/tenant";
 import { LEGAL_VERSIONS } from "@/lib/legal";
 
 const createCaller = createCallerFactory(appRouter);
@@ -38,6 +38,7 @@ describe("consent router", () => {
       tenantId: A.tenantId,
       ip: null,
       user: { id: A.studentUserId },
+      loadMembership: testLoadMembership(A.studentUserId, A.tenantId),
     });
     await expect(asStudent.consent.accept({ type: "CONTROLLER_DPA" })).rejects.toThrow();
     await asStudent.consent.accept({ type: "USER_TERMS" });
@@ -52,6 +53,7 @@ describe("consent router", () => {
       tenantId: A.tenantId,
       ip: null,
       user: { id: A.instructorUserId },
+      loadMembership: testLoadMembership(A.instructorUserId, A.tenantId),
     });
 
     // Fresh: needs acceptance, but it's a first-time prompt — not an update.

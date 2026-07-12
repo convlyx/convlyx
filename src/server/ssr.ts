@@ -10,6 +10,7 @@ import superjson from "superjson";
 import { db } from "@/server/db";
 import { appRouter } from "@/server/routers/_app";
 import { getDashboardUser } from "@/server/dashboard-user";
+import type { TRPCContext } from "@/server/trpc";
 
 /**
  * tRPC server-side helpers for the current request, used by Server Component
@@ -27,18 +28,17 @@ import { getDashboardUser } from "@/server/dashboard-user";
  */
 export const getSsrHelpers = cache(async () => {
   const user = await getDashboardUser();
-  const ctx = {
+  // getDashboardUser already resolved the caller's active membership (role +
+  // school) for this tenant, so `loadMembership` reuses it — no extra query.
+  const ctx: TRPCContext = {
     db,
     tenantId: user?.tenantId ?? null,
     ip: null,
-    user: user
-      ? {
-          id: user.id,
-          role: user.role,
-          tenantId: user.tenantId,
-          schoolId: user.schoolId,
-        }
-      : null,
+    user: user ? { id: user.id } : null,
+    loadMembership: async () =>
+      user
+        ? { role: user.role, schoolId: user.schoolId, tenantId: user.tenantId, status: "ACTIVE" }
+        : null,
   };
   return createServerSideHelpers({ router: appRouter, ctx, transformer: superjson });
 });

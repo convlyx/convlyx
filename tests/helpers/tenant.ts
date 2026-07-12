@@ -5,6 +5,20 @@ import { appRouter } from "@/server/routers/_app";
 
 const createCaller = createCallerFactory(appRouter);
 
+/**
+ * Live membership loader for test callers (which inject ctx directly, bypassing
+ * createTRPCContext). Queries the DB on each call — deliberately NOT memoized,
+ * so tests that mutate memberships mid-caller (e.g. deactivate then re-call)
+ * see the current state.
+ */
+export function testLoadMembership(userId: string, tenantId: string) {
+  return () =>
+    db.membership.findFirst({
+      where: { userId, tenantId },
+      select: { role: true, schoolId: true, tenantId: true, status: true },
+    });
+}
+
 export type TestTenant = {
   tenantId: string;
   schoolId: string;
@@ -119,6 +133,7 @@ export async function createTestTenant(label: string): Promise<TestTenant> {
     ip: null,
     // ctx.user is global identity only; role/school come from the Membership.
     user: { id: adminUserId },
+    loadMembership: testLoadMembership(adminUserId, tenantId),
   });
 
   return {

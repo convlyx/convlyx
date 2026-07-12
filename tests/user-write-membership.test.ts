@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { db } from "@/server/db";
 import { createCallerFactory } from "@/server/trpc";
 import { appRouter } from "@/server/routers/_app";
-import { createTestTenant, cleanupTenants, type TestTenant } from "./helpers/tenant";
+import { createTestTenant, cleanupTenants, testLoadMembership, type TestTenant } from "./helpers/tenant";
 
 const createCaller = createCallerFactory(appRouter);
 let A: TestTenant;
@@ -60,6 +60,7 @@ describe("user mutations write through to Membership", () => {
       tenantId: A.tenantId,
       ip: null,
       user: { id: A.instructorUserId },
+      loadMembership: testLoadMembership(A.instructorUserId, A.tenantId),
     });
 
     // Active → a plain protectedProcedure works.

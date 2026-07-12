@@ -4,7 +4,14 @@ import { db } from "./db";
 import { withTenant } from "./lib/tenant-scope";
 import { createClient } from "@/lib/supabase/server";
 import { extractSubdomain } from "@/lib/subdomain";
-import type { UserRole } from "@/generated/prisma/enums";
+import type { UserRole, UserStatus } from "@/generated/prisma/enums";
+
+type MembershipContext = {
+  role: UserRole;
+  schoolId: string;
+  tenantId: string;
+  status: UserStatus;
+};
 
 export type TRPCContext = {
   db: typeof db;
@@ -13,6 +20,11 @@ export type TRPCContext = {
   // Global identity only. The caller's per-tenant role/school are resolved
   // from their Membership in `protectedProcedure` (see `ctx.membership`).
   user: { id: string } | null;
+  // Per-request memoized loader for the caller's Membership in the current
+  // tenant. A batched tRPC request shares one context, so this resolves the
+  // membership ONCE for the whole batch instead of once per procedure (which
+  // was an N+1). Resolves null when unauthenticated / no tenant / not a member.
+  loadMembership: () => Promise<MembershipContext | null>;
 };
 
 export const createTRPCContext = async (opts: {
@@ -26,7 +38,7 @@ export const createTRPCContext = async (opts: {
   } = await supabase.auth.getUser();
 
   if (!authUser) {
-    return { db, tenantId: null, ip, user: null };
+    return { db, tenantId: null, ip, user: null, loadMembership: async () => null };
   }
 
   // Tenant is resolved from the subdomain — "which school's site is this".
@@ -45,7 +57,21 @@ export const createTRPCContext = async (opts: {
     tenantId = school?.tenantId ?? null;
   }
 
-  return { db, tenantId, ip, user: { id: authUser.id } };
+  // Memoized once per request — shared across every procedure in a batch.
+  const userId = authUser.id;
+  let membershipPromise: Promise<MembershipContext | null> | undefined;
+  const loadMembership = () => {
+    if (!tenantId) return Promise.resolve(null);
+    if (!membershipPromise) {
+      membershipPromise = db.membership.findFirst({
+        where: { userId, tenantId },
+        select: { role: true, schoolId: true, tenantId: true, status: true },
+      });
+    }
+    return membershipPromise;
+  };
+
+  return { db, tenantId, ip, user: { id: userId }, loadMembership };
 };
 
 const t = initTRPC.context<TRPCContext>().create({
@@ -93,12 +119,9 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   // Approach 1a (cross-tenant identity): the caller's role + school live on their
   // Membership in THIS tenant, and it is authoritative — no membership ⇒ not a
   // member of this school ⇒ unauthorized (don't leak the tenant's existence).
-  // Every user-creation path creates a membership, and existing users were
-  // backfilled, so a missing one genuinely means "not a member here".
-  const membership = await db.membership.findFirst({
-    where: { userId: ctx.user.id, tenantId: ctx.tenantId },
-    select: { role: true, schoolId: true, tenantId: true, status: true },
-  });
+  // Resolved via the per-request memoized loader so a batched request pays for
+  // this lookup once, not once per procedure.
+  const membership = await ctx.loadMembership();
   // No membership ⇒ not a member here. INACTIVE membership ⇒ deactivated in
   // this tenant (per-tenant status; a person may stay ACTIVE elsewhere). Both
   // are unauthorized — don't leak the tenant's existence.

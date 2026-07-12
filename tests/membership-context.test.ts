@@ -2,7 +2,7 @@ import { describe, it, expect, afterAll } from "vitest";
 import { db } from "@/server/db";
 import { createCallerFactory } from "@/server/trpc";
 import { appRouter } from "@/server/routers/_app";
-import { createTestTenant, cleanupTenants, type TestTenant } from "./helpers/tenant";
+import { createTestTenant, cleanupTenants, testLoadMembership, type TestTenant } from "./helpers/tenant";
 
 const createCaller = createCallerFactory(appRouter);
 let A: TestTenant;
@@ -29,6 +29,7 @@ describe("membership-aware protectedProcedure", () => {
       tenantId: A.tenantId,
       ip: null,
       user: { id: A.studentUserId },
+      loadMembership: testLoadMembership(A.studentUserId, A.tenantId),
     });
     // user.list is ADMIN/SECRETARY/INSTRUCTOR-only. The student's membership
     // role (STUDENT) is authoritative and blocks it.
