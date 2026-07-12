@@ -83,10 +83,11 @@ describe("user.create", () => {
     inviteMock.mockClear();
 
     const email = `dup-${randomUUID().slice(0, 8)}@test.local`;
-    // Seed an ACTIVE user with this email directly.
+    // Seed an ACTIVE member with this email (User + active Membership).
+    const dupId = randomUUID();
     await db.user.create({
       data: {
-        id: randomUUID(),
+        id: dupId,
         tenantId: t.tenantId,
         schoolId: t.schoolId,
         email,
@@ -94,6 +95,9 @@ describe("user.create", () => {
         role: "STUDENT",
         status: "ACTIVE",
       },
+    });
+    await db.membership.create({
+      data: { tenantId: t.tenantId, userId: dupId, schoolId: t.schoolId, role: "STUDENT", status: "ACTIVE" },
     });
 
     await expect(
@@ -114,7 +118,7 @@ describe("user.create", () => {
     expect(inviteMock).not.toHaveBeenCalled();
   });
 
-  test("INACTIVE duplicate email → reactivates in place, no Supabase call", async () => {
+  test("INACTIVE membership → reactivates it, no Supabase call, global name untouched", async () => {
     inviteMock.mockClear();
 
     const email = `inactive-${randomUUID().slice(0, 8)}@test.local`;
@@ -131,9 +135,14 @@ describe("user.create", () => {
         status: "INACTIVE",
       },
     });
+    await db.membership.create({
+      data: { tenantId: t.tenantId, userId: originalId, schoolId: t.schoolId, role: "STUDENT", status: "INACTIVE" },
+    });
 
-    // Secretary re-adds the same student, with a fresh name/phone and a
-    // category they want to start. Result: same row, ACTIVE, new fields.
+    // Secretary re-adds the same student. Their membership reactivates; the
+    // global name/phone are NOT overwritten by a re-invite (those are edited
+    // through user.update, so cross-tenant identities can't be silently
+    // relabelled by a school that merely re-adds them).
     const result = await t.asAdmin.user.create({
       email,
       name: "Reativado",
@@ -148,11 +157,10 @@ describe("user.create", () => {
 
     const row = await db.user.findUniqueOrThrow({
       where: { id: originalId },
-      select: { status: true, name: true, phone: true },
+      select: { name: true, phone: true },
     });
-    expect(row.status).toBe("ACTIVE");
-    expect(row.name).toBe("Reativado");
-    expect(row.phone).toBe("999");
+    expect(row.name).toBe("Antigo");
+    expect(row.phone).toBe("111");
 
     // No invite for reactivations — credentials are intact from before.
     expect(inviteMock).not.toHaveBeenCalled();
@@ -164,7 +172,7 @@ describe("user.create", () => {
     });
     expect(courses.some((c) => c.status === "IN_PROGRESS")).toBe(true);
 
-    // Phase 1: reactivation creates the membership if it was missing.
+    // The membership is now ACTIVE.
     const mem = await db.membership.findFirst({
       where: { userId: originalId, tenantId: t.tenantId },
       select: { role: true, status: true },
@@ -188,6 +196,9 @@ describe("user.create", () => {
         role: "STUDENT",
         status: "INACTIVE",
       },
+    });
+    await db.membership.create({
+      data: { tenantId: t.tenantId, userId, schoolId: t.schoolId, role: "STUDENT", status: "INACTIVE" },
     });
     await db.studentCourse.create({
       data: {
@@ -217,9 +228,10 @@ describe("user.create", () => {
   // the global onError handler can translate the message key.
   test("CONFLICT is a TRPCError (not a raw Prisma error)", async () => {
     const email = `trpc-${randomUUID().slice(0, 8)}@test.local`;
+    const trpcId = randomUUID();
     await db.user.create({
       data: {
-        id: randomUUID(),
+        id: trpcId,
         tenantId: t.tenantId,
         schoolId: t.schoolId,
         email,
@@ -227,6 +239,9 @@ describe("user.create", () => {
         role: "STUDENT",
         status: "ACTIVE",
       },
+    });
+    await db.membership.create({
+      data: { tenantId: t.tenantId, userId: trpcId, schoolId: t.schoolId, role: "STUDENT", status: "ACTIVE" },
     });
 
     let caught: unknown;

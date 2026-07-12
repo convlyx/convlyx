@@ -61,9 +61,10 @@ describe("user.bulkCreate", () => {
   test("skips ACTIVE duplicates without aborting the batch", async () => {
     inviteMock.mockClear();
     const active = `bulk-active-${randomUUID().slice(0, 8)}@test.local`;
+    const activeId = randomUUID();
     await db.user.create({
       data: {
-        id: randomUUID(),
+        id: activeId,
         tenantId: t.tenantId,
         schoolId: t.schoolId,
         email: active,
@@ -71,6 +72,9 @@ describe("user.bulkCreate", () => {
         role: "STUDENT",
         status: "ACTIVE",
       },
+    });
+    await db.membership.create({
+      data: { tenantId: t.tenantId, userId: activeId, schoolId: t.schoolId, role: "STUDENT", status: "ACTIVE" },
     });
     const fresh = `bulk-fresh-${randomUUID().slice(0, 8)}@test.local`;
 
@@ -102,6 +106,9 @@ describe("user.bulkCreate", () => {
         status: "INACTIVE",
       },
     });
+    await db.membership.create({
+      data: { tenantId: t.tenantId, userId: id, schoolId: t.schoolId, role: "STUDENT", status: "INACTIVE" },
+    });
 
     const { results } = await t.asAdmin.user.bulkCreate({
       schoolId: t.schoolId,
@@ -110,12 +117,17 @@ describe("user.bulkCreate", () => {
 
     expect(results[0].status).toBe("reactivated");
     expect(inviteMock).not.toHaveBeenCalled();
+    // Membership reactivated; the global name is NOT overwritten by a re-invite.
+    const mem = await db.membership.findFirst({
+      where: { tenantId: t.tenantId, userId: id },
+      select: { status: true },
+    });
+    expect(mem?.status).toBe("ACTIVE");
     const row = await db.user.findUniqueOrThrow({
       where: { id },
-      select: { status: true, name: true },
+      select: { name: true },
     });
-    expect(row.status).toBe("ACTIVE");
-    expect(row.name).toBe("Reativado");
+    expect(row.name).toBe("Antigo");
   });
 });
 

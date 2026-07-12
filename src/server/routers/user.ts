@@ -297,7 +297,7 @@ export const userRouter = router({
       // Verify the school belongs to this tenant
       const school = await ctx.db.school.findFirst({
         where: { id: input.schoolId, tenantId: ctx.tenantId },
-        select: { id: true, subdomain: true },
+        select: { id: true, subdomain: true, name: true },
       });
 
       if (!school) {
@@ -335,7 +335,7 @@ export const userRouter = router({
       // Verify the school belongs to this tenant once, up front.
       const school = await ctx.db.school.findFirst({
         where: { id: input.schoolId, tenantId: ctx.tenantId },
-        select: { id: true, subdomain: true },
+        select: { id: true, subdomain: true, name: true },
       });
 
       if (!school) {
