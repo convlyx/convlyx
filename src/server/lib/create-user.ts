@@ -170,25 +170,16 @@ export async function createUserAccount({
     });
     dispatchPush(db, jobs);
 
-    // Freshly added to a new school → email them a one-click magic link into
-    // that school's subdomain (they already have a password, so no invite).
-    // Best-effort: a link/email failure must never undo the completed add.
+    // Freshly added to a new school → email them the school's login URL. They
+    // already have a Convlyx account, so they sign in with their existing
+    // (global) credentials — no magic link (which would need the subdomain in
+    // Supabase's redirect allowlist) and no password reset (the password is
+    // shared across all their schools). Best-effort: never undo the add.
     if (!isReactivation) {
       try {
         const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
-        const redirectTo = `${siteUrl.protocol}//${school.subdomain}.${siteUrl.host}/`;
-        const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
-          type: "magiclink",
-          email,
-          options: { redirectTo },
-        });
-        if (linkErr) {
-          logger.warn("createUserAccount: magic link generation failed", {
-            message: linkErr.message,
-          });
-        }
-        const actionUrl = linkData?.properties?.action_link ?? redirectTo;
-        const mail = renderAddedToSchoolEmail({ schoolName: school.name, actionUrl });
+        const loginUrl = `${siteUrl.protocol}//${school.subdomain}.${siteUrl.host}/login`;
+        const mail = renderAddedToSchoolEmail({ schoolName: school.name, actionUrl: loginUrl });
         await sendEmail({ to: email, subject: mail.subject, html: mail.html, text: mail.text });
       } catch (e) {
         logger.error("createUserAccount: added-to-school email failed", {

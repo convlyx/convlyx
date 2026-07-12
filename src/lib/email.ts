@@ -90,12 +90,12 @@ export function renderAddedToSchoolEmail(params: {
             <td style="padding:32px;">
               <h2 style="margin:0 0 8px;font-size:18px;font-weight:600;color:#18181b;">Bem-vindo/a à ${school}</h2>
               <p style="margin:0 0 24px;font-size:14px;color:#71717a;line-height:1.6;">
-                Foi adicionado/a à escola <strong>${school}</strong> na Convlyx. Como já tem uma conta, basta clicar no botão abaixo para aceder — as suas credenciais atuais mantêm-se.
+                Foi adicionado/a à escola <strong>${school}</strong> na Convlyx. Como já tem uma conta, basta iniciar sessão com as suas credenciais habituais — a sua palavra-passe mantém-se.
               </p>
               <table align="center" cellpadding="0" cellspacing="0" border="0" role="presentation">
                 <tr>
                   <td bgcolor="#16a34a" style="background-color:#16a34a;border-radius:8px;">
-                    <a href="${url}" style="display:inline-block;padding:12px 24px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">Aceder à escola</a>
+                    <a href="${url}" style="display:inline-block;padding:12px 24px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">Iniciar sessão</a>
                   </td>
                 </tr>
               </table>
@@ -116,7 +116,7 @@ export function renderAddedToSchoolEmail(params: {
 </body>
 </html>`;
 
-  const text = `Bem-vindo/a à ${params.schoolName}\n\nFoi adicionado/a à escola ${params.schoolName} na Convlyx. Como já tem uma conta, aceda através deste link (as suas credenciais mantêm-se):\n\n${url}\n\nSe não esperava este acesso, pode ignorar este email.`;
+  const text = `Bem-vindo/a à ${params.schoolName}\n\nFoi adicionado/a à escola ${params.schoolName} na Convlyx. Como já tem uma conta, inicie sessão com as suas credenciais habituais (a sua palavra-passe mantém-se):\n\n${url}\n\nSe não esperava este acesso, pode ignorar este email.`;
 
   return { subject, html, text };
 }
