@@ -224,6 +224,43 @@ describe("user.create", () => {
     expect(courses).toHaveLength(1);
   });
 
+  test("matches an existing identity case-insensitively (mixed-case email)", async () => {
+    inviteMock.mockClear();
+
+    // Existing ACTIVE member stored with a MIXED-CASE email.
+    const local = `Mixed-${randomUUID().slice(0, 8)}`;
+    const storedEmail = `${local}@Test.Local`;
+    const ciId = randomUUID();
+    await db.user.create({
+      data: {
+        id: ciId,
+        tenantId: t.tenantId,
+        schoolId: t.schoolId,
+        email: storedEmail,
+        name: "Existente",
+        role: "STUDENT",
+        status: "ACTIVE",
+      },
+    });
+    await db.membership.create({
+      data: { tenantId: t.tenantId, userId: ciId, schoolId: t.schoolId, role: "STUDENT", status: "ACTIVE" },
+    });
+
+    // Inviting the lowercase form must recognise the same identity (→ CONFLICT
+    // because they're already an active member) rather than treating it as new
+    // and failing later at the Supabase invite.
+    await expect(
+      t.asAdmin.user.create({
+        email: storedEmail.toLowerCase(),
+        name: "Duplicado",
+        role: "STUDENT",
+        schoolId: t.schoolId,
+        initialCategory: "B",
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT", message: "users.emailAlreadyRegistered" });
+    expect(inviteMock).not.toHaveBeenCalled();
+  });
+
   // Sanity: TRPCError is the type we should be receiving from the router so
   // the global onError handler can translate the message key.
   test("CONFLICT is a TRPCError (not a raw Prisma error)", async () => {

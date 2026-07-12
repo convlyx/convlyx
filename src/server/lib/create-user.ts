@@ -76,12 +76,19 @@ export async function createUserAccount({
   school,
   input,
 }: CreateUserArgs): Promise<CreateUserResult> {
+  // Emails are case-insensitive: normalize so lookups, the Supabase invite, and
+  // the stored row all agree (Supabase lowercases auth emails, so a mixed-case
+  // User.email would otherwise never match its auth user).
+  const email = input.email.trim().toLowerCase();
+
   // Global identity lookup (raw client — deliberately cross-tenant: "does this
-  // person already exist on the platform?"). Email is globally unique in
-  // practice: Supabase auth is global and `User.id == auth id`, so a second
-  // tenant can never mint a separate row for the same email.
+  // person already exist on the platform?"). Matched case-insensitively so a
+  // legacy mixed-case row is still found (otherwise we'd fall through to the
+  // invite path and Supabase would reject it as "already registered"). Email is
+  // globally unique in practice: Supabase auth is global and `User.id == auth
+  // id`, so a second tenant can never mint a separate row for the same email.
   const globalUser = await rawDb.user.findFirst({
-    where: { email: input.email },
+    where: { email: { equals: email, mode: "insensitive" } },
     select: { id: true, name: true },
   });
 
@@ -166,7 +173,7 @@ export async function createUserAccount({
       user: {
         id: globalUser.id,
         name: globalUser.name,
-        email: input.email,
+        email,
         role: input.role,
       },
       outcome: isReactivation ? "reactivated" : "created",
@@ -181,7 +188,7 @@ export async function createUserAccount({
 
   // Invite user via email — they'll set their own password
   const { data: authData, error: authError } =
-    await supabaseAdmin.auth.admin.inviteUserByEmail(input.email, {
+    await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       redirectTo,
     });
 
@@ -190,7 +197,7 @@ export async function createUserAccount({
     // collapses unknown failures into `users.inviteFailed`, which hides
     // the actual SMTP / auth-service reason from the Vercel logs.
     logger.error("createUserAccount: supabase invite failed", {
-      email: input.email,
+      email,
       status: authError.status,
       name: authError.name,
       code: authError.code,
@@ -213,7 +220,7 @@ export async function createUserAccount({
           id: authData.user.id,
           tenantId,
           schoolId: input.schoolId,
-          email: input.email,
+          email,
           name: input.name,
           phone: input.phone,
           role: input.role,
