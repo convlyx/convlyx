@@ -3,6 +3,7 @@ import { Inter, Plus_Jakarta_Sans, Newsreader } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { TRPCProvider } from "@/lib/trpc-provider";
+import { ChunkErrorReloader } from "@/components/chunk-error-reloader";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -66,6 +67,7 @@ export default async function RootLayout({
       className={`${inter.variable} ${jakarta.variable} ${newsreader.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <ChunkErrorReloader />
         <NextIntlClientProvider messages={messages}>
           <TRPCProvider>{children}</TRPCProvider>
           <Toaster position="bottom-right" richColors />

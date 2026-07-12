@@ -1,11 +1,21 @@
 "use client";
 
+import { useEffect } from "react";
+import { isChunkLoadError, reloadForChunkError } from "@/lib/chunk-error";
+
 export default function Error({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  // A stale-chunk error after a deploy → reload onto the fresh build instead of
+  // showing the generic error screen.
+  useEffect(() => {
+    if (isChunkLoadError(error)) reloadForChunkError();
+  }, [error]);
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="text-center space-y-4">

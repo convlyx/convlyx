@@ -3,6 +3,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 import { BRAND_THEME_COLOR_HEX } from "@/lib/constants/brand";
+import { isChunkLoadError, reloadForChunkError } from "@/lib/chunk-error";
 
 export default function GlobalError({
   error,
@@ -10,6 +11,12 @@ export default function GlobalError({
   error: Error & { digest?: string };
 }) {
   useEffect(() => {
+    // Stale-chunk errors are deploy artifacts, not bugs — reload onto the fresh
+    // build and don't page Sentry with the noise.
+    if (isChunkLoadError(error)) {
+      reloadForChunkError();
+      return;
+    }
     Sentry.captureException(error);
   }, [error]);
 
