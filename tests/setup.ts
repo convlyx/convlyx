@@ -27,6 +27,10 @@ vi.mock("@supabase/supabase-js", async (importOriginal) => {
     getUserById: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
     createUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
     inviteUserByEmail: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
+    generateLink: vi.fn().mockResolvedValue({
+      data: { properties: { action_link: "https://example.test/magic" }, user: null },
+      error: null,
+    }),
   };
   return {
     ...actual,

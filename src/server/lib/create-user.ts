@@ -7,6 +7,7 @@ import type { CreateUserInput } from "@/lib/validations/user";
 import { db as rawDb } from "@/server/db";
 import type { TenantScopedDb } from "./tenant-scope";
 import { recordNotification, dispatchPush, type PushJob } from "./notifications";
+import { sendEmail, renderAddedToSchoolEmail } from "@/lib/email";
 
 /**
  * Translate a raw Supabase auth error message into one of our translatable
@@ -168,6 +169,33 @@ export async function createUserAccount({
       }
     });
     dispatchPush(db, jobs);
+
+    // Freshly added to a new school → email them a one-click magic link into
+    // that school's subdomain (they already have a password, so no invite).
+    // Best-effort: a link/email failure must never undo the completed add.
+    if (!isReactivation) {
+      try {
+        const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
+        const redirectTo = `${siteUrl.protocol}//${school.subdomain}.${siteUrl.host}/`;
+        const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
+          type: "magiclink",
+          email,
+          options: { redirectTo },
+        });
+        if (linkErr) {
+          logger.warn("createUserAccount: magic link generation failed", {
+            message: linkErr.message,
+          });
+        }
+        const actionUrl = linkData?.properties?.action_link ?? redirectTo;
+        const mail = renderAddedToSchoolEmail({ schoolName: school.name, actionUrl });
+        await sendEmail({ to: email, subject: mail.subject, html: mail.html, text: mail.text });
+      } catch (e) {
+        logger.error("createUserAccount: added-to-school email failed", {
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
 
     return {
       user: {
