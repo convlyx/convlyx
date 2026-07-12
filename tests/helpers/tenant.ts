@@ -44,32 +44,22 @@ export async function createTestTenant(label: string): Promise<TestTenant> {
     db.user.create({
       data: {
         id: adminUserId,
-        tenantId,
-        schoolId,
         email: `admin-${suffix}@test.local`,
         name: `Admin ${label}`,
-        role: "ADMIN",
       },
     }),
     db.user.create({
       data: {
         id: instructorUserId,
-        tenantId,
-        schoolId,
         email: `instructor-${suffix}@test.local`,
         name: `Instrutor ${label}`,
-        role: "INSTRUCTOR",
-        qualifiedCategories: ["B"],
       },
     }),
     db.user.create({
       data: {
         id: studentUserId,
-        tenantId,
-        schoolId,
         email: `student-${suffix}@test.local`,
         name: `Aluno ${label}`,
-        role: "STUDENT",
       },
     }),
     db.membership.createMany({
@@ -147,6 +137,13 @@ export async function createTestTenant(label: string): Promise<TestTenant> {
 /** Delete tenants + all dependent rows, in FK-safe order. */
 export async function cleanupTenants(...tenantIds: string[]) {
   if (tenantIds.length === 0) return;
+  // Users are global (no tenantId) — resolve them via their memberships in
+  // these tenants, then delete by id after the tenant-scoped rows are cleared.
+  const memberships = await db.membership.findMany({
+    where: { tenantId: { in: tenantIds } },
+    select: { userId: true },
+  });
+  const userIds = [...new Set(memberships.map((m) => m.userId))];
   await db.$transaction([
     db.exam.deleteMany({ where: { tenantId: { in: tenantIds } } }),
     db.enrollment.deleteMany({ where: { tenantId: { in: tenantIds } } }),
@@ -156,7 +153,7 @@ export async function cleanupTenants(...tenantIds: string[]) {
     db.pushSubscription.deleteMany({ where: { tenantId: { in: tenantIds } } }),
     db.consentRecord.deleteMany({ where: { tenantId: { in: tenantIds } } }),
     db.membership.deleteMany({ where: { tenantId: { in: tenantIds } } }),
-    db.user.deleteMany({ where: { tenantId: { in: tenantIds } } }),
+    db.user.deleteMany({ where: { id: { in: userIds } } }),
     db.school.deleteMany({ where: { tenantId: { in: tenantIds } } }),
     db.tenant.deleteMany({ where: { id: { in: tenantIds } } }),
   ]);

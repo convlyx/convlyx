@@ -26,6 +26,7 @@ const PUBLIC_ORDER = [
   "tenants",
   "schools",
   "users",
+  "memberships",
   "student_courses",
   "class_sessions",
   "exams",
@@ -35,11 +36,19 @@ const PUBLIC_ORDER = [
   "consent_records",
 ] as const;
 
-async function insertSet(client: PoolClient, table: string, rows: unknown[]) {
+async function insertSet(
+  client: PoolClient,
+  table: string,
+  rows: unknown[],
+  opts: { ignoreConflicts?: boolean } = {},
+) {
   if (!rows || rows.length === 0) return;
   // `table` values come only from the hardcoded lists below — not user input.
+  // Users are the global identity and may already exist (belong to another
+  // tenant in the target DB) — skip those rather than fail the whole restore.
+  const onConflict = opts.ignoreConflicts ? " ON CONFLICT DO NOTHING" : "";
   await client.query(
-    `INSERT INTO ${table} SELECT * FROM jsonb_populate_recordset(NULL::${table}, $1::jsonb)`,
+    `INSERT INTO ${table} SELECT * FROM jsonb_populate_recordset(NULL::${table}, $1::jsonb)${onConflict}`,
     [JSON.stringify(rows)],
   );
   console.log(`  ${table}: ${rows.length}`);
@@ -82,7 +91,9 @@ async function main() {
     await insertSet(client, "auth.identities", snapshot.auth?.identities ?? []);
 
     for (const t of PUBLIC_ORDER) {
-      await insertSet(client, `public.${t}`, snapshot.tables?.[t] ?? []);
+      await insertSet(client, `public.${t}`, snapshot.tables?.[t] ?? [], {
+        ignoreConflicts: t === "users",
+      });
     }
 
     await client.query("COMMIT");

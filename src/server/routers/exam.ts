@@ -143,9 +143,9 @@ export const examRouter = router({
         select: {
           id: true,
           status: true,
-          student: {
-            select: { id: true, schoolId: true, school: { select: { timeZone: true } } },
-          },
+          schoolId: true,
+          school: { select: { timeZone: true } },
+          student: { select: { id: true } },
         },
       });
 
@@ -257,7 +257,7 @@ export const examRouter = router({
         const created = await tx.exam.create({
           data: {
             tenantId: ctx.tenantId,
-            schoolId: course.student.schoolId,
+            schoolId: course.schoolId,
             courseId: course.id,
             type: input.type,
             scheduledAt: new Date(input.scheduledAt),
@@ -276,7 +276,7 @@ export const examRouter = router({
           },
         });
 
-        const timeStr = formatClassTime(created.scheduledAt, course.student.school.timeZone);
+        const timeStr = formatClassTime(created.scheduledAt, course.school.timeZone);
 
         // Notify student
         jobs.push(
@@ -511,7 +511,7 @@ export const examRouter = router({
           type: true,
           scheduledAt: true,
           instructorId: true,
-          course: { select: { student: { select: { id: true, school: { select: { timeZone: true } } } } } },
+          course: { select: { school: { select: { timeZone: true } }, student: { select: { id: true } } } },
         },
       });
 
@@ -534,7 +534,7 @@ export const examRouter = router({
           select: { id: true },
         });
 
-        const timeStr = formatClassTime(exam.scheduledAt, exam.course.student.school.timeZone);
+        const timeStr = formatClassTime(exam.scheduledAt, exam.course.school.timeZone);
 
         jobs.push(
           await recordNotification(tx, {

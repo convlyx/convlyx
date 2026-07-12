@@ -49,13 +49,13 @@ describe("user.bulkCreate", () => {
     expect(results.every((r) => r.status === "created")).toBe(true);
     expect(inviteMock).toHaveBeenCalledTimes(2);
 
-    const created = await db.user.findFirst({
-      where: { tenantId: t.tenantId, email: a },
-      select: { role: true, status: true, studentCourses: { select: { category: true } } },
+    const created = await db.membership.findFirst({
+      where: { tenantId: t.tenantId, user: { email: a } },
+      select: { role: true, status: true, user: { select: { studentCourses: { select: { category: true } } } } },
     });
     expect(created?.role).toBe("STUDENT");
     expect(created?.status).toBe("ACTIVE");
-    expect(created?.studentCourses[0]?.category).toBe("B");
+    expect(created?.user.studentCourses[0]?.category).toBe("B");
   });
 
   test("skips ACTIVE duplicates without aborting the batch", async () => {
@@ -63,15 +63,7 @@ describe("user.bulkCreate", () => {
     const active = `bulk-active-${randomUUID().slice(0, 8)}@test.local`;
     const activeId = randomUUID();
     await db.user.create({
-      data: {
-        id: activeId,
-        tenantId: t.tenantId,
-        schoolId: t.schoolId,
-        email: active,
-        name: "Já ativo",
-        role: "STUDENT",
-        status: "ACTIVE",
-      },
+      data: { id: activeId, email: active, name: "Já ativo" },
     });
     await db.membership.create({
       data: { tenantId: t.tenantId, userId: activeId, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "ACTIVE" },
@@ -96,15 +88,7 @@ describe("user.bulkCreate", () => {
     const email = `bulk-inactive-${randomUUID().slice(0, 8)}@test.local`;
     const id = randomUUID();
     await db.user.create({
-      data: {
-        id,
-        tenantId: t.tenantId,
-        schoolId: t.schoolId,
-        email,
-        name: "Antigo",
-        role: "STUDENT",
-        status: "INACTIVE",
-      },
+      data: { id, email, name: "Antigo" },
     });
     await db.membership.create({
       data: { tenantId: t.tenantId, userId: id, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "INACTIVE" },
@@ -151,14 +135,8 @@ describe("user.checkExistingEmails", () => {
     const inactiveId = randomUUID();
     await db.user.createMany({
       data: [
-        {
-          id: activeId, tenantId: t.tenantId, schoolId: t.schoolId,
-          email: activeEmail, name: "A", role: "STUDENT", status: "ACTIVE",
-        },
-        {
-          id: inactiveId, tenantId: t.tenantId, schoolId: t.schoolId,
-          email: inactiveEmail, name: "B", role: "STUDENT", status: "INACTIVE",
-        },
+        { id: activeId, email: activeEmail, name: "A" },
+        { id: inactiveId, email: inactiveEmail, name: "B" },
       ],
     });
     // checkExistingEmails is now Membership-driven — mirror status there.

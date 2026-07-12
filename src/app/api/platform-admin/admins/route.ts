@@ -96,14 +96,11 @@ export async function POST(request: NextRequest) {
       const created = await tx.user.create({
         data: {
           id: authData.user.id,
-          tenantId: school.tenantId,
-          schoolId: school.id,
           email,
           name,
           phone: phone || null,
-          role: "ADMIN",
         },
-        select: { id: true, name: true, email: true, role: true },
+        select: { id: true, name: true, email: true },
       });
       // Phase 1 (Approach 1a): platform-admin-created admins also get a Membership.
       await tx.membership.create({

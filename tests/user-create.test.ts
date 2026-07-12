@@ -56,12 +56,11 @@ describe("user.create", () => {
     expect(created.role).toBe("STUDENT");
     expect(inviteMock).toHaveBeenCalledTimes(1);
 
-    const row = await db.user.findUniqueOrThrow({
-      where: { id: created.id },
-      select: { status: true, tenantId: true },
+    const mem = await db.membership.findFirst({
+      where: { tenantId: t.tenantId, userId: created.id },
+      select: { status: true },
     });
-    expect(row.status).toBe("ACTIVE");
-    expect(row.tenantId).toBe(t.tenantId);
+    expect(mem?.status).toBe("ACTIVE");
 
     // The initial course should also exist.
     const course = await db.studentCourse.findFirst({
@@ -86,15 +85,7 @@ describe("user.create", () => {
     // Seed an ACTIVE member with this email (User + active Membership).
     const dupId = randomUUID();
     await db.user.create({
-      data: {
-        id: dupId,
-        tenantId: t.tenantId,
-        schoolId: t.schoolId,
-        email,
-        name: "Existente",
-        role: "STUDENT",
-        status: "ACTIVE",
-      },
+      data: { id: dupId, email, name: "Existente" },
     });
     await db.membership.create({
       data: { tenantId: t.tenantId, userId: dupId, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "ACTIVE" },
@@ -124,16 +115,7 @@ describe("user.create", () => {
     const email = `inactive-${randomUUID().slice(0, 8)}@test.local`;
     const originalId = randomUUID();
     await db.user.create({
-      data: {
-        id: originalId,
-        tenantId: t.tenantId,
-        schoolId: t.schoolId,
-        email,
-        name: "Antigo",
-        phone: "111",
-        role: "STUDENT",
-        status: "INACTIVE",
-      },
+      data: { id: originalId, email, name: "Antigo", phone: "111" },
     });
     await db.membership.create({
       data: { tenantId: t.tenantId, userId: originalId, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "INACTIVE" },
@@ -187,15 +169,7 @@ describe("user.create", () => {
     const email = `course-dup-${randomUUID().slice(0, 8)}@test.local`;
     const userId = randomUUID();
     await db.user.create({
-      data: {
-        id: userId,
-        tenantId: t.tenantId,
-        schoolId: t.schoolId,
-        email,
-        name: "Tem curso",
-        role: "STUDENT",
-        status: "INACTIVE",
-      },
+      data: { id: userId, email, name: "Tem curso" },
     });
     await db.membership.create({
       data: { tenantId: t.tenantId, userId, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "INACTIVE" },
@@ -232,15 +206,7 @@ describe("user.create", () => {
     const storedEmail = `${local}@Test.Local`;
     const ciId = randomUUID();
     await db.user.create({
-      data: {
-        id: ciId,
-        tenantId: t.tenantId,
-        schoolId: t.schoolId,
-        email: storedEmail,
-        name: "Existente",
-        role: "STUDENT",
-        status: "ACTIVE",
-      },
+      data: { id: ciId, email: storedEmail, name: "Existente" },
     });
     await db.membership.create({
       data: { tenantId: t.tenantId, userId: ciId, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "ACTIVE" },
@@ -267,15 +233,7 @@ describe("user.create", () => {
     const email = `trpc-${randomUUID().slice(0, 8)}@test.local`;
     const trpcId = randomUUID();
     await db.user.create({
-      data: {
-        id: trpcId,
-        tenantId: t.tenantId,
-        schoolId: t.schoolId,
-        email,
-        name: "Existente",
-        role: "STUDENT",
-        status: "ACTIVE",
-      },
+      data: { id: trpcId, email, name: "Existente" },
     });
     await db.membership.create({
       data: { tenantId: t.tenantId, userId: trpcId, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "ACTIVE" },

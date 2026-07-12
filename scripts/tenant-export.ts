@@ -21,11 +21,13 @@ import { Pool } from "pg";
 const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 const tenantId = process.argv[2];
 
-// Tenant-scoped public tables. Order is the FK-safe RESTORE order (parents
-// before children) so the same list drives tenant-restore.
+// Tenant-scoped public tables carrying a tenant_id. Order is the FK-safe
+// RESTORE order (parents before children) so the same list drives
+// tenant-restore. `users` is NOT here — it's the global identity (no tenant_id)
+// and is exported separately via the tenant's memberships (see below).
 const SCOPED_TABLES = [
   "schools",
-  "users",
+  "memberships",
   "student_courses",
   "class_sessions",
   "exams",
@@ -56,6 +58,18 @@ async function main() {
     }
 
     const tables: Record<string, unknown[]> = { tenants: tenantRows };
+
+    // Global users belonging to this tenant = those with a membership here.
+    // (They may also belong to other tenants; that's fine — restore upserts.)
+    const users = (
+      await pool.query(
+        `SELECT to_jsonb(u) AS row FROM users u
+         WHERE u.id IN (SELECT user_id FROM memberships WHERE tenant_id = $1)`,
+        [tenantId],
+      )
+    ).rows.map((r) => r.row);
+    tables.users = users;
+
     for (const t of SCOPED_TABLES) {
       // `t` comes only from the hardcoded SCOPED_TABLES list — not user input.
       const { rows } = await pool.query(

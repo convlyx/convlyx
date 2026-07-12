@@ -24,15 +24,7 @@ describe("per-membership GDPR erasure", () => {
   async function makeMultiTenantUser(email: string) {
     const uid = randomUUID();
     await db.user.create({
-      data: {
-        id: uid,
-        tenantId: A.tenantId,
-        schoolId: A.schoolId,
-        email,
-        name: "Global",
-        role: "STUDENT",
-        status: "ACTIVE",
-      },
+      data: { id: uid, email, name: "Global" },
     });
     await db.membership.createMany({
       data: [
@@ -57,15 +49,7 @@ describe("per-membership GDPR erasure", () => {
   test("deleting the last school removes the global identity", async () => {
     const uid = randomUUID();
     await db.user.create({
-      data: {
-        id: uid,
-        tenantId: A.tenantId,
-        schoolId: A.schoolId,
-        email: `del-solo-${randomUUID().slice(0, 8)}@test.local`,
-        name: "Solo",
-        role: "STUDENT",
-        status: "ACTIVE",
-      },
+      data: { id: uid, email: `del-solo-${randomUUID().slice(0, 8)}@test.local`, name: "Solo" },
     });
     await db.membership.create({
       data: { tenantId: A.tenantId, userId: uid, schoolId: A.schoolId, name: "Solo", role: "STUDENT" },
@@ -100,15 +84,7 @@ describe("per-membership GDPR erasure", () => {
     const uid = randomUUID();
     const email = `anon-solo-${randomUUID().slice(0, 8)}@test.local`;
     await db.user.create({
-      data: {
-        id: uid,
-        tenantId: A.tenantId,
-        schoolId: A.schoolId,
-        email,
-        name: "Real",
-        role: "STUDENT",
-        status: "ACTIVE",
-      },
+      data: { id: uid, email, name: "Real" },
     });
     await db.membership.create({
       data: { tenantId: A.tenantId, userId: uid, schoolId: A.schoolId, name: "Real", role: "STUDENT" },

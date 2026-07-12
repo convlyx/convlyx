@@ -100,7 +100,11 @@ export async function GET(request: NextRequest) {
       scheduledAt: true,
       instructorId: true,
       course: {
-        select: { student: { select: { id: true, name: true, school: { select: { timeZone: true } } } } },
+        select: {
+          school: { select: { timeZone: true } },
+          // Name is per-tenant → resolve against the exam's tenant below.
+          student: { select: { id: true, memberships: { select: { tenantId: true, name: true } } } },
+        },
       },
     },
   });
@@ -108,14 +112,17 @@ export async function GET(request: NextRequest) {
   let examNotificationCount = 0;
 
   for (const exam of tomorrowExams) {
-    const timeStr = formatClassTime(new Date(exam.scheduledAt), exam.course.student.school.timeZone);
+    const timeStr = formatClassTime(new Date(exam.scheduledAt), exam.course.school.timeZone);
     const examTypeLabel = exam.type === "THEORY" ? "teórico" : "prático";
+    const studentId = exam.course.student.id;
+    const studentName =
+      exam.course.student.memberships.find((m) => m.tenantId === exam.tenantId)?.name ?? "";
 
     // Notify student
     jobs.push(
       await recordNotification(db, {
         tenantId: exam.tenantId,
-        userId: exam.course.student.id,
+        userId: studentId,
         type: "reminder.exam",
         titleKey:
           exam.type === "THEORY"
@@ -138,9 +145,9 @@ export async function GET(request: NextRequest) {
           type: "reminder.exam",
           titleKey: "notifications.examAccompanyTitle",
           messageKey: "notifications.examReminderInstructor",
-          params: { student: exam.course.student.name, time: timeStr },
+          params: { student: studentName, time: timeStr },
           pushTitle: "Lembrete de exame",
-          pushBody: `Amanhã: exame de ${exam.course.student.name} · ${timeStr}`,
+          pushBody: `Amanhã: exame de ${studentName} · ${timeStr}`,
         }),
       );
       examNotificationCount += 1;

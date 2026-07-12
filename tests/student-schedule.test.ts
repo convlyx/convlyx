@@ -28,12 +28,8 @@ describe("student schedule conflicts", () => {
     await db.user.create({
       data: {
         id: freeInstructorId,
-        tenantId: a.tenantId,
-        schoolId: a.schoolId,
         email: `free-instructor-${randomUUID().slice(0, 8)}@test.local`,
         name: "Instrutor Livre",
-        role: "INSTRUCTOR",
-        qualifiedCategories: ["B"],
       },
     });
     // Instructor verification in class.create is Membership-driven now.

@@ -40,7 +40,9 @@ import type { PrismaClient } from "@/generated/prisma/client";
 
 const TENANT_SCOPED_MODELS = new Set<string>([
   "School",
-  "User",
+  // NOTE: User is intentionally NOT here — it's the global identity (one row
+  // per person across all tenants). Per-tenant facts live on Membership, which
+  // IS scoped. Queries that need a person within a tenant go through Membership.
   "ClassSession",
   "Enrollment",
   "Notification",

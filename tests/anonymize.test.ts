@@ -27,22 +27,29 @@ describe("user.anonymize", () => {
     // Sanity: helper seeded an enrollment + course for this student.
     const before = await db.user.findUniqueOrThrow({
       where: { id: a.studentUserId },
-      select: { name: true, email: true, status: true },
+      select: { name: true, email: true },
     });
     expect(before.name).toMatch(/^Aluno /);
-    expect(before.status).toBe("ACTIVE");
 
     await a.asAdmin.user.anonymize({ id: a.studentUserId });
 
+    // This is the student's only school → the global identity is scrubbed and
+    // the per-tenant membership is anonymized + deactivated.
     const after = await db.user.findUniqueOrThrow({
       where: { id: a.studentUserId },
-      select: { name: true, email: true, phone: true, status: true },
+      select: { name: true, email: true, phone: true },
     });
     expect(after.name).toBe("Anonimizado");
     // Email is `anonimizado-{first 8 chars of user id}@convlyx.invalid`.
     expect(after.email).toMatch(/^anonimizado-[0-9a-f]{8}@convlyx\.invalid$/);
     expect(after.phone).toBeNull();
-    expect(after.status).toBe("INACTIVE");
+
+    const mem = await db.membership.findFirst({
+      where: { tenantId: a.tenantId, userId: a.studentUserId },
+      select: { status: true, name: true },
+    });
+    expect(mem?.status).toBe("INACTIVE");
+    expect(mem?.name).toBe("Anonimizado");
 
     // studentProfile surfaces an `anonymized: true` flag so the UI can hide
     // the danger zone for already-anonymized users.

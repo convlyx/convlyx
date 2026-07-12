@@ -106,17 +106,11 @@ async function main() {
     // Upsert Prisma user profile
     await db.user.upsert({
       where: { id: authUserId },
-      update: {
-        name: seedUser.name,
-        role: seedUser.role,
-      },
+      update: { name: seedUser.name },
       create: {
         id: authUserId,
-        tenantId: tenant.id,
-        schoolId: school.id,
         email: seedUser.email,
         name: seedUser.name,
-        role: seedUser.role,
       },
     });
 

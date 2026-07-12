@@ -100,7 +100,6 @@ model Tenant {
   updatedAt DateTime     @updatedAt @map("updated_at")
 
   schools        School[]
-  users          User[]
   consentRecords ConsentRecord[]
   memberships    Membership[]
 
@@ -130,7 +129,6 @@ model School {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   tenant         Tenant          @relation(fields: [tenantId], references: [id])
-  users          User[]
   sessions       ClassSession[]
   enrollments    Enrollment[]
   notifications  Notification[]
@@ -141,25 +139,18 @@ model School {
   @@map("schools")
 }
 
+// Global identity, keyed to Supabase auth.users (same UUID). Per-tenant facts
+// (role, school, status, name/phone, qualifications, novidades-seen) live on
+// Membership — one person can belong to several schools. Email is the global
+// login identity and is unique across the platform.
 model User {
   id        String     @id @db.Uuid // matches Supabase auth.users.id
-  tenantId  String     @map("tenant_id") @db.Uuid
-  schoolId  String     @map("school_id") @db.Uuid
-  email     String
+  email     String     @unique
   name      String
   phone     String?
-  role      UserRole
-  status    UserStatus @default(ACTIVE)
-  // Categories an instructor is qualified to teach. Empty for non-instructors.
-  qualifiedCategories LicenseCategory[] @default([]) @map("qualified_categories")
-  // Timestamp of the last time the user opened the "Novidades" panel; drives the
-  // unread badge — posts newer than this (and matching their role) count as unread.
-  novidadesSeenAt DateTime? @map("novidades_seen_at")
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
 
-  tenant        Tenant         @relation(fields: [tenantId], references: [id])
-  school        School         @relation(fields: [schoolId], references: [id])
   enrollments       Enrollment[]
   notifications     Notification[]
   pushSubscriptions PushSubscription[]
@@ -173,7 +164,7 @@ model User {
   createdSessions ClassSession[] @relation("CreatedBySessions")
   updatedSessions ClassSession[] @relation("UpdatedBySessions")
 
-  // Driving courses (only meaningful for STUDENT role)
+  // Driving courses (only meaningful for a STUDENT membership)
   studentCourses StudentCourse[]
 
   // Practical exams this instructor is accompanying
@@ -183,9 +174,6 @@ model User {
   createdExams Exam[] @relation("CreatedByExams")
   updatedExams Exam[] @relation("UpdatedByExams")
 
-  @@unique([tenantId, email])
-  @@index([tenantId])
-  @@index([schoolId])
   @@map("users")
 }
 

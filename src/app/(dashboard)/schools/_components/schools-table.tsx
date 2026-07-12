@@ -46,7 +46,7 @@ export function SchoolsTable() {
                   <div className="flex items-center gap-4 pt-1">
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                       <Users className="h-3.5 w-3.5" />
-                      <span className="font-medium text-foreground">{school._count.users}</span>
+                      <span className="font-medium text-foreground">{school._count.memberships}</span>
                       <span className="hidden sm:inline">{t("nav.students").toLowerCase()}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -79,7 +79,7 @@ export function SchoolsTable() {
                   <TableCell className="font-medium">{school.name}</TableCell>
                   <TableCell>{school.address ?? "—"}</TableCell>
                   <TableCell>{school.phone ?? "—"}</TableCell>
-                  <TableCell>{school._count.users}</TableCell>
+                  <TableCell>{school._count.memberships}</TableCell>
                   <TableCell>{school._count.sessions}</TableCell>
                 </TableRow>
               ))}

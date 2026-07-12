@@ -241,16 +241,11 @@ export async function createUserAccount({
       const created = await tx.user.create({
         data: {
           id: authData.user.id,
-          tenantId,
-          schoolId: input.schoolId,
           email,
           name: input.name,
           phone: input.phone,
-          role: input.role,
-          qualifiedCategories:
-            input.role === "INSTRUCTOR" ? input.qualifiedCategories ?? [] : [],
         },
-        select: { id: true, name: true, email: true, role: true },
+        select: { id: true, name: true, email: true },
       });
 
       // Per-tenant Membership — role/school live here (Phase 2 drops the User
@@ -282,7 +277,7 @@ export async function createUserAccount({
       return created;
     });
 
-    return { user, outcome: "created" };
+    return { user: { ...user, role: input.role }, outcome: "created" };
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       throw new TRPCError({

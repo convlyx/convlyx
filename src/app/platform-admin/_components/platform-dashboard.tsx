@@ -28,7 +28,7 @@ type Tenant = {
   name: string;
   status: string;
   createdAt: Date;
-  _count: { schools: number; users: number };
+  _count: { schools: number; memberships: number };
 };
 
 type School = {
@@ -39,7 +39,7 @@ type School = {
   phone: string | null;
   tenantId: string;
   tenant: { name: string };
-  _count: { users: number; sessions: number };
+  _count: { memberships: number; sessions: number };
 };
 
 export function PlatformDashboard({
@@ -168,7 +168,7 @@ export function PlatformDashboard({
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {tenant._count.schools} escolas · {tenant._count.users} utilizadores
+                    {tenant._count.schools} escolas · {tenant._count.memberships} utilizadores
                   </p>
                 </div>
                 <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">{tenant.id.slice(0, 8)}...</code>
@@ -205,7 +205,7 @@ export function PlatformDashboard({
                         <Globe className="h-3 w-3" />
                         {school.subdomain}.convlyx.com
                       </span>
-                      <span>{school._count.users} utilizadores</span>
+                      <span>{school._count.memberships} utilizadores</span>
                       <span>{school._count.sessions} aulas</span>
                     </div>
                   </div>

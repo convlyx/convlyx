@@ -168,7 +168,7 @@ async function getOrCreateUser({
   qualifiedCategories?: readonly string[];
 }): Promise<string> {
   const existing = await db.user.findFirst({
-    where: { email, tenantId },
+    where: { email },
     select: { id: true },
   });
   if (existing) return existing.id;
@@ -192,14 +192,9 @@ async function getOrCreateUser({
   await db.user.create({
     data: {
       id: authUserId,
-      tenantId,
-      schoolId,
       email,
       name,
       phone,
-      role,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      qualifiedCategories: qualifiedCategories as any,
       ...(createdAt && { createdAt }),
     },
   });
@@ -303,10 +298,11 @@ async function main() {
     studentIds.push(id);
   }
 
-  const admin = await db.user.findFirstOrThrow({
+  const adminMembership = await db.membership.findFirstOrThrow({
     where: { tenantId: tenant.id, role: "ADMIN" },
-    select: { id: true },
+    select: { userId: true },
   });
+  const admin = { id: adminMembership.userId };
 
   // ─── Student Courses ───
   // Each student gets exactly one course in their declared category.

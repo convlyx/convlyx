@@ -546,13 +546,9 @@ export const userRouter = router({
 
       const jobs: (PushJob | null)[] = [];
       const result = await ctx.db.$transaction(async (tx) => {
-        const updated = await tx.user.updateMany({
-          where: { id: input.id, tenantId: ctx.tenantId },
-          data: { status: "INACTIVE" },
-        });
-        // Status is per-tenant → deactivate the Membership too (the auth gate
-        // now reads membership.status). User.status kept in sync for #4.
-        await tx.membership.updateMany({
+        // Status is per-tenant → deactivate the Membership (the auth gate reads
+        // membership.status).
+        const updated = await tx.membership.updateMany({
           where: { tenantId: ctx.tenantId, userId: input.id },
           data: { status: "INACTIVE" },
         });
@@ -592,16 +588,9 @@ export const userRouter = router({
         }
       }
 
-      return ctx.db.$transaction(async (tx) => {
-        const updated = await tx.user.updateMany({
-          where: { id: input.id, tenantId: ctx.tenantId },
-          data: { status: "ACTIVE" },
-        });
-        await tx.membership.updateMany({
-          where: { tenantId: ctx.tenantId, userId: input.id },
-          data: { status: "ACTIVE" },
-        });
-        return updated;
+      return ctx.db.membership.updateMany({
+        where: { tenantId: ctx.tenantId, userId: input.id },
+        data: { status: "ACTIVE" },
       });
     }),
 
@@ -725,7 +714,6 @@ export const userRouter = router({
               name: "Anonimizado",
               email: placeholderEmail,
               phone: null,
-              status: "INACTIVE",
             },
           });
           const { error } = await supabaseAdmin.auth.admin.deleteUser(target.userId);

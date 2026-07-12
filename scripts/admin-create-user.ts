@@ -127,13 +127,13 @@ async function runCreate(
   });
   if (!school) die(`No school found with subdomain "${subdomain}"`);
 
-  const existing = await db.user.findFirst({
-    where: { tenantId: school.tenantId, email },
-    select: { id: true, status: true, role: true },
+  const existing = await db.membership.findFirst({
+    where: { tenantId: school.tenantId, user: { email } },
+    select: { userId: true, status: true, role: true },
   });
   if (existing) {
     die(
-      `User ${email} already exists in tenant (id=${existing.id}, role=${existing.role}, status=${existing.status}). ` +
+      `User ${email} already a member of this school (id=${existing.userId}, role=${existing.role}, status=${existing.status}). ` +
         `Use --reset to send a new password link, or reactivate via the dashboard.`,
     );
   }
@@ -188,17 +188,12 @@ async function runCreate(
 
   console.log(`→ inserting Prisma rows…`);
   await db.$transaction(async (tx) => {
-    await tx.user.create({
-      data: {
-        id: authUserId!,
-        tenantId: school.tenantId,
-        schoolId: school.id,
-        email,
-        name,
-        phone,
-        role,
-        qualifiedCategories: role === "INSTRUCTOR" ? qualifiedCategories : [],
-      },
+    // Upsert the global User (the auth user may already exist from another
+    // school); the per-tenant Membership below is what makes them a member here.
+    await tx.user.upsert({
+      where: { id: authUserId! },
+      create: { id: authUserId!, email, name, phone },
+      update: {},
     });
 
     // Per-tenant Membership (Approach 1a): role/school live here, and
@@ -250,35 +245,36 @@ async function runReset(
   const email = args.values.email?.trim().toLowerCase();
   if (!email) die("Missing --email");
 
-  // Look up the user across all tenants. The Prisma `User.email` column has
-  // no global unique constraint (a person could exist as a user in more
-  // than one tenant), so guard against ambiguity rather than silently
-  // picking the first match.
-  const matches = await db.user.findMany({
+  // Email is globally unique now (one User), but a person can belong to
+  // several schools. The recovery link redirects to one subdomain, so guard
+  // against ambiguity rather than silently picking one.
+  const user = await db.user.findFirst({
     where: { email },
     select: {
       id: true,
-      tenantId: true,
       name: true,
-      school: { select: { subdomain: true, name: true } },
+      memberships: { select: { school: { select: { subdomain: true, name: true } } } },
     },
   });
-  if (matches.length === 0) {
+  if (!user) {
     die(
       `No user found with email ${email}. If they exist in Supabase auth but not in our DB, ` +
         `create them via the default (no-flag) mode instead.`,
     );
   }
-  if (matches.length > 1) {
-    const list = matches.map((m) => `${m.school.subdomain} (${m.school.name})`).join(", ");
+  if (user.memberships.length === 0) {
+    die(`User ${email} has no school membership. Create them via the default (no-flag) mode.`);
+  }
+  if (user.memberships.length > 1) {
+    const list = user.memberships.map((m) => `${m.school.subdomain} (${m.school.name})`).join(", ");
     die(
-      `Email ${email} exists in multiple tenants: ${list}. ` +
+      `Email ${email} belongs to multiple schools: ${list}. ` +
         `Reset via the dashboard for the correct one, or extend this script with --school to disambiguate.`,
     );
   }
-  const user = matches[0];
+  const school = user.memberships[0].school;
 
-  const redirectTo = buildRedirectTo(siteUrl, user.school.subdomain);
+  const redirectTo = buildRedirectTo(siteUrl, school.subdomain);
 
   console.log(`→ generating recovery link for ${email}…`);
   const recovery = await supabaseAdmin.auth.admin.generateLink({
@@ -301,7 +297,7 @@ async function runReset(
   console.log(`  id:     ${user.id}`);
   console.log(`  email:  ${email}`);
   console.log(`  name:   ${user.name}`);
-  console.log(`  school: ${user.school.name} (${user.school.subdomain})`);
+  console.log(`  school: ${school.name} (${school.subdomain})`);
   console.log("\n🔑 Send this link to the user (it lets them set a new password):\n");
   console.log(`   ${actionLink}\n`);
   console.log("Note: the link is single-use and expires per your Supabase auth settings.\n");

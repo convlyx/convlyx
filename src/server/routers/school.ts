@@ -14,7 +14,7 @@ export const schoolRouter = router({
         phone: true,
         timeZone: true,
         createdAt: true,
-        _count: { select: { users: true, sessions: true } },
+        _count: { select: { memberships: true, sessions: true } },
       },
       orderBy: { name: "asc" },
     });

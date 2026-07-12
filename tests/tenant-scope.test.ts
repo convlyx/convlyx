@@ -22,10 +22,12 @@ describe("withTenant extension", () => {
     await cleanupTenants(a.tenantId, b.tenantId);
   });
 
+  // User is no longer tenant-scoped (it's the global identity); these
+  // extension tests use Membership, the per-tenant row that replaced it.
   test("findMany with NO where clause only returns the current tenant's rows", async () => {
     const scoped = withTenant(db, a.tenantId);
-    const users = await scoped.user.findMany();
-    const ids = users.map((u) => u.id);
+    const memberships = await scoped.membership.findMany();
+    const ids = memberships.map((m) => m.userId);
 
     expect(ids).toEqual(
       expect.arrayContaining([a.adminUserId, a.instructorUserId, a.studentUserId]),
@@ -43,8 +45,8 @@ describe("withTenant extension", () => {
   test("count is scoped — counts only current-tenant rows", async () => {
     const aScoped = withTenant(db, a.tenantId);
     const bScoped = withTenant(db, b.tenantId);
-    const aTotal = await aScoped.user.count();
-    const bTotal = await bScoped.user.count();
+    const aTotal = await aScoped.membership.count();
+    const bTotal = await bScoped.membership.count();
     expect(aTotal).toBe(3);
     expect(bTotal).toBe(3);
   });
@@ -53,25 +55,27 @@ describe("withTenant extension", () => {
     // Caller is acting as tenant A; deliberately passes B's tenantId.
     // Result must be A's row(s), not B's.
     const scoped = withTenant(db, a.tenantId);
-    const users = await scoped.user.findMany({
+    const memberships = await scoped.membership.findMany({
       where: { tenantId: b.tenantId, role: "ADMIN" },
     });
-    const ids = users.map((u) => u.id);
+    const ids = memberships.map((m) => m.userId);
     expect(ids).toContain(a.adminUserId);
     expect(ids).not.toContain(b.adminUserId);
   });
 
   test("update with NO tenant filter cannot reach into another tenant", async () => {
     const scoped = withTenant(db, a.tenantId);
-    // Try to update B's admin name via A's scoped client.
-    const result = await scoped.user.updateMany({
-      where: { id: b.adminUserId },
+    // Try to rename B's admin membership via A's scoped client.
+    const result = await scoped.membership.updateMany({
+      where: { userId: b.adminUserId },
       data: { name: "Tampered" },
     });
 
     expect(result.count).toBe(0);
-    // B's admin is unchanged.
-    const bAdmin = await db.user.findFirst({ where: { id: b.adminUserId } });
+    // B's admin membership is unchanged.
+    const bAdmin = await db.membership.findFirst({
+      where: { tenantId: b.tenantId, userId: b.adminUserId },
+    });
     expect(bAdmin?.name).not.toBe("Tampered");
   });
 
@@ -106,7 +110,9 @@ describe("withTenant extension", () => {
     const scoped = withTenant(db, a.tenantId);
     await expect(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (scoped as any).user.findUnique({ where: { id: a.adminUserId } }),
+      (scoped as any).membership.findUnique({
+        where: { tenantId_userId: { tenantId: a.tenantId, userId: a.adminUserId } },
+      }),
     ).rejects.toThrow(/tenant-scope.*findUnique.*forbidden/i);
   });
 
