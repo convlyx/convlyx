@@ -8,6 +8,10 @@ import { logger } from "@/lib/logger";
 import { Prisma } from "@/generated/prisma/client";
 import { createUserAccount, mapSupabaseAuthError } from "../lib/create-user";
 import { userNameSelect, tenantName } from "../lib/tenant-name";
+// Raw (un-tenant-scoped) client — GDPR erasure spans tenants: it must count a
+// person's memberships across ALL tenants and delete the global identity by id
+// regardless of the (soon-to-be-dropped) User.tenantId.
+import { db as rawDb } from "@/server/db";
 
 // Construction-time fallback: Supabase JS throws if URL/key are empty,
 // which would crash the module on import in environments where env vars
@@ -601,13 +605,16 @@ export const userRouter = router({
       });
     }),
 
-  // Hard-delete a STUDENT or INSTRUCTOR that has no business-meaningful FK
+  // Hard-delete a STUDENT or INSTRUCTOR with no business-meaningful FK
   // references. Used to clean up data-entry mistakes. Staff (ADMIN/SECRETARY)
   // are deactivate-only — their audit-trail FKs accumulate too quickly.
   //
-  // Cascade on the schema removes Notification, PushSubscription, and
-  // StudentCourse rows. Enrollments and Exams BLOCK deletion (the guard below)
-  // because they represent real history that shouldn't disappear silently.
+  // Per-tenant: this removes the person FROM THIS SCHOOL. If they belong to
+  // other schools, only this tenant's membership + tenant-scoped rows are
+  // deleted and their global identity/login is kept. Only when this is their
+  // LAST school is the global User (and Supabase auth account) hard-deleted —
+  // the schema cascade then clears their remaining rows. Enrollments/Exams
+  // BLOCK deletion (the guard below) so real history is never silently lost.
   delete: roleProtectedProcedure(["ADMIN"])
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
@@ -631,33 +638,47 @@ export const userRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "users.cannotDeleteHasData" });
       }
 
-      // Delete Prisma row inside a transaction; if Supabase Auth delete fails,
-      // throw to roll back so we don't leave a Prisma-less but still-loggable
-      // auth row in an inconsistent state.
-      await ctx.db.$transaction(async (tx) => {
-        await tx.user.delete({ where: { id: target.userId } });
-        // 404 = auth row already gone, which is the desired end state.
-        const { error } = await supabaseAdmin.auth.admin.deleteUser(target.userId);
-        if (error && error.status !== 404) {
-          logger.error("user.delete: supabase auth delete failed", { error });
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "users.deleteFailed" });
+      // Does this person belong to any OTHER school? (raw client — cross-tenant.)
+      const otherMemberships = await rawDb.membership.count({
+        where: { userId: target.userId, tenantId: { not: ctx.tenantId } },
+      });
+      const isLastTenant = otherMemberships === 0;
+
+      // Raw client + explicit tenant filters: erasure spans tenants, so it must
+      // not be auto-scoped, and the global User must be deletable by id.
+      await rawDb.$transaction(async (tx) => {
+        if (isLastTenant) {
+          // Their only school → fully forget them. Deleting the User cascades
+          // this tenant's membership/courses/notifications/push subscriptions.
+          await tx.user.delete({ where: { id: target.userId } });
+          const { error } = await supabaseAdmin.auth.admin.deleteUser(target.userId);
+          if (error && error.status !== 404) {
+            logger.error("user.delete: supabase auth delete failed", { error });
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "users.deleteFailed" });
+          }
+        } else {
+          // They remain a member elsewhere → remove them from THIS school only.
+          // Keep the global identity + login intact.
+          await tx.studentCourse.deleteMany({ where: { tenantId: ctx.tenantId, studentId: target.userId } });
+          await tx.notification.deleteMany({ where: { tenantId: ctx.tenantId, userId: target.userId } });
+          await tx.pushSubscription.deleteMany({ where: { tenantId: ctx.tenantId, userId: target.userId } });
+          await tx.membership.deleteMany({ where: { tenantId: ctx.tenantId, userId: target.userId } });
         }
       });
 
       return { success: true };
     }),
 
-  // GDPR Art. 17 ("right to be forgotten") companion to `delete`. For users
-  // who can't be hard-deleted because they have history (enrollments, exams,
-  // taught classes), this strips PII in place: name → "Anonimizado", email →
-  // a unique placeholder, phone → null. Historical FK rows stay intact so
-  // attendance records and exam history aren't silently rewritten — the
-  // person is just unidentifiable.
+  // GDPR Art. 17 ("right to be forgotten") companion to `delete`, for users
+  // with history (enrollments, exams, taught classes) that can't be hard-
+  // deleted. Strips PII in place so historical FK rows survive but the person
+  // is unidentifiable.
   //
-  // The Supabase Auth row is also deleted so the account can't log in again.
-  // Same guards as `delete`: ADMIN-only, self forbidden, STUDENT/INSTRUCTOR
-  // only (staff with audit-trail FKs would still be undeletable; if a staff
-  // member ever needs anonymizing, lift the role check then).
+  // Per-tenant: their membership here is anonymized (name → "Anonimizado",
+  // phone null, INACTIVE) and this tenant's notifications/push wiped. The
+  // GLOBAL identity (User email/name) and the login are only scrubbed/killed
+  // when this is their LAST school — otherwise they stay reachable and able to
+  // log into the other schools that still hold them.
   anonymize: roleProtectedProcedure(["ADMIN"])
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
@@ -676,41 +697,42 @@ export const userRouter = router({
         throw new TRPCError({ code: "FORBIDDEN", message: "users.cannotDeleteStaff" });
       }
 
-      // The User table is `@@unique([tenantId, email])`. The first 8 chars of
-      // the user's UUID make the placeholder unique enough to avoid collisions
-      // with other anonymized users in the same tenant, without dragging the
-      // full UUID into anything an operator might still see in the UI.
+      const otherMemberships = await rawDb.membership.count({
+        where: { userId: target.userId, tenantId: { not: ctx.tenantId } },
+      });
+      const isLastTenant = otherMemberships === 0;
+
+      // The first 8 chars of the UUID keep the placeholder email unique against
+      // other anonymized users without exposing the full id in the UI.
       const placeholderEmail = `anonimizado-${target.userId.slice(0, 8)}@convlyx.invalid`;
 
-      await ctx.db.$transaction(async (tx) => {
-        await tx.user.update({
-          where: { id: target.userId },
-          data: {
-            name: "Anonimizado",
-            email: placeholderEmail,
-            phone: null,
-            status: "INACTIVE",
-          },
-        });
-        // Deactivate the membership too (per-tenant status; the auth gate reads
-        // membership.status).
+      await rawDb.$transaction(async (tx) => {
+        // Always: anonymize the per-tenant membership + wipe this tenant's
+        // name-adjacent personal data.
         await tx.membership.updateMany({
           where: { tenantId: ctx.tenantId, userId: target.userId },
           data: { status: "INACTIVE", name: "Anonimizado", phone: null },
         });
-        // Notifications + push subscriptions hold name-adjacent personal data
-        // and don't need to survive anonymization. Wipe them explicitly
-        // (cascade rules only fire on user delete, which we're not doing).
-        await tx.notification.deleteMany({ where: { userId: target.userId } });
-        await tx.pushSubscription.deleteMany({ where: { userId: target.userId } });
-        // Lock the auth account so the person can't log in again. If the
-        // auth row is already gone (404), accept that as success — that's
-        // the end state we want. Anything else rolls the transaction back
-        // so the Prisma row stays identifiable.
-        const { error } = await supabaseAdmin.auth.admin.deleteUser(target.userId);
-        if (error && error.status !== 404) {
-          logger.error("user.anonymize: supabase auth delete failed", { error });
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "users.deleteFailed" });
+        await tx.notification.deleteMany({ where: { tenantId: ctx.tenantId, userId: target.userId } });
+        await tx.pushSubscription.deleteMany({ where: { tenantId: ctx.tenantId, userId: target.userId } });
+
+        if (isLastTenant) {
+          // No other school controls them → scrub the global identity and kill
+          // the login so the account can't be used again.
+          await tx.user.update({
+            where: { id: target.userId },
+            data: {
+              name: "Anonimizado",
+              email: placeholderEmail,
+              phone: null,
+              status: "INACTIVE",
+            },
+          });
+          const { error } = await supabaseAdmin.auth.admin.deleteUser(target.userId);
+          if (error && error.status !== 404) {
+            logger.error("user.anonymize: supabase auth delete failed", { error });
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "users.deleteFailed" });
+          }
         }
       });
 
