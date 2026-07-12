@@ -208,6 +208,8 @@ async function runCreate(
       data: {
         tenantId: school.tenantId,
         userId: authUserId!,
+        name,
+        phone,
         schoolId: school.id,
         role,
         qualifiedCategories: role === "INSTRUCTOR" ? qualifiedCategories : [],

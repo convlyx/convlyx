@@ -110,6 +110,8 @@ export async function POST(request: NextRequest) {
         data: {
           tenantId: school.tenantId,
           userId: created.id,
+          name,
+          phone: phone || null,
           schoolId: school.id,
           role: "ADMIN",
         },

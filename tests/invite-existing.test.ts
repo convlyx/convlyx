@@ -53,14 +53,15 @@ describe("invite existing identity into a second school", () => {
     // No Supabase invite: they already have credentials.
     expect(inviteMock).not.toHaveBeenCalled();
 
-    // A Membership now exists in tenant B.
+    // A Membership now exists in tenant B — with B's own (per-tenant) name.
     const memB = await db.membership.findFirst({
       where: { tenantId: B.tenantId, userId: A.studentUserId },
-      select: { role: true, status: true, schoolId: true },
+      select: { role: true, status: true, schoolId: true, name: true },
     });
     expect(memB?.status).toBe("ACTIVE");
     expect(memB?.role).toBe("STUDENT");
     expect(memB?.schoolId).toBe(B.schoolId);
+    expect(memB?.name).toBe("Nome Diferente");
 
     // Tenant A's membership is untouched.
     const memA = await db.membership.findFirst({

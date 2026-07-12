@@ -41,6 +41,7 @@ describe("student schedule conflicts", () => {
       data: {
         tenantId: a.tenantId,
         userId: freeInstructorId,
+        name: "Instrutor Livre",
         schoolId: a.schoolId,
         role: "INSTRUCTOR",
         qualifiedCategories: ["B"],

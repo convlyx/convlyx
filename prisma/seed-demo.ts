@@ -209,6 +209,8 @@ async function getOrCreateUser({
     data: {
       tenantId,
       userId: authUserId,
+      name,
+      phone,
       schoolId,
       role,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -108,6 +108,10 @@ export async function createUserAccount({
 
     const isReactivation = !!membership;
     const membershipData = {
+      // Per-tenant name/phone: this school labels the person with what the
+      // admin entered, independent of any other school's label for them.
+      name: input.name,
+      phone: input.phone ?? null,
       schoolId: input.schoolId,
       role: input.role,
       status: "ACTIVE" as const,
@@ -191,7 +195,7 @@ export async function createUserAccount({
     return {
       user: {
         id: globalUser.id,
-        name: globalUser.name,
+        name: input.name,
         email,
         role: input.role,
       },
@@ -255,6 +259,8 @@ export async function createUserAccount({
         data: {
           tenantId,
           userId: created.id,
+          name: input.name,
+          phone: input.phone,
           schoolId: input.schoolId,
           role: input.role,
           qualifiedCategories:

@@ -74,9 +74,9 @@ export async function createTestTenant(label: string): Promise<TestTenant> {
     }),
     db.membership.createMany({
       data: [
-        { tenantId, userId: adminUserId, schoolId, role: "ADMIN" },
-        { tenantId, userId: instructorUserId, schoolId, role: "INSTRUCTOR", qualifiedCategories: ["B"] },
-        { tenantId, userId: studentUserId, schoolId, role: "STUDENT" },
+        { tenantId, userId: adminUserId, schoolId, role: "ADMIN", name: `Admin ${label}` },
+        { tenantId, userId: instructorUserId, schoolId, role: "INSTRUCTOR", qualifiedCategories: ["B"], name: `Instrutor ${label}` },
+        { tenantId, userId: studentUserId, schoolId, role: "STUDENT", name: `Aluno ${label}` },
       ],
     }),
   ]);

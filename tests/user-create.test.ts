@@ -97,7 +97,7 @@ describe("user.create", () => {
       },
     });
     await db.membership.create({
-      data: { tenantId: t.tenantId, userId: dupId, schoolId: t.schoolId, role: "STUDENT", status: "ACTIVE" },
+      data: { tenantId: t.tenantId, userId: dupId, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "ACTIVE" },
     });
 
     await expect(
@@ -136,7 +136,7 @@ describe("user.create", () => {
       },
     });
     await db.membership.create({
-      data: { tenantId: t.tenantId, userId: originalId, schoolId: t.schoolId, role: "STUDENT", status: "INACTIVE" },
+      data: { tenantId: t.tenantId, userId: originalId, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "INACTIVE" },
     });
 
     // Secretary re-adds the same student. Their membership reactivates; the
@@ -198,7 +198,7 @@ describe("user.create", () => {
       },
     });
     await db.membership.create({
-      data: { tenantId: t.tenantId, userId, schoolId: t.schoolId, role: "STUDENT", status: "INACTIVE" },
+      data: { tenantId: t.tenantId, userId, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "INACTIVE" },
     });
     await db.studentCourse.create({
       data: {
@@ -243,7 +243,7 @@ describe("user.create", () => {
       },
     });
     await db.membership.create({
-      data: { tenantId: t.tenantId, userId: ciId, schoolId: t.schoolId, role: "STUDENT", status: "ACTIVE" },
+      data: { tenantId: t.tenantId, userId: ciId, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "ACTIVE" },
     });
 
     // Inviting the lowercase form must recognise the same identity (→ CONFLICT
@@ -278,7 +278,7 @@ describe("user.create", () => {
       },
     });
     await db.membership.create({
-      data: { tenantId: t.tenantId, userId: trpcId, schoolId: t.schoolId, role: "STUDENT", status: "ACTIVE" },
+      data: { tenantId: t.tenantId, userId: trpcId, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "ACTIVE" },
     });
 
     let caught: unknown;

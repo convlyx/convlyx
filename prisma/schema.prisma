@@ -377,6 +377,10 @@ model Membership {
   tenantId            String            @map("tenant_id") @db.Uuid
   userId              String            @map("user_id") @db.Uuid
   schoolId            String            @map("school_id") @db.Uuid
+  // Name + phone are per-tenant: the same person (one login/email) can be
+  // labelled differently at each school. Email stays the global identity on User.
+  name                String
+  phone               String?
   role                UserRole
   status              UserStatus        @default(ACTIVE)
   qualifiedCategories LicenseCategory[] @default([]) @map("qualified_categories")

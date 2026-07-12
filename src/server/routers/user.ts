@@ -93,18 +93,10 @@ export const userRouter = router({
       // for relation-based filters (search, current course, instructor scoping).
       const isInstructor = ctx.membership.role === "INSTRUCTOR";
 
-      // Conditions that apply to the joined User. They all live under a single
-      // `user` key (combined with AND) so they don't clobber one another —
-      // unlike the old User-model query where they were sibling top-level keys.
+      // Conditions on the joined User (current-course category, instructor's
+      // own-students filter) — combined under a single `user` key with AND so
+      // they don't clobber one another.
       const userConditions: Prisma.UserWhereInput[] = [];
-      if (input?.search) {
-        userConditions.push({
-          OR: [
-            { name: { contains: input.search, mode: "insensitive" } },
-            { email: { contains: input.search, mode: "insensitive" } },
-          ],
-        });
-      }
       if (input?.category) {
         userConditions.push({
           studentCourses: {
@@ -132,10 +124,20 @@ export const userRouter = router({
               ? { role: { in: input.roles } }
               : {}),
         ...(input?.status && { status: input.status }),
+        // Search matches the per-tenant name (on the membership) or the global
+        // email (on the user).
+        ...(input?.search && {
+          OR: [
+            { name: { contains: input.search, mode: "insensitive" } },
+            { user: { email: { contains: input.search, mode: "insensitive" } } },
+          ],
+        }),
         ...(userConditions.length > 0 && { user: { AND: userConditions } }),
       };
 
       const select = {
+        name: true,
+        phone: true,
         role: true,
         status: true,
         qualifiedCategories: true,
@@ -143,9 +145,7 @@ export const userRouter = router({
         user: {
           select: {
             id: true,
-            name: true,
             email: true,
-            phone: true,
             createdAt: true,
             // Current course for students (drives the category badge in lists)
             studentCourses: {
@@ -163,14 +163,14 @@ export const userRouter = router({
             ctx.db.membership.findMany({
               where,
               select,
-              orderBy: { user: { name: "asc" } },
+              orderBy: { name: "asc" },
               skip: (input!.page! - 1) * input!.pageSize!,
               take: input!.pageSize!,
             }),
             ctx.db.membership.count({ where }),
           ])
         : await ctx.db.membership
-            .findMany({ where, select, orderBy: { user: { name: "asc" } } })
+            .findMany({ where, select, orderBy: { name: "asc" } })
             .then((r) => [r, r.length] as const);
 
       // Merge email-confirmation status from Supabase Auth so the UI can
@@ -192,9 +192,9 @@ export const userRouter = router({
 
       const items = rows.map((m) => ({
         id: m.user.id,
-        name: m.user.name,
+        name: m.name,
         email: m.user.email,
-        phone: m.user.phone,
+        phone: m.phone,
         role: m.role,
         status: m.status,
         qualifiedCategories: m.qualifiedCategories,
@@ -248,6 +248,8 @@ export const userRouter = router({
       const m = await ctx.db.membership.findFirst({
         where: { tenantId: ctx.tenantId, userId: input.id },
         select: {
+          name: true,
+          phone: true,
           role: true,
           status: true,
           schoolId: true,
@@ -256,9 +258,7 @@ export const userRouter = router({
           user: {
             select: {
               id: true,
-              name: true,
               email: true,
-              phone: true,
               createdAt: true,
             },
           },
@@ -267,9 +267,9 @@ export const userRouter = router({
       if (!m) return null;
       return {
         id: m.user.id,
-        name: m.user.name,
+        name: m.name,
         email: m.user.email,
-        phone: m.user.phone,
+        phone: m.phone,
         role: m.role,
         status: m.status,
         schoolId: m.schoolId,
@@ -497,28 +497,20 @@ export const userRouter = router({
         });
       }
 
-      // Role / school / qualifications are per-tenant → authoritative on the
-      // Membership (read by roleProtectedProcedure + the roster). Name/phone are
-      // global identity on User. Write both in one transaction; the User
-      // columns stay in sync for the not-yet-migrated read paths until #4 drops
-      // them.
-      const membershipData = {
-        role: input.role,
-        schoolId: input.schoolId,
-        ...(input.qualifiedCategories !== undefined && {
-          qualifiedCategories: input.qualifiedCategories,
-        }),
-      };
-      return ctx.db.$transaction(async (tx) => {
-        const updated = await tx.user.updateMany({
-          where: { id: input.id, tenantId: ctx.tenantId },
-          data: { name: input.name, phone: input.phone, ...membershipData },
-        });
-        await tx.membership.updateMany({
-          where: { tenantId: ctx.tenantId, userId: input.id },
-          data: membershipData,
-        });
-        return updated;
+      // Name / phone / role / school / qualifications are all per-tenant → they
+      // live on the Membership. The global User identity (email) is untouched,
+      // so editing here never relabels the person at another school.
+      return ctx.db.membership.updateMany({
+        where: { tenantId: ctx.tenantId, userId: input.id },
+        data: {
+          name: input.name,
+          phone: input.phone ?? null,
+          role: input.role,
+          schoolId: input.schoolId,
+          ...(input.qualifiedCategories !== undefined && {
+            qualifiedCategories: input.qualifiedCategories,
+          }),
+        },
       });
     }),
 
@@ -703,7 +695,7 @@ export const userRouter = router({
         // membership.status).
         await tx.membership.updateMany({
           where: { tenantId: ctx.tenantId, userId: target.userId },
-          data: { status: "INACTIVE" },
+          data: { status: "INACTIVE", name: "Anonimizado", phone: null },
         });
         // Notifications + push subscriptions hold name-adjacent personal data
         // and don't need to survive anonymization. Wipe them explicitly
@@ -740,6 +732,8 @@ export const userRouter = router({
       const m = await ctx.db.membership.findFirst({
         where: { tenantId: ctx.tenantId, userId: input.id },
         select: {
+          name: true,
+          phone: true,
           role: true,
           status: true,
           qualifiedCategories: true,
@@ -755,9 +749,7 @@ export const userRouter = router({
         where: { id: input.id },
         select: {
           id: true,
-          name: true,
           email: true,
-          phone: true,
           createdAt: true,
           updatedAt: true,
           studentCourses: {
@@ -875,6 +867,8 @@ export const userRouter = router({
       // export shape is unchanged.
       const profile = {
         ...profileBase,
+        name: m.name,
+        phone: m.phone,
         role: m.role,
         status: m.status,
         qualifiedCategories: m.qualifiedCategories,
@@ -901,16 +895,17 @@ export const userRouter = router({
       const m = await ctx.db.membership.findFirst({
         where: { tenantId: ctx.tenantId, userId: ctx.user.id },
         select: {
+          name: true,
           role: true,
           school: { select: { id: true, name: true, address: true, phone: true } },
           tenant: { select: { id: true, name: true } },
-          user: { select: { id: true, name: true, email: true } },
+          user: { select: { id: true, email: true } },
         },
       });
       if (!m) return null;
       return {
         id: m.user.id,
-        name: m.user.name,
+        name: m.name,
         email: m.user.email,
         role: m.role,
         school: m.school,
@@ -921,8 +916,9 @@ export const userRouter = router({
   updateProfile: protectedProcedure
     .input(z.object({ name: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.user.update({
-        where: { id: ctx.user.id },
+      // Name is per-tenant → update the caller's membership in this tenant.
+      await ctx.db.membership.updateMany({
+        where: { tenantId: ctx.tenantId, userId: ctx.user.id },
         data: { name: input.name },
       });
       return { success: true };
@@ -948,14 +944,14 @@ export const userRouter = router({
           }),
         },
         select: {
+          name: true,
+          phone: true,
           status: true,
           school: { select: { id: true, name: true, timeZone: true } },
           user: {
             select: {
               id: true,
-              name: true,
               email: true,
-              phone: true,
               createdAt: true,
             },
           },
@@ -967,9 +963,9 @@ export const userRouter = router({
       }
       const student = {
         id: m.user.id,
-        name: m.user.name,
+        name: m.name,
         email: m.user.email,
-        phone: m.user.phone,
+        phone: m.phone,
         status: m.status,
         createdAt: m.user.createdAt,
         school: m.school,
@@ -1189,14 +1185,14 @@ export const userRouter = router({
           }),
         },
         select: {
+          name: true,
+          phone: true,
           status: true,
           school: { select: { id: true, name: true } },
           user: {
             select: {
               id: true,
-              name: true,
               email: true,
-              phone: true,
               createdAt: true,
               studentCourses: {
                 select: {
@@ -1249,9 +1245,9 @@ export const userRouter = router({
       }
       const student = {
         id: m.user.id,
-        name: m.user.name,
+        name: m.name,
         email: m.user.email,
-        phone: m.user.phone,
+        phone: m.phone,
         status: m.status,
         createdAt: m.user.createdAt,
         school: m.school,
@@ -1293,15 +1289,15 @@ export const userRouter = router({
       const m = await ctx.db.membership.findFirst({
         where: { tenantId: ctx.tenantId, userId: input.id, role: "INSTRUCTOR" },
         select: {
+          name: true,
+          phone: true,
           status: true,
           qualifiedCategories: true,
           school: { select: { id: true, name: true } },
           user: {
             select: {
               id: true,
-              name: true,
               email: true,
-              phone: true,
               createdAt: true,
             },
           },
@@ -1313,9 +1309,9 @@ export const userRouter = router({
       }
       const instructor = {
         id: m.user.id,
-        name: m.user.name,
+        name: m.name,
         email: m.user.email,
-        phone: m.user.phone,
+        phone: m.phone,
         status: m.status,
         qualifiedCategories: m.qualifiedCategories,
         createdAt: m.user.createdAt,

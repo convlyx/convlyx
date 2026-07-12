@@ -74,7 +74,7 @@ describe("user.bulkCreate", () => {
       },
     });
     await db.membership.create({
-      data: { tenantId: t.tenantId, userId: activeId, schoolId: t.schoolId, role: "STUDENT", status: "ACTIVE" },
+      data: { tenantId: t.tenantId, userId: activeId, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "ACTIVE" },
     });
     const fresh = `bulk-fresh-${randomUUID().slice(0, 8)}@test.local`;
 
@@ -107,7 +107,7 @@ describe("user.bulkCreate", () => {
       },
     });
     await db.membership.create({
-      data: { tenantId: t.tenantId, userId: id, schoolId: t.schoolId, role: "STUDENT", status: "INACTIVE" },
+      data: { tenantId: t.tenantId, userId: id, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "INACTIVE" },
     });
 
     const { results } = await t.asAdmin.user.bulkCreate({
@@ -164,8 +164,8 @@ describe("user.checkExistingEmails", () => {
     // checkExistingEmails is now Membership-driven — mirror status there.
     await db.membership.createMany({
       data: [
-        { tenantId: t.tenantId, userId: activeId, schoolId: t.schoolId, role: "STUDENT", status: "ACTIVE" },
-        { tenantId: t.tenantId, userId: inactiveId, schoolId: t.schoolId, role: "STUDENT", status: "INACTIVE" },
+        { tenantId: t.tenantId, userId: activeId, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "ACTIVE" },
+        { tenantId: t.tenantId, userId: inactiveId, schoolId: t.schoolId, name: "Teste", role: "STUDENT", status: "INACTIVE" },
       ],
     });
 

@@ -123,10 +123,11 @@ async function main() {
     // Phase 1 (Approach 1a): per-tenant membership carries role/school.
     await db.membership.upsert({
       where: { tenantId_userId: { tenantId: tenant.id, userId: authUserId } },
-      update: { role: seedUser.role, schoolId: school.id, status: "ACTIVE" },
+      update: { name: seedUser.name, role: seedUser.role, schoolId: school.id, status: "ACTIVE" },
       create: {
         tenantId: tenant.id,
         userId: authUserId,
+        name: seedUser.name,
         schoolId: school.id,
         role: seedUser.role,
       },
