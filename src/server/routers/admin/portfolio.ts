@@ -15,7 +15,7 @@ export const portfolioRouter = router({
     const since30 = subDaysUTC(now, 30);
     const prev60 = subDaysUTC(now, 60);
 
-    const [schoolCount, activeMembers, classes30d, schoolRows, classDates, checkinRows, lastSeenRows] =
+    const [schoolCount, activeMembers, classes30d, schoolRows, classDates, checkinRows, lastSeenRows, lastClassRows] =
       await Promise.all([
         ctx.db.school.count(),
         ctx.db.membership.count({ where: { status: "ACTIVE" } }),
@@ -37,19 +37,20 @@ export const portfolioRouter = router({
           where: { lastSeenAt: { not: null } },
           _max: { lastSeenAt: true },
         }),
+        // Most recent class created per school (all-time) — a real activity
+        // signal even before check-ins / heartbeat data accrue.
+        ctx.db.classSession.groupBy({ by: ["schoolId"], _max: { createdAt: true } }),
       ]);
 
     const recent = new Map<string, number>();
     const prev = new Map<string, number>();
-    const lastClass = new Map<string, Date>();
     for (const c of classDates) {
       const map = c.createdAt >= since30 ? recent : prev;
       map.set(c.schoolId, (map.get(c.schoolId) ?? 0) + 1);
-      const cur = lastClass.get(c.schoolId);
-      if (!cur || c.createdAt > cur) lastClass.set(c.schoolId, c.createdAt);
     }
     const lastCheckin = new Map(checkinRows.map((r) => [r.schoolId, r._max.checkedInAt]));
     const lastSeen = new Map(lastSeenRows.map((r) => [r.schoolId, r._max.lastSeenAt]));
+    const lastClass = new Map(lastClassRows.map((r) => [r.schoolId, r._max.createdAt]));
 
     let atRiskCount = 0;
     for (const s of schoolRows) {
@@ -156,7 +157,7 @@ export const portfolioRouter = router({
     const ids = schools.map((s) => s.id);
     if (ids.length === 0) return { items: [], total };
 
-    const [students, wau, classesRecent, classesPrev, passAgg, checkin, lastSeenRows, sparkRows] =
+    const [students, wau, classesRecent, classesPrev, passAgg, checkin, lastSeenRows, lastClassRows, sparkRows] =
       await Promise.all([
         ctx.db.membership.groupBy({ by: ["schoolId"], where: { schoolId: { in: ids }, role: "STUDENT", status: "ACTIVE" }, _count: { _all: true } }),
         ctx.db.membership.groupBy({ by: ["schoolId"], where: { schoolId: { in: ids }, lastSeenAt: { gte: wauSince } }, _count: { _all: true } }),
@@ -165,6 +166,7 @@ export const portfolioRouter = router({
         ctx.db.exam.groupBy({ by: ["schoolId", "result"], where: { schoolId: { in: ids }, result: { in: ["PASSED", "FAILED", "NO_SHOW"] } }, _count: { _all: true } }),
         ctx.db.enrollment.groupBy({ by: ["schoolId"], where: { schoolId: { in: ids }, checkedInAt: { not: null } }, _max: { checkedInAt: true } }),
         ctx.db.membership.groupBy({ by: ["schoolId"], where: { schoolId: { in: ids }, lastSeenAt: { not: null } }, _max: { lastSeenAt: true } }),
+        ctx.db.classSession.groupBy({ by: ["schoolId"], where: { schoolId: { in: ids } }, _max: { createdAt: true } }),
         ctx.db.enrollment.findMany({ where: { schoolId: { in: ids }, enrolledAt: { gte: sparkSince } }, select: { schoolId: true, enrolledAt: true } }),
       ]);
 
@@ -176,6 +178,7 @@ export const portfolioRouter = router({
     const prev$ = num(classesPrev);
     const lastCheckin$ = new Map(checkin.map((r) => [r.schoolId, r._max.checkedInAt]));
     const lastSeen$ = new Map(lastSeenRows.map((r) => [r.schoolId, r._max.lastSeenAt]));
+    const lastClass$ = new Map(lastClassRows.map((r) => [r.schoolId, r._max.createdAt]));
 
     const passBySchool = new Map<string, { passed: number; total: number }>();
     for (const r of passAgg) {
@@ -197,7 +200,9 @@ export const portfolioRouter = router({
 
     let items = schools.map((s) => {
       const ageDays = Math.floor((now.getTime() - s.createdAt.getTime()) / DAY_MS);
-      const dates = [lastCheckin$.get(s.id), lastSeen$.get(s.id)].filter((d): d is Date => d != null);
+      const dates = [lastCheckin$.get(s.id), lastSeen$.get(s.id), lastClass$.get(s.id)].filter(
+        (d): d is Date => d != null,
+      );
       const mostRecent = dates.length ? dates.reduce((a, b) => (a > b ? a : b)) : null;
       const daysSinceActivity = mostRecent
         ? Math.floor((now.getTime() - mostRecent.getTime()) / DAY_MS)
