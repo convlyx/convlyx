@@ -2,6 +2,9 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { db } from "./db";
 import { withTenant } from "./lib/tenant-scope";
+import { recordHeartbeat } from "./lib/heartbeat";
+import { audit } from "./lib/audit";
+import { isPlatformAdmin } from "./lib/platform-admin";
 import { createClient } from "@/lib/supabase/server";
 import { extractSubdomain } from "@/lib/subdomain";
 import type { UserRole, UserStatus } from "@/generated/prisma/enums";
@@ -11,6 +14,7 @@ type MembershipContext = {
   schoolId: string;
   tenantId: string;
   status: UserStatus;
+  lastSeenAt: Date | null;
 };
 
 export type TRPCContext = {
@@ -20,6 +24,9 @@ export type TRPCContext = {
   // Global identity only. The caller's per-tenant role/school are resolved
   // from their Membership in `protectedProcedure` (see `ctx.membership`).
   user: { id: string } | null;
+  // Auth-level email, used by `adminProcedure` for the platform-admin
+  // allowlist check (which is not represented in the DB). Null when anon.
+  userEmail: string | null;
   // Per-request memoized loader for the caller's Membership in the current
   // tenant. A batched tRPC request shares one context, so this resolves the
   // membership ONCE for the whole batch instead of once per procedure (which
@@ -38,7 +45,7 @@ export const createTRPCContext = async (opts: {
   } = await supabase.auth.getUser();
 
   if (!authUser) {
-    return { db, tenantId: null, ip, user: null, loadMembership: async () => null };
+    return { db, tenantId: null, ip, user: null, userEmail: null, loadMembership: async () => null };
   }
 
   // Tenant is resolved from the subdomain — "which school's site is this".
@@ -65,13 +72,13 @@ export const createTRPCContext = async (opts: {
     if (!membershipPromise) {
       membershipPromise = db.membership.findFirst({
         where: { userId, tenantId },
-        select: { role: true, schoolId: true, tenantId: true, status: true },
+        select: { role: true, schoolId: true, tenantId: true, status: true, lastSeenAt: true },
       });
     }
     return membershipPromise;
   };
 
-  return { db, tenantId, ip, user: { id: userId }, loadMembership };
+  return { db, tenantId, ip, user: { id: userId }, userEmail: authUser.email ?? null, loadMembership };
 };
 
 const t = initTRPC.context<TRPCContext>().create({
@@ -132,6 +139,10 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
     });
   }
 
+  // Lightweight activity signal for the internal admin console. Throttled to
+  // ≤1 write/hour per membership and never awaited — zero added request latency.
+  void recordHeartbeat(ctx.db, ctx.user.id, membership.tenantId, membership.lastSeenAt);
+
   return next({
     ctx: {
       ...ctx,
@@ -158,3 +169,34 @@ export const roleProtectedProcedure = (allowedRoles: UserRole[]) =>
 
     return next({ ctx });
   });
+
+/**
+ * Platform-admin procedure — authorized purely by the PLATFORM_ADMIN_EMAILS
+ * allowlist (the platform-admin concept is intentionally not in the DB). Runs
+ * on the RAW db (cross-tenant: Tenant/AuditLog are un-scoped, and other models
+ * are read cross-tenant deliberately here). Every mutation / individual-PII
+ * read must call `ctx.audit(...)` — this is the single audited choke point for
+ * operator access at admin.convlyx.com.
+ */
+export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
+  if (!ctx.user || !ctx.userEmail || !isPlatformAdmin(ctx.userEmail)) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "auth.notAuthenticated",
+    });
+  }
+  const actorEmail = ctx.userEmail;
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+      actorEmail,
+      audit: (params: {
+        action: string;
+        targetType: string;
+        targetId: string;
+        metadata?: Record<string, unknown>;
+      }) => audit({ db: ctx.db, actorEmail, ...params }),
+    },
+  });
+});
