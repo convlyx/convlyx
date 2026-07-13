@@ -1,8 +1,6 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requirePlatformAdmin } from "@/server/lib/platform-admin";
 import { AdminLogout } from "./_components/admin-logout";
-
-const ADMIN_EMAILS = (process.env.PLATFORM_ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
 
 export default async function PlatformAdminLayout({
   children,
@@ -10,16 +8,7 @@ export default async function PlatformAdminLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  if (!ADMIN_EMAILS.includes(user.email?.toLowerCase() ?? "")) {
-    await supabase.auth.signOut();
-    redirect("/login");
-  }
+  await requirePlatformAdmin(supabase); // redirects if not an operator
 
   return (
     <div className="min-h-screen bg-background">

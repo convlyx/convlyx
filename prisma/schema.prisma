@@ -373,6 +373,10 @@ model Membership {
   status              UserStatus        @default(ACTIVE)
   qualifiedCategories LicenseCategory[] @default([]) @map("qualified_categories")
   novidadesSeenAt     DateTime?         @map("novidades_seen_at")
+  // Coarse activity signal for the internal admin console (WAU / last-active).
+  // Updated at most once/hour per membership via a throttled, fire-and-forget
+  // write in protectedProcedure — see src/server/lib/heartbeat.ts.
+  lastSeenAt          DateTime?         @map("last_seen_at")
   createdAt           DateTime          @default(now()) @map("created_at")
   updatedAt           DateTime          @updatedAt @map("updated_at")
 
@@ -384,6 +388,7 @@ model Membership {
   @@index([tenantId])
   @@index([schoolId])
   @@index([userId])
+  @@index([tenantId, lastSeenAt])
   @@map("memberships")
 }
 

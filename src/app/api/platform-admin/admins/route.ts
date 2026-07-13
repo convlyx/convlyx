@@ -5,14 +5,10 @@ import { db } from "@/server/db";
 import { isSameOrigin } from "@/lib/csrf";
 import { logger } from "@/lib/logger";
 import { audit } from "@/server/lib/audit";
+import { isPlatformAdmin } from "@/server/lib/platform-admin";
 
 // Pin to Dublin (eu-west-1) to co-locate with Supabase — avoids transatlantic DB latency.
 export const preferredRegion = "dub1";
-
-const ADMIN_EMAILS = (process.env.PLATFORM_ADMIN_EMAILS ?? "")
-  .split(",")
-  .map((e) => e.trim().toLowerCase())
-  .filter(Boolean);
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,10 +19,7 @@ const supabaseAdmin = createClient(
 async function verifyPlatformAdmin() {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user || !ADMIN_EMAILS.includes(user.email?.toLowerCase() ?? "")) {
-    return null;
-  }
-  return user;
+  return isPlatformAdmin(user?.email) ? user : null;
 }
 
 export async function POST(request: NextRequest) {

@@ -60,6 +60,7 @@ describe("user mutations write through to Membership", () => {
       tenantId: A.tenantId,
       ip: null,
       user: { id: A.instructorUserId },
+      userEmail: null,
       loadMembership: testLoadMembership(A.instructorUserId, A.tenantId),
     });
 

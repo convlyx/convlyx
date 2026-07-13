@@ -15,7 +15,7 @@ export function testLoadMembership(userId: string, tenantId: string) {
   return () =>
     db.membership.findFirst({
       where: { userId, tenantId },
-      select: { role: true, schoolId: true, tenantId: true, status: true },
+      select: { role: true, schoolId: true, tenantId: true, status: true, lastSeenAt: true },
     });
 }
 
@@ -133,6 +133,7 @@ export async function createTestTenant(label: string): Promise<TestTenant> {
     ip: null,
     // ctx.user is global identity only; role/school come from the Membership.
     user: { id: adminUserId },
+    userEmail: null,
     loadMembership: testLoadMembership(adminUserId, tenantId),
   });
 

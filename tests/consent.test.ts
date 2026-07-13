@@ -38,6 +38,7 @@ describe("consent router", () => {
       tenantId: A.tenantId,
       ip: null,
       user: { id: A.studentUserId },
+      userEmail: null,
       loadMembership: testLoadMembership(A.studentUserId, A.tenantId),
     });
     await expect(asStudent.consent.accept({ type: "CONTROLLER_DPA" })).rejects.toThrow();
@@ -53,6 +54,7 @@ describe("consent router", () => {
       tenantId: A.tenantId,
       ip: null,
       user: { id: A.instructorUserId },
+      userEmail: null,
       loadMembership: testLoadMembership(A.instructorUserId, A.tenantId),
     });
 

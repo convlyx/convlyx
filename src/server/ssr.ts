@@ -35,9 +35,10 @@ export const getSsrHelpers = cache(async () => {
     tenantId: user?.tenantId ?? null,
     ip: null,
     user: user ? { id: user.id } : null,
+    userEmail: null,
     loadMembership: async () =>
       user
-        ? { role: user.role, schoolId: user.schoolId, tenantId: user.tenantId, status: "ACTIVE" }
+        ? { role: user.role, schoolId: user.schoolId, tenantId: user.tenantId, status: "ACTIVE", lastSeenAt: null }
         : null,
   };
   return createServerSideHelpers({ router: appRouter, ctx, transformer: superjson });

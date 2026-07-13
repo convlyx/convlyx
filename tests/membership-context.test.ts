@@ -29,6 +29,7 @@ describe("membership-aware protectedProcedure", () => {
       tenantId: A.tenantId,
       ip: null,
       user: { id: A.studentUserId },
+      userEmail: null,
       loadMembership: testLoadMembership(A.studentUserId, A.tenantId),
     });
     // user.list is ADMIN/SECRETARY/INSTRUCTOR-only. The student's membership

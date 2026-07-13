@@ -1,46 +1,42 @@
-import { db } from "@/server/db";
-import { PlatformDashboard } from "./_components/platform-dashboard";
+import { HydrationBoundary } from "@tanstack/react-query";
+import { getAdminSsrHelpers } from "@/server/admin-ssr";
+import { dehydrateSsr } from "@/server/ssr";
+import { PortfolioOverview } from "./_components/portfolio-overview";
 
-// Cross-tenant live data — never static-render at build time, otherwise the
-// build hits the DB with whatever DATABASE_URL Vercel has cached and fails
-// when credentials drift.
+// Cross-tenant live data — never static-render at build time.
 export const dynamic = "force-dynamic";
 
-export default async function PlatformAdminPage() {
-  const [tenants, schools, userCount, classCount, enrollmentCount] = await Promise.all([
-    db.tenant.findMany({
-      select: {
-        id: true,
-        name: true,
-        status: true,
-        createdAt: true,
-        _count: { select: { schools: true, memberships: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    db.school.findMany({
-      select: {
-        id: true,
-        name: true,
-        subdomain: true,
-        address: true,
-        phone: true,
-        tenantId: true,
-        tenant: { select: { name: true } },
-        _count: { select: { memberships: true, sessions: true } },
-      },
-      orderBy: { name: "asc" },
-    }),
-    db.user.count(),
-    db.classSession.count(),
-    db.enrollment.count(),
+type StatusFilter = "ALL" | "ACTIVE" | "INACTIVE";
+type RiskFilter = "ALL" | "HEALTHY" | "AT_RISK" | "NEW" | "INACTIVE";
+type SortKey = "name" | "createdAt" | "students" | "classes30d";
+
+export default async function PlatformAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; q?: string; status?: string; risk?: string; sort?: string }>;
+}) {
+  const sp = await searchParams;
+  // Mirror PortfolioOverview's input derivation exactly so prefetch keys match.
+  const page = Number(sp.page) >= 1 ? Number(sp.page) : 1;
+  const overviewInput = {
+    page,
+    pageSize: 10,
+    ...(sp.q ? { search: sp.q } : {}),
+    status: (sp.status as StatusFilter) ?? "ALL",
+    risk: (sp.risk as RiskFilter) ?? "ALL",
+    sort: (sp.sort as SortKey) ?? "name",
+  };
+
+  const helpers = await getAdminSsrHelpers();
+  await Promise.all([
+    helpers.admin.portfolio.kpis.prefetch(),
+    helpers.admin.portfolio.trends.prefetch({ rangeDays: 90 }),
+    helpers.admin.portfolio.overview.prefetch(overviewInput),
   ]);
 
   return (
-    <PlatformDashboard
-      tenants={tenants}
-      schools={schools}
-      stats={{ users: userCount, classes: classCount, enrollments: enrollmentCount }}
-    />
+    <HydrationBoundary state={dehydrateSsr(helpers)}>
+      <PortfolioOverview />
+    </HydrationBoundary>
   );
 }
