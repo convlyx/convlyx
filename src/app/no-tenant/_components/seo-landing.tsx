@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { ArrowRight, Check, ChevronRight, Laptop, CalendarDays, GraduationCap } from "lucide-react";
 import { SiteFooter } from "./site-footer";
 import { DemoDialog } from "./demo-dialog";
+import { FaqSection, type Faq } from "./faq-section";
 import { Eyebrow, SectionHeading, Reveal, SectionDecor } from "./landing/_primitives";
 
 /** Theme icons can't be passed as components across the server→client boundary,
@@ -53,6 +54,7 @@ export function SeoLanding({
   deepDive,
   midCta,
   related,
+  faqs,
   themeIcon,
 }: {
   kicker: string;
@@ -64,6 +66,8 @@ export function SeoLanding({
   deepDive: SeoDeepDive;
   midCta?: { title: string; description: string };
   related?: SeoLandingRelated[];
+  /** Optional FAQ block: renders a visible accordion + matching FAQPage JSON-LD. */
+  faqs?: Faq[];
   /** Key of the faint driving-themed icon shown behind the features heading. */
   themeIcon?: ThemeIconKey;
 }) {
@@ -282,6 +286,9 @@ export function SeoLanding({
           </div>
         </section>
       )}
+
+      {/* FAQ: visible accordion + FAQPage JSON-LD */}
+      {faqs && faqs.length > 0 && <FaqSection faqs={faqs} />}
 
       {/* Final CTA — green band */}
       <section id="demo" className="relative overflow-hidden py-16 md:py-20">

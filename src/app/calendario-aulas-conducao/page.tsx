@@ -5,9 +5,9 @@ import { CalendarHeroMockup, CalendarDeepDiveMockup } from "@/app/no-tenant/_com
 import { ORGANIZATION_SCHEMA } from "@/lib/seo-schema";
 
 const URL = "https://convlyx.com/calendario-aulas-conducao";
-const TITLE = "Calendário e agenda de aulas de condução | Convlyx";
+const TITLE = "Agenda de aulas de condução sem conflitos | Convlyx";
 const DESCRIPTION =
-  "Agenda inteligente para escolas de condução: aulas teóricas e práticas num só calendário, deteção de conflitos de horário, recorrência automática e notificações para alunos e instrutores. Convlyx, o software para escolas de condução em Portugal.";
+  "Aulas teóricas e práticas num só calendário, com deteção automática de conflitos e notificações a alunos e instrutores. Peça uma demonstração.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -80,7 +80,7 @@ export default function Page() {
           {
             icon: <LayoutGrid className="h-5 w-5 text-primary" />,
             title: "Várias vistas",
-            description: "Semana, dia, mês ou lista — adaptada a cada papel na escola: instrutor, secretariado ou aluno.",
+            description: "Semana, dia, mês ou lista, adaptada a cada papel na escola: instrutor, secretariado ou aluno.",
             gradient: "from-primary/10 to-emerald-400/10",
           },
           {
@@ -109,8 +109,8 @@ export default function Page() {
           },
           {
             icon: <Smartphone className="h-5 w-5 text-primary" />,
-            title: "PWA — sem app store",
-            description: "Aplicação web progressiva — funciona em qualquer telemóvel, sem instalação numa loja de aplicações.",
+            title: "PWA, sem app store",
+            description: "Aplicação web progressiva que funciona em qualquer telemóvel, sem instalação numa loja de aplicações.",
             gradient: "from-violet-500/10 to-purple-400/10",
           },
         ]}
@@ -120,10 +120,10 @@ export default function Page() {
         }}
         deepDive={{
           kicker: "Calendário pensado para o terreno",
-          title: "Recorrências, conflitos e notificações — sem trabalho manual",
+          title: "Recorrências, conflitos e notificações sem trabalho manual",
           body: [
             "Gerir a agenda de uma escola de condução em papel ou em folhas de cálculo significa horas perdidas a reconciliar horários, cruzar disponibilidades e avisar alunos. O calendário do Convlyx resolve tudo isso: cria aulas em segundos, deteta automaticamente quando dois instrutores estariam ocupados ao mesmo tempo, e mantém alunos e instrutores informados via notificações push e email.",
-            "Para o instrutor, o calendário é o ponto central de cada dia — vê os seus alunos, marca presenças, abre o detalhe de cada aula. Para o aluno, é onde se inscreve em aulas teóricas disponíveis e confirma a próxima aula prática.",
+            "Para o instrutor, o calendário é o ponto central de cada dia: vê os seus alunos, marca presenças e abre o detalhe de cada aula. Para o aluno, é onde se inscreve em aulas teóricas disponíveis e confirma a próxima aula prática.",
           ],
           bullets: [
             "Crie aulas com um clique no calendário, ou em série com recorrência diária/semanal.",
@@ -142,7 +142,34 @@ export default function Page() {
           {
             href: "/gestao-alunos-conducao",
             title: "Gestão de alunos da escola",
-            description: "Perfil completo de cada aluno: presenças, faltas, categoria de carta e exames do IMT — tudo num só sítio.",
+            description: "Perfil completo de cada aluno: presenças, faltas, categoria de carta e exames do IMT, tudo num só sítio.",
+          },
+        ]}
+        faqs={[
+          {
+            question: "Como funciona a deteção de conflitos de horário?",
+            answer:
+              "Antes de criar uma aula, o Convlyx avisa-o se o instrutor (ou a sala) já estaria ocupado nesse horário, evitando marcações sobrepostas.",
+          },
+          {
+            question: "Posso criar aulas recorrentes?",
+            answer:
+              "Sim. Cria séries de aulas em poucos cliques, definindo a data de início e fim e os dias da semana. Cada aula fica independente e pode ser alterada individualmente.",
+          },
+          {
+            question: "Os alunos e instrutores são avisados das aulas e alterações?",
+            answer:
+              "Sim. O Convlyx envia notificações automáticas por push e email (lembrete na véspera, alterações de horário e cancelamentos) a alunos e instrutores.",
+          },
+          {
+            question: "Os alunos podem inscrever-se em aulas teóricas sozinhos?",
+            answer:
+              "Sim. Os alunos veem as aulas teóricas com vagas disponíveis e inscrevem-se diretamente no telemóvel, sem passar pelo secretariado.",
+          },
+          {
+            question: "Preciso de instalar uma aplicação para ver o calendário?",
+            answer:
+              "Não. O calendário funciona no navegador e pode ser instalado como aplicação (PWA) no telemóvel, sem loja de aplicações.",
           },
         ]}
       />

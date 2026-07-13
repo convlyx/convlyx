@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getAllPosts } from "@/lib/novidades";
+import { getAllArticles } from "./blog/_articles";
 
 const ROOT = "https://convlyx.com";
 
@@ -20,8 +21,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
   ];
 
+  const blog: MetadataRoute.Sitemap = [
+    {
+      url: `${ROOT}/blog`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    ...getAllArticles().map((article) => ({
+      url: `${ROOT}/blog/${article.slug}`,
+      lastModified: new Date(`${article.date}T00:00:00.000Z`),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
+  ];
+
   return [
     ...novidades,
+    ...blog,
     {
       url: ROOT,
       lastModified,

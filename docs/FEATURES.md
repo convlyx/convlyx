@@ -231,6 +231,14 @@ Living document of everything the app can do, organized by area.
 - tRPC `novidades` router: `feed` (role-filtered posts + unread count) + `markSeen`
 - See `docs/decisions/2026-06-07-novidades-changelog.md`
 
+## SEO Marketing Pages (apex domain)
+- Keyword-targeted landing pages on the apex domain, built from the shared `<SeoLanding>` component (`src/app/no-tenant/_components/seo-landing.tsx`): `/software-escola-conducao`, `/gestao-alunos-conducao`, `/calendario-aulas-conducao`
+- Each page ships per-page metadata (title, description, canonical, OpenGraph, Twitter) + JSON-LD (`Organization`, `BreadcrumbList`, `Service`), cross-links the other pages via the `related` prop, and is registered in `MARKETING_EXACT_PATHS` (`src/middleware.ts`) + `src/app/sitemap.ts`
+- **Social preview image**: `/og-image.png` is generated on the fly with `next/og` (`src/app/og-image.png/route.ts`): a branded 1200×630 card referenced by every marketing page's OpenGraph/Twitter tags. No static asset to maintain; brand look lives in code
+- **FAQ blocks**: each page renders a visible `<details>` accordion (accessible, keyboard-operable, no extra JS) plus matching `FAQPage` JSON-LD from the same data array via the `FaqSection` component (`src/app/no-tenant/_components/faq-section.tsx`), so visible text and structured data can't drift, per Google's rich-result guidelines
+- **Blog** (`/blog` index + `/blog/[slug]`): informational top-of-funnel articles for driving-school owners/staff (e.g. "quanto custa abrir uma escola de condução", "como gerir uma escola sem papel"). Authored in-repo as trusted Markdown in `src/app/blog/_articles.ts`. Unlike `novidades`, these live ONLY on the public blog and never appear in the in-app staff changelog. Each article ships `Article` + `BreadcrumbList` JSON-LD, cross-links the product pages, and ends with a soft "pedir demonstração" CTA (`ArticleCta` → `DemoDialog`). Registered via the `/blog` prefix in `MARKETING_EXACT_PATHS` handling + `sitemap.ts`; linked from the shared footer
+- See `docs/superpowers/specs/2026-07-13-seo-improvements-spec.md`
+
 ## UI/UX
 - Convlyx branding with custom logo
 - Green/grey/white professional theme (CSS variables, ready for per-tenant accent color)

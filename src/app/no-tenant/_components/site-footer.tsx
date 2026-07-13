@@ -102,6 +102,9 @@ export function SiteFooter({ onRequestDemo }: { onRequestDemo?: () => void } = {
             <Link href="/gestao-alunos-conducao" className="hover:text-primary transition-colors">
               Gestão de alunos
             </Link>
+            <Link href="/blog" className="hover:text-primary transition-colors">
+              Blog
+            </Link>
             <Link href="/novidades" className="hover:text-primary transition-colors">
               {t("novidades.title")}
             </Link>

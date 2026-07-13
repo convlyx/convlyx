@@ -7,7 +7,7 @@ import { ORGANIZATION_SCHEMA } from "@/lib/seo-schema";
 const URL = "https://convlyx.com/software-escola-conducao";
 const TITLE = "Software para escola de condução em Portugal | Convlyx";
 const DESCRIPTION =
-  "Convlyx é o software de gestão para escolas de condução em Portugal. Agenda de aulas teóricas e práticas, gestão de alunos e instrutores, marcação de exames do IMT e relatórios — tudo numa plataforma web e móvel.";
+  "Convlyx é o software de gestão para escolas de condução em Portugal. Agenda de aulas teóricas e práticas, gestão de alunos e instrutores, marcação de exames do IMT e relatórios, tudo numa plataforma web e móvel.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -99,7 +99,7 @@ export default function Page() {
           {
             icon: <Smartphone className="h-5 w-5 text-primary" />,
             title: "Web e móvel",
-            description: "Aplicação web progressiva — alunos e instrutores acedem ao seu horário no telemóvel sem instalar nada.",
+            description: "Aplicação web progressiva: alunos e instrutores acedem ao seu horário no telemóvel sem instalar nada.",
             gradient: "from-violet-500/10 to-purple-400/10",
           },
           {
@@ -123,13 +123,13 @@ export default function Page() {
           kicker: "Pensado para o mercado português",
           title: "Conformidade IMT, isolamento por escola e papéis bem definidos",
           body: [
-            "Procura um software para escola de condução? O Convlyx é a plataforma certa para escolas que querem deixar de gerir aulas em papel ou em folhas de cálculo. Tudo o que precisa — calendário, presenças, exames, alunos, instrutores — está num único sítio, acessível por qualquer membro da equipa com permissões adequadas (administrador, secretariado, instrutor, aluno).",
+            "Procura um software para escola de condução? O Convlyx é a plataforma certa para escolas que querem deixar de gerir aulas em papel ou em folhas de cálculo. Tudo o que precisa (calendário, presenças, exames, alunos, instrutores) está num único sítio, acessível por qualquer membro da equipa com permissões adequadas (administrador, secretariado, instrutor, aluno).",
             "Cada escola tem o seu próprio espaço seguro com dados completamente isolados. O Convlyx é multi-tenant e foi pensado para o mercado português: suporta as 14 categorias de carta de condução do IMT, segue as regras de marcação de exames teóricos e práticos, e permite exportar folhas de presença e relatórios em PDF para auditorias.",
           ],
           bullets: [
             "14 categorias de carta de condução suportadas (AM, A1, A2, A, B1, B, BE, C1, C1E, C, D1, D1E, D, DE).",
             "Regras de exame: o exame prático só fica disponível depois do aluno ter passado o teórico.",
-            "Subdomínio próprio por escola — escola.convlyx.com — com dados completamente isolados.",
+            "Subdomínio próprio por escola (escola.convlyx.com) com dados completamente isolados.",
           ],
           mockup: <SoftwareDeepDiveMockup />,
           mockupPosition: "left",
@@ -143,7 +143,34 @@ export default function Page() {
           {
             href: "/gestao-alunos-conducao",
             title: "Gestão de alunos da escola",
-            description: "Perfil completo de cada aluno: presenças, faltas, categoria de carta e exames do IMT — tudo num só sítio.",
+            description: "Perfil completo de cada aluno: presenças, faltas, categoria de carta e exames do IMT, tudo num só sítio.",
+          },
+        ]}
+        faqs={[
+          {
+            question: "Quanto custa um software para escola de condução como o Convlyx?",
+            answer:
+              "O valor depende da dimensão da escola e do número de utilizadores. Peça uma demonstração gratuita e apresentamos-lhe um plano adaptado à sua escola de condução, sem compromisso.",
+          },
+          {
+            question: "O Convlyx funciona com as categorias de carta do IMT?",
+            answer:
+              "Sim. O Convlyx suporta as 14 categorias de carta de condução do IMT (AM, A1, A2, A, B1, B, BE, C1, C1E, C, D1, D1E, D, DE) e segue as regras de marcação de exames teóricos e práticos.",
+          },
+          {
+            question: "Preciso de instalar alguma coisa para usar o Convlyx?",
+            answer:
+              "Não. O Convlyx funciona no navegador de qualquer computador ou telemóvel. Alunos e instrutores podem instalá-lo como aplicação (PWA) a partir do telemóvel, sem passar por nenhuma loja de aplicações.",
+          },
+          {
+            question: "Os dados da minha escola ficam isolados dos das outras escolas?",
+            answer:
+              "Sim. Cada escola tem o seu próprio espaço com dados completamente isolados e um subdomínio próprio (escola.convlyx.com). Nenhuma escola consegue ver os dados de outra.",
+          },
+          {
+            question: "O Convlyx serve escolas de condução fora de Portugal?",
+            answer:
+              "Sim. Embora seja pensado para o mercado português e as regras do IMT, o Convlyx gere aulas, alunos, instrutores e horários de qualquer escola de condução, incluindo noutros países de língua portuguesa.",
           },
         ]}
       />
