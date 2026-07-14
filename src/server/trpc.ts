@@ -7,7 +7,7 @@ import { audit } from "./lib/audit";
 import { isPlatformAdmin } from "./lib/platform-admin";
 import { createClient } from "@/lib/supabase/server";
 import { extractSubdomain } from "@/lib/subdomain";
-import type { UserRole, UserStatus } from "@/generated/prisma/enums";
+import type { UserRole, UserStatus, TenantStatus } from "@/generated/prisma/enums";
 
 type MembershipContext = {
   role: UserRole;
@@ -15,6 +15,7 @@ type MembershipContext = {
   tenantId: string;
   status: UserStatus;
   lastSeenAt: Date | null;
+  tenant: { status: TenantStatus };
 };
 
 export type TRPCContext = {
@@ -72,7 +73,10 @@ export const createTRPCContext = async (opts: {
     if (!membershipPromise) {
       membershipPromise = db.membership.findFirst({
         where: { userId, tenantId },
-        select: { role: true, schoolId: true, tenantId: true, status: true, lastSeenAt: true },
+        select: {
+          role: true, schoolId: true, tenantId: true, status: true, lastSeenAt: true,
+          tenant: { select: { status: true } },
+        },
       });
     }
     return membershipPromise;
@@ -130,9 +134,10 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   // this lookup once, not once per procedure.
   const membership = await ctx.loadMembership();
   // No membership ⇒ not a member here. INACTIVE membership ⇒ deactivated in
-  // this tenant (per-tenant status; a person may stay ACTIVE elsewhere). Both
-  // are unauthorized — don't leak the tenant's existence.
-  if (!membership || membership.status !== "ACTIVE") {
+  // this tenant (per-tenant status; a person may stay ACTIVE elsewhere).
+  // INACTIVE tenant ⇒ the whole school is suspended by a platform operator.
+  // All three are unauthorized — don't leak the tenant's existence.
+  if (!membership || membership.status !== "ACTIVE" || membership.tenant.status !== "ACTIVE") {
     throw new TRPCError({
       code: "UNAUTHORIZED",
       message: "auth.notAuthenticated",

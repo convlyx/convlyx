@@ -204,6 +204,8 @@ Destructive actions require typing the tenant/school name to confirm (guardrail)
 
 ## 7. Sub-project 3 — Support & impersonation
 
+> **Amendment (2026-07-14, implemented):** §7.2 view-as was **descoped from true app impersonation to a read-only support view rendered inside the admin console** (audited `admin.support.getStudent` + a read-only detail page). Rationale: real impersonation would modify the shared auth path (`middleware` / `createTRPCContext` / `getDashboardUser`) that every live tenant user hits, and this project can only be tested in prod (no dev credentials) — too high-risk. The console-rendered read-only view delivers the diagnostic value (same underlying data) at zero auth-path risk. True token-based impersonation remains specced below for a future round once auth changes can be tested safely (dev credentials or a staging tenant). §7.1 shipped as specced.
+
 The only surfaces that touch individual end-user PII. Both gated + audited.
 
 ### 7.1 Gated student lookup — `admin.support.getStudent`

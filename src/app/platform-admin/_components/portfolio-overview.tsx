@@ -25,33 +25,13 @@ import {
 import { DataTableCard } from "@/components/data-table-card";
 import { ChartCard } from "@/app/(dashboard)/analytics/_components/chart-card";
 import { HealthBadge } from "./health-badge";
+import { formatBucket, formatAge } from "./admin-format";
 
 const PAGE_SIZE = 10;
 
 type StatusFilter = "ALL" | "ACTIVE" | "INACTIVE";
 type RiskFilter = "ALL" | "HEALTHY" | "AT_RISK" | "NEW" | "INACTIVE";
 type SortKey = "name" | "createdAt" | "students" | "classes30d";
-
-/** Compact bucket label for the trend charts (internal tool, pt-PT). */
-function formatBucket(bucket: string, granularity: "day" | "week" | "month"): string {
-  if (granularity === "month") {
-    const [y, m] = bucket.split("-");
-    const months = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-    return `${months[Number(m) - 1]} ${y.slice(2)}`;
-  }
-  const [, m, d] = bucket.split("-");
-  return `${d}/${m}`;
-}
-
-/** Human account age from days. */
-function formatAge(days: number): string {
-  if (days < 30) return `${days}d`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months}m`;
-  const years = Math.floor(months / 12);
-  const rem = months % 12;
-  return rem ? `${years}a ${rem}m` : `${years}a`;
-}
 
 function Sparkline({ data }: { data: number[] }) {
   const max = Math.max(1, ...data);

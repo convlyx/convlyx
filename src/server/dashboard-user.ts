@@ -38,7 +38,7 @@ async function loadDashboardUser(): Promise<DashboardUser | null> {
           tenantId: true,
           name: true,
           timeZone: true,
-          tenant: { select: { name: true } },
+          tenant: { select: { name: true, status: true } },
         },
       });
       if (!school) return null;
@@ -58,6 +58,12 @@ async function loadDashboardUser(): Promise<DashboardUser | null> {
       // forever. Auth cookies are per-host, so this doesn't touch a session the
       // person may hold on another school's subdomain.
       if (!membership || membership.status !== "ACTIVE") {
+        await supabase.auth.signOut();
+        return null;
+      }
+
+      if (school.tenant.status !== "ACTIVE") {
+        // Tenant suspended by a platform operator — no dashboard access.
         await supabase.auth.signOut();
         return null;
       }
