@@ -29,3 +29,43 @@ export const adminTimelineSchema = z.object({
   tenantId: z.string().uuid(),
   cursor: z.string().datetime().optional(),
 });
+
+// --- Operational actions (sub-project 2) ---
+
+export const adminTenantIdSchema = z.object({ tenantId: z.string().uuid() });
+
+export const renameTenantSchema = z.object({
+  tenantId: z.string().uuid(),
+  name: z.string().trim().min(1).max(120),
+});
+
+export const updateSchoolSchema = z.object({
+  schoolId: z.string().uuid(),
+  name: z.string().trim().min(1).max(160),
+  address: z.string().trim().max(300).nullable().optional(),
+  phone: z.string().trim().max(40).nullable().optional(),
+  cancellationNoticeHours: z.number().int().min(0).max(168),
+  practicalSelfEnrollEnabled: z.boolean(),
+});
+
+export const listStaffSchema = z.object({ schoolId: z.string().uuid() });
+
+export const setMembershipStatusSchema = z.object({
+  membershipId: z.string().uuid(),
+  status: z.enum(["ACTIVE", "INACTIVE"]),
+});
+
+// --- Support view (sub-project 3) ---
+
+export const supportListStudentsSchema = z.object({
+  tenantId: z.string().uuid(),
+  schoolId: z.string().uuid().optional(),
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(20),
+  search: z.string().trim().max(120).optional(),
+});
+
+export const supportGetStudentSchema = z.object({
+  tenantId: z.string().uuid(),
+  studentUserId: z.string().uuid(),
+});

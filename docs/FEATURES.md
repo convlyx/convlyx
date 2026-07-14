@@ -277,7 +277,7 @@ Living document of everything the app can do, organized by area.
 
 ## API (tRPC)
 - Type-safe end-to-end (shared types web ↔ future mobile app)
-- Routers: school, class, enrollment, user, notification, course, exam
+- Routers: school, class, enrollment, user, notification, novidades, course, exam, analytics, consent, admin (platform-operator, allowlist-gated + audited)
 - Protected procedures with role enforcement
 - Zod validation on all inputs
 - Supabase JWT auth in tRPC context
@@ -311,6 +311,19 @@ Living document of everything the app can do, organized by area.
 - Daily exam reminder (same cron path): notifies student + accompanying instructor about tomorrow's exams.
 - Vercel crons secured via `CRON_SECRET` Bearer token.
 - Class status sync runs **inside Postgres via Supabase `pg_cron`**, every minute — `SCHEDULED→IN_PROGRESS` when `starts_at <= now`, `IN_PROGRESS→COMPLETED` when `ends_at <= now`. Lives in the DB so read paths (`class.list`, calendar, dashboard) stay pure SELECTs without consuming Vercel function CPU. Setup SQL at `scripts/sync-class-statuses.cron.sql`. Worst-case lag: a class that ended <1 min ago briefly still shows as `IN_PROGRESS` until the next sweep.
+
+## Platform Admin Console (`admin.convlyx.com`) — internal, operator-only
+- Separate internal console on the reserved `admin` subdomain (middleware rewrites to `/platform-admin/*`). Authorization is a `PLATFORM_ADMIN_EMAILS` env allowlist (not a DB role), centralized in `requirePlatformAdmin()` / `isPlatformAdmin()` (`src/server/lib/platform-admin.ts`). Non-i18n by design (team-only, hardcoded pt-PT).
+- **Audited tRPC layer**: `adminProcedure` (`src/server/trpc.ts`) runs cross-tenant on the raw (un-scoped) Prisma client, gated by the allowlist, and exposes a pre-bound `ctx.audit(...)` — the single choke point for operator access. Router tree under `src/server/routers/admin/` (`portfolio`, `account`, `ops`, `support`).
+- **Portfolio overview** (landing page): KPI tiles (schools, active users, classes-30d, at-risk count), two 90-day trend charts (new schools; classes vs enrolments), and a searchable / sortable / health-filtered table of every school — age, weekly-active users, active students, classes-30d, exam pass rate, an 8-week enrolment sparkline, and a health badge — each row linking to its account page. SSR-prefetched, offset-paginated.
+- **School health heuristic** (`src/server/lib/admin-health.ts`, one tunable place): NEW (age < 21d) / INACTIVE (tenant suspended) / AT_RISK (no class-created, check-in, or activity in 14d, or class volume down ≥60% vs prior 30d) / HEALTHY.
+- **Activity heartbeat**: `Membership.lastSeenAt`, updated at most once/hour per member via a throttled, fire-and-forget write in `protectedProcedure` (`src/server/lib/heartbeat.ts`) — powers WAU / last-active. Tracked forward from ship date only.
+- **Per-account page** (`/platform-admin/tenants/[tenantId]`): tenant header (status, age, last-active), KPI snapshot, charts (enrolments over time, theory vs practical, enrolment funnel, pass-rate by category, course-completion donut), activity timeline (staff-attributed, "load more"), members breakdown + staff contacts, per-school config, and consent coverage. Aggregates + staff contacts only — no student PII here.
+- **Operational actions** (`admin.ops.*`, all audited, confirm dialogs): suspend / reactivate a tenant (type-the-name confirmation), rename a tenant, edit school settings (name, cancellation-notice hours, practical self-enroll — **never** timezone), and activate / deactivate any staff membership. **Suspend is enforced**: an INACTIVE tenant is denied at both the tRPC layer (`protectedProcedure`, via the tenant status folded into the per-request membership load) and the pages layer (`getDashboardUser`).
+- **Support view** (`admin.support.*`, read-only): from a school's account page, "Ver alunos" opens an audited student list (search + paginate) and a read-only student detail (profile, courses, enrolments, exams). This is the only admin surface that returns individual student PII — **every access writes an `AuditLog` row** (`student.list_view` / `student.view_detail`) and each page shows a "your access is logged" banner. Impersonation was deliberately descoped to this console-rendered read-only view (auth-path risk); see `docs/superpowers/specs/2026-07-13-admin-panel-internal-tools-design.md` §7.
+- **Create flows** (`/platform-admin/manage`, REST routes): create tenant, create school, create school-admin (Supabase service-role auth user + `User` + `Membership` in one transaction with auth-rollback). CSRF-checked, `dub1`-pinned.
+- **Audit log viewer** (`/platform-admin/audit`): operator action trail (actor email, action, target, timestamp, metadata) with action/actor filters. `AuditLog` is intentionally not tenant-scoped.
+- Full design + build history: `docs/superpowers/specs/2026-07-13-admin-panel-internal-tools-design.md` + the three plans under `docs/superpowers/plans/`.
 
 ## Infrastructure
 - Next.js 15 (App Router) deployed on Vercel

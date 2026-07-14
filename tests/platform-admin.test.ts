@@ -5,9 +5,18 @@ describe("parsePlatformAdminEmails", () => {
   it("splits, trims, lowercases and drops blanks", () => {
     expect(parsePlatformAdminEmails(" A@x.com, b@Y.com ,, ")).toEqual(["a@x.com", "b@y.com"]);
   });
-  it("returns [] for undefined/empty", () => {
-    expect(parsePlatformAdminEmails(undefined)).toEqual([]);
+  it("returns [] for an explicit empty string", () => {
     expect(parsePlatformAdminEmails("")).toEqual([]);
+  });
+  it("falls back to the env var when called with no argument", () => {
+    const original = process.env.PLATFORM_ADMIN_EMAILS;
+    process.env.PLATFORM_ADMIN_EMAILS = "env@x.com";
+    try {
+      expect(parsePlatformAdminEmails()).toEqual(["env@x.com"]);
+    } finally {
+      if (original === undefined) delete process.env.PLATFORM_ADMIN_EMAILS;
+      else process.env.PLATFORM_ADMIN_EMAILS = original;
+    }
   });
 });
 

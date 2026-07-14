@@ -24,7 +24,8 @@ beforeAll(() => {
   process.env.PLATFORM_ADMIN_EMAILS = "op@convlyx.com";
 });
 afterAll(() => {
-  process.env.PLATFORM_ADMIN_EMAILS = originalEmails;
+  if (originalEmails === undefined) delete process.env.PLATFORM_ADMIN_EMAILS;
+  else process.env.PLATFORM_ADMIN_EMAILS = originalEmails;
 });
 
 describe("adminProcedure auth", () => {

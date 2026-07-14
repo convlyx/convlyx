@@ -15,7 +15,10 @@ export function testLoadMembership(userId: string, tenantId: string) {
   return () =>
     db.membership.findFirst({
       where: { userId, tenantId },
-      select: { role: true, schoolId: true, tenantId: true, status: true, lastSeenAt: true },
+      select: {
+        role: true, schoolId: true, tenantId: true, status: true, lastSeenAt: true,
+        tenant: { select: { status: true } },
+      },
     });
 }
 
