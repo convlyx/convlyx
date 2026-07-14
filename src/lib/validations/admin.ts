@@ -27,7 +27,8 @@ export const adminAccountChartsSchema = z.object({
 
 export const adminTimelineSchema = z.object({
   tenantId: z.string().uuid(),
-  cursor: z.string().datetime().optional(),
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(30),
 });
 
 // --- Operational actions (sub-project 2) ---

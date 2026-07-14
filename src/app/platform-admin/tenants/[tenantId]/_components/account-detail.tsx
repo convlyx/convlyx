@@ -8,8 +8,10 @@ import {
 import {
   ArrowLeft, GraduationCap, Users, Activity, CalendarDays, Award, Clock,
 } from "lucide-react";
+import { keepPreviousData } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
-import { useUrlParam } from "@/hooks/use-url-param";
+import { useUrlParam, useUrlParamInt } from "@/hooks/use-url-param";
+import { Pagination } from "@/components/pagination";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -63,11 +65,13 @@ export function AccountDetail({ tenantId }: { tenantId: string }) {
     : 90;
   const schoolId = school === "ALL" ? undefined : school;
 
+  const TIMELINE_PAGE_SIZE = 30;
+  const [timelinePage, setTimelinePage] = useUrlParamInt("tl", 1);
   const account = trpc.admin.account.get.useQuery({ tenantId });
   const charts = trpc.admin.account.charts.useQuery({ tenantId, ...(schoolId && { schoolId }), rangeDays });
-  const timeline = trpc.admin.account.timeline.useInfiniteQuery(
-    { tenantId },
-    { getNextPageParam: (last) => last.nextCursor ?? undefined },
+  const timeline = trpc.admin.account.timeline.useQuery(
+    { tenantId, page: timelinePage, pageSize: TIMELINE_PAGE_SIZE },
+    { placeholderData: keepPreviousData },
   );
   const utils = trpc.useUtils();
   const setStatus = trpc.admin.ops.setMembershipStatus.useMutation({
@@ -94,7 +98,8 @@ export function AccountDetail({ tenantId }: { tenantId: string }) {
 
   const { tenant, schools, snapshot, members, consents, lastActiveAt } = account.data;
   const c = charts.data;
-  const timelineItems = timeline.data?.pages.flatMap((p) => p.items) ?? [];
+  const timelineItems = timeline.data?.items ?? [];
+  const timelineTotal = timeline.data?.total ?? 0;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -333,7 +338,7 @@ export function AccountDetail({ tenantId }: { tenantId: string }) {
             <EmptyState icon={Clock} message="Sem atividade registada." />
           ) : (
             <>
-              <ul className="space-y-3">
+              <ul className={`space-y-3 ${timeline.isFetching ? "opacity-60 transition-opacity" : "transition-opacity"}`}>
                 {timelineItems.map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm">
                     <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -344,16 +349,12 @@ export function AccountDetail({ tenantId }: { tenantId: string }) {
                   </li>
                 ))}
               </ul>
-              {timeline.hasNextPage && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => timeline.fetchNextPage()}
-                  disabled={timeline.isFetchingNextPage}
-                >
-                  {timeline.isFetchingNextPage ? "A carregar…" : "Carregar mais"}
-                </Button>
-              )}
+              <Pagination
+                page={timelinePage}
+                totalPages={Math.ceil(timelineTotal / TIMELINE_PAGE_SIZE)}
+                total={timelineTotal}
+                onPageChange={setTimelinePage}
+              />
             </>
           )}
         </ChartCard>

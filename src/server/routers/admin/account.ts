@@ -184,25 +184,33 @@ export const accountRouter = router({
 
   /**
    * Recent activity timeline — aggregate, staff-attributed events only (class
-   * created/updated by staff, exam scheduled). No student names. Cursor is the
-   * ISO timestamp of the last item.
+   * created by staff, exam scheduled). No student names. Offset-paginated over
+   * the merged (ClassSession ∪ Exam) stream sorted newest-first.
+   *
+   * The two sources are merged in JS, so to serve page N correctly we fetch the
+   * newest `page*pageSize` from EACH table (any event in the global top-K is in
+   * its own table's top-K), merge, sort, then slice the page. `total` is the sum
+   * of both counts.
    */
   timeline: adminProcedure.input(adminTimelineSchema).query(async ({ ctx, input }) => {
-    const before = input.cursor ? new Date(input.cursor) : new Date();
-    const PAGE = 30;
-    const [classes, exams] = await Promise.all([
+    const need = input.page * input.pageSize;
+    const skip = (input.page - 1) * input.pageSize;
+
+    const [classes, exams, classCount, examCount] = await Promise.all([
       ctx.db.classSession.findMany({
-        where: { tenantId: input.tenantId, createdAt: { lt: before } },
+        where: { tenantId: input.tenantId },
         orderBy: { createdAt: "desc" },
-        take: PAGE,
+        take: need,
         select: { createdAt: true, title: true, createdBy: { select: { name: true } } },
       }),
       ctx.db.exam.findMany({
-        where: { tenantId: input.tenantId, createdAt: { lt: before } },
+        where: { tenantId: input.tenantId },
         orderBy: { createdAt: "desc" },
-        take: PAGE,
+        take: need,
         select: { createdAt: true, type: true },
       }),
+      ctx.db.classSession.count({ where: { tenantId: input.tenantId } }),
+      ctx.db.exam.count({ where: { tenantId: input.tenantId } }),
     ]);
 
     const items = [
@@ -218,9 +226,8 @@ export const accountRouter = router({
       })),
     ]
       .sort((x, y) => y.at.getTime() - x.at.getTime())
-      .slice(0, PAGE);
+      .slice(skip, skip + input.pageSize);
 
-    const nextCursor = items.length === PAGE ? items[items.length - 1].at.toISOString() : null;
-    return { items, nextCursor };
+    return { items, total: classCount + examCount };
   }),
 });

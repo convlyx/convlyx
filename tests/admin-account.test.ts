@@ -66,9 +66,11 @@ describe("admin.account.charts + timeline", () => {
     expect(Array.isArray(c.passByCategory)).toBe(true);
     expect(Array.isArray(c.courseCompletion)).toBe(true);
   });
-  it("timeline returns attributed events (staff, not students)", async () => {
-    const t = await adminCaller().admin.account.timeline({ tenantId: a.tenantId });
+  it("timeline returns attributed events (staff, not students) + a total", async () => {
+    const t = await adminCaller().admin.account.timeline({ tenantId: a.tenantId, page: 1, pageSize: 30 });
     expect(Array.isArray(t.items)).toBe(true);
+    expect(typeof t.total).toBe("number");
+    expect(t.total).toBeGreaterThanOrEqual(1); // seed has one class
     // Seed created one class by "Admin ACC" — a class_created event exists.
     expect(t.items.some((i) => i.kind === "class_created")).toBe(true);
   });
