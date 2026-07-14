@@ -78,4 +78,13 @@ describe("admin.portfolio.overview", () => {
     expect(res.total).toBe(0);
     expect(res.items.length).toBe(0);
   });
+  it("risk filter returns only that health and a correct total", async () => {
+    const caller = adminCaller("op@convlyx.com");
+    const all = await caller.admin.portfolio.overview({ page: 1, pageSize: 100, status: "ALL", risk: "ALL", sort: "name" });
+    const healthyCount = all.items.filter((i) => i.health === "HEALTHY").length;
+    const healthy = await caller.admin.portfolio.overview({ page: 1, pageSize: 100, status: "ALL", risk: "HEALTHY", sort: "name" });
+    expect(healthy.items.every((i) => i.health === "HEALTHY")).toBe(true);
+    expect(healthy.total).toBe(healthyCount);
+    expect(healthy.items.length).toBe(healthyCount);
+  });
 });

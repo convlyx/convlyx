@@ -2,7 +2,10 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/empty-state";
+import { Pagination } from "@/components/pagination";
 import { ClipboardList } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -21,8 +24,8 @@ type AuditLog = {
 // Tint each action class differently so an operator can scan the list.
 function actionVariant(action: string): "default" | "secondary" | "destructive" | "outline" {
   if (action.endsWith(".create")) return "default";
-  if (action.endsWith(".delete")) return "destructive";
-  if (action.endsWith(".update")) return "secondary";
+  if (action.endsWith(".delete") || action.endsWith(".suspend")) return "destructive";
+  if (action.endsWith(".update") || action.endsWith(".view_detail") || action.endsWith(".list_view")) return "secondary";
   return "outline";
 }
 
@@ -32,20 +35,31 @@ export function AuditLogList({
   actorOptions,
   activeAction,
   activeActor,
+  activeTarget,
+  activeDays,
+  page,
+  pageSize,
+  total,
 }: {
   logs: AuditLog[];
   actionOptions: string[];
   actorOptions: string[];
   activeAction?: string;
   activeActor?: string;
+  activeTarget: string;
+  activeDays: string;
+  page: number;
+  pageSize: number;
+  total: number;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  function updateParam(key: string, value: string) {
+  function setParam(key: string, value: string, resetPage = true) {
     const params = new URLSearchParams(searchParams.toString());
-    if (value === "ALL") params.delete(key);
+    if (value === "ALL" || value === "") params.delete(key);
     else params.set(key, value);
+    if (resetPage) params.delete("page");
     const query = params.toString();
     router.replace(query ? `?${query}` : "?", { scroll: false });
   }
@@ -53,34 +67,39 @@ export function AuditLogList({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        <Select
-          value={activeAction ?? "ALL"}
-          onValueChange={(v) => updateParam("action", v)}
-        >
-          <SelectTrigger className="w-auto min-w-[180px]">
-            <SelectValue placeholder="Ação" />
-          </SelectTrigger>
+        <Select value={activeAction ?? "ALL"} onValueChange={(v) => setParam("action", v)}>
+          <SelectTrigger className="w-auto min-w-[180px]"><SelectValue placeholder="Ação" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">Todas as ações</SelectItem>
-            {actionOptions.map((a) => (
-              <SelectItem key={a} value={a}>{a}</SelectItem>
-            ))}
+            {actionOptions.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select
-          value={activeActor ?? "ALL"}
-          onValueChange={(v) => updateParam("actor", v)}
-        >
-          <SelectTrigger className="w-auto min-w-[220px]">
-            <SelectValue placeholder="Autor" />
-          </SelectTrigger>
+        <Select value={activeActor ?? "ALL"} onValueChange={(v) => setParam("actor", v)}>
+          <SelectTrigger className="w-auto min-w-[220px]"><SelectValue placeholder="Autor" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">Todos os autores</SelectItem>
-            {actorOptions.map((a) => (
-              <SelectItem key={a} value={a}>{a}</SelectItem>
-            ))}
+            {actorOptions.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={activeDays} onValueChange={(v) => setParam("days", v)}>
+          <SelectTrigger className="w-auto min-w-[140px]"><SelectValue placeholder="Período" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">Sempre</SelectItem>
+            <SelectItem value="7">Últimos 7 dias</SelectItem>
+            <SelectItem value="30">Últimos 30 dias</SelectItem>
+            <SelectItem value="90">Últimos 90 dias</SelectItem>
+          </SelectContent>
+        </Select>
+        <Input
+          defaultValue={activeTarget}
+          placeholder="Filtrar por ID de alvo…"
+          className="w-[280px]"
+          aria-label="Filtrar por ID de alvo"
+          onKeyDown={(e) => { if (e.key === "Enter") setParam("target", (e.target as HTMLInputElement).value.trim()); }}
+        />
+        {activeTarget && (
+          <Button variant="ghost" size="sm" onClick={() => setParam("target", "")}>Limpar alvo</Button>
+        )}
       </div>
 
       {logs.length === 0 ? (
@@ -101,7 +120,15 @@ export function AuditLogList({
                   </span>
                 </div>
                 <div className="text-xs font-mono text-muted-foreground">
-                  {log.targetType}: <span className="text-foreground">{log.targetId}</span>
+                  {log.targetType}:{" "}
+                  <button
+                    type="button"
+                    className="text-foreground hover:underline"
+                    onClick={() => setParam("target", log.targetId)}
+                    title="Filtrar por este alvo"
+                  >
+                    {log.targetId}
+                  </button>
                 </div>
                 {log.metadata != null && (
                   <pre className="text-xs bg-muted/40 rounded px-2 py-1.5 overflow-x-auto">
@@ -113,6 +140,13 @@ export function AuditLogList({
           </div>
         </div>
       )}
+
+      <Pagination
+        page={page}
+        totalPages={Math.ceil(total / pageSize)}
+        total={total}
+        onPageChange={(p) => setParam("page", String(p), false)}
+      />
     </div>
   );
 }

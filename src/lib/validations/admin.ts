@@ -69,3 +69,9 @@ export const supportGetStudentSchema = z.object({
   tenantId: z.string().uuid(),
   studentUserId: z.string().uuid(),
 });
+
+export const supportLookupSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+});
+
+export const resetPasswordSchema = z.object({ membershipId: z.string().uuid() });

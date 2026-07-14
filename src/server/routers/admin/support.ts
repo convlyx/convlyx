@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { router, adminProcedure } from "../../trpc";
-import { supportListStudentsSchema, supportGetStudentSchema } from "@/lib/validations/admin";
+import { supportListStudentsSchema, supportGetStudentSchema, supportLookupSchema } from "@/lib/validations/admin";
 
 /**
  * Support router — the ONLY admin surface that returns individual student PII.
@@ -49,6 +49,7 @@ export const supportRouter = router({
       targetType: "tenant",
       targetId: input.tenantId,
       metadata: { schoolId: input.schoolId ?? null, page: input.page, count: rows.length },
+      strict: true,
     });
 
     return {
@@ -109,6 +110,7 @@ export const supportRouter = router({
       targetType: "user",
       targetId: input.studentUserId,
       metadata: { tenantId: input.tenantId },
+      strict: true,
     });
 
     return {
@@ -125,6 +127,57 @@ export const supportRouter = router({
       courses,
       enrollments,
       exams: exams.map((e) => ({ type: e.type, result: e.result, scheduledAt: e.scheduledAt, category: e.course.category })),
+    };
+  }),
+
+  /**
+   * Cross-tenant user lookup by email — support triage ("which schools is this
+   * login in / why can't they get in"). Returns the global identity + every
+   * membership. Audited (PII) when a user is found; fail-closed.
+   */
+  lookupUser: adminProcedure.input(supportLookupSchema).query(async ({ ctx, input }) => {
+    const user = await ctx.db.user.findUnique({
+      where: { email: input.email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+        memberships: {
+          select: {
+            role: true,
+            status: true,
+            lastSeenAt: true,
+            tenant: { select: { id: true, name: true, status: true } },
+            school: { select: { name: true } },
+          },
+          orderBy: { tenant: { name: "asc" } },
+        },
+      },
+    });
+
+    if (!user) return { found: false as const, user: undefined, memberships: [] as never[] };
+
+    await ctx.audit({
+      action: "user.lookup",
+      targetType: "user",
+      targetId: user.id,
+      metadata: { email: user.email },
+      strict: true,
+    });
+
+    return {
+      found: true as const,
+      user: { userId: user.id, name: user.name, email: user.email, createdAt: user.createdAt },
+      memberships: user.memberships.map((m) => ({
+        tenantId: m.tenant.id,
+        tenantName: m.tenant.name,
+        tenantStatus: m.tenant.status,
+        schoolName: m.school.name,
+        role: m.role,
+        status: m.status,
+        lastSeenAt: m.lastSeenAt,
+      })),
     };
   }),
 });

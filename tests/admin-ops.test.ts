@@ -86,3 +86,16 @@ describe("admin.ops staff management", () => {
     expect(audits.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe("admin.ops.sendPasswordReset (guards)", () => {
+  it("throws NOT_FOUND for an unknown membership", async () => {
+    await expect(
+      adminCaller().admin.ops.sendPasswordReset({ membershipId: "00000000-0000-0000-0000-000000000000" }),
+    ).rejects.toThrow();
+  });
+  it("rejects a non-operator", async () => {
+    await expect(
+      adminCaller("nope@x.com").admin.ops.sendPasswordReset({ membershipId: "00000000-0000-0000-0000-000000000000" }),
+    ).rejects.toThrow();
+  });
+});

@@ -139,12 +139,12 @@ export const portfolioRouter = router({
     const dbOrderBy =
       input.sort === "createdAt" ? { createdAt: "desc" as const } : { name: "asc" as const };
 
-    const total = await ctx.db.school.count({ where });
+    // Enrich the FULL name/status-filtered set (school count is bounded for an
+    // internal tool), so the risk filter + computed sorts are correct and the
+    // returned total reflects the risk-filtered count — then paginate in JS.
     const schools = await ctx.db.school.findMany({
       where,
       orderBy: dbOrderBy,
-      skip: (input.page - 1) * input.pageSize,
-      take: input.pageSize,
       select: {
         id: true,
         name: true,
@@ -155,7 +155,7 @@ export const portfolioRouter = router({
       },
     });
     const ids = schools.map((s) => s.id);
-    if (ids.length === 0) return { items: [], total };
+    if (ids.length === 0) return { items: [], total: 0 };
 
     const [students, wau, classesRecent, classesPrev, passAgg, checkin, lastSeenRows, lastClassRows, sparkRows] =
       await Promise.all([
@@ -236,6 +236,8 @@ export const portfolioRouter = router({
     if (input.sort === "students") items.sort((a, b) => b.activeStudents - a.activeStudents);
     if (input.sort === "classes30d") items.sort((a, b) => b.classes30d - a.classes30d);
 
-    return { items, total };
+    const filteredTotal = items.length;
+    const paged = items.slice((input.page - 1) * input.pageSize, input.page * input.pageSize);
+    return { items: paged, total: filteredTotal };
   }),
 });

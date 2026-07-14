@@ -6,7 +6,7 @@ import { keepPreviousData } from "@tanstack/react-query";
 import {
   Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
-import { Building2, Users, CalendarDays, CircleAlert, Search, Plus, ClipboardList } from "lucide-react";
+import { Building2, Users, CalendarDays, CircleAlert, Search, Plus, ClipboardList, UserSearch } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { useUrlParam, useUrlParamInt, useDebouncedUrlParam } from "@/hooks/use-url-param";
@@ -89,6 +89,12 @@ export function PortfolioOverview() {
           <Button size="sm" className="gap-1.5">
             <Plus className="h-3.5 w-3.5" aria-hidden="true" />
             Criar / gerir
+          </Button>
+        </Link>
+        <Link href="/platform-admin/lookup">
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <UserSearch className="h-3.5 w-3.5" aria-hidden="true" />
+            Procurar utilizador
           </Button>
         </Link>
         <Link href="/platform-admin/audit">

@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { router, adminProcedure } from "../../trpc";
 import {
@@ -7,6 +8,7 @@ import {
   updateSchoolSchema,
   listStaffSchema,
   setMembershipStatusSchema,
+  resetPasswordSchema,
 } from "@/lib/validations/admin";
 
 async function requireTenant(db: PrismaClient, tenantId: string) {
@@ -81,5 +83,43 @@ export const opsRouter = router({
       metadata: { tenantId: m.tenantId },
     });
     return { id: m.id, status: input.status };
+  }),
+
+  /**
+   * Mint a Supabase recovery link for a staff member so an operator can help a
+   * locked-out admin. Returns the link (immediate, SMTP-independent) for the
+   * operator to relay; short-lived. Audited. The Supabase call is constructed
+   * lazily so importing the router never depends on the service-role env.
+   */
+  sendPasswordReset: adminProcedure.input(resetPasswordSchema).mutation(async ({ ctx, input }) => {
+    const m = await ctx.db.membership.findUnique({
+      where: { id: input.membershipId },
+      select: { userId: true, role: true, user: { select: { email: true } }, school: { select: { subdomain: true } } },
+    });
+    if (!m) throw new TRPCError({ code: "NOT_FOUND", message: "errors.notFound" });
+
+    const supabaseAdmin = createSupabaseAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
+    const redirectTo = `https://${m.school.subdomain}.convlyx.com/update-password`;
+    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+      type: "recovery",
+      email: m.user.email,
+      options: { redirectTo },
+    });
+    if (error || !data?.properties?.action_link) {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "errors.unexpected" });
+    }
+
+    await ctx.audit({
+      action: "admin.password_reset",
+      targetType: "user",
+      targetId: m.userId,
+      metadata: { email: m.user.email, role: m.role },
+    });
+
+    return { link: data.properties.action_link };
   }),
 });

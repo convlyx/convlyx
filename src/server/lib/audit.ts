@@ -19,6 +19,12 @@ export async function audit(params: {
   targetType: string;
   targetId: string;
   metadata?: Record<string, unknown>;
+  /**
+   * Fail-closed: rethrow if the audit write fails, so the caller aborts. Used
+   * by individual-PII reads (support view / user lookup) where proceeding
+   * without a recorded access is not acceptable. Default is best-effort.
+   */
+  strict?: boolean;
 }) {
   try {
     await params.db.auditLog.create({
@@ -38,5 +44,6 @@ export async function audit(params: {
       action: params.action,
       targetId: params.targetId,
     });
+    if (params.strict) throw error;
   }
 }

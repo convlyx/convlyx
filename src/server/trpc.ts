@@ -201,6 +201,7 @@ export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
         targetType: string;
         targetId: string;
         metadata?: Record<string, unknown>;
+        strict?: boolean;
       }) => audit({ db: ctx.db, actorEmail, ...params }),
     },
   });

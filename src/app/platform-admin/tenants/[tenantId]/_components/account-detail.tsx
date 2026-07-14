@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -14,6 +15,10 @@ import { EmptyState } from "@/components/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogBody,
+} from "@/components/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/radix-select";
@@ -68,6 +73,11 @@ export function AccountDetail({ tenantId }: { tenantId: string }) {
   const setStatus = trpc.admin.ops.setMembershipStatus.useMutation({
     onSuccess: () => utils.admin.account.get.invalidate({ tenantId }),
     onError: () => toast.error("Erro ao alterar estado"),
+  });
+  const [resetLink, setResetLink] = useState<string | null>(null);
+  const resetPw = trpc.admin.ops.sendPasswordReset.useMutation({
+    onSuccess: (r) => setResetLink(r.link),
+    onError: () => toast.error("Erro ao gerar ligação"),
   });
 
   if (account.isLoading) {
@@ -277,26 +287,36 @@ export function AccountDetail({ tenantId }: { tenantId: string }) {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {m.status === "ACTIVE" ? (
+                      <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-destructive"
-                          disabled={setStatus.isPending}
-                          onClick={() => setStatus.mutate({ membershipId: m.membershipId, status: "INACTIVE" })}
+                          disabled={resetPw.isPending}
+                          onClick={() => resetPw.mutate({ membershipId: m.membershipId })}
                         >
-                          Desativar
+                          Repor palavra-passe
                         </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={setStatus.isPending}
-                          onClick={() => setStatus.mutate({ membershipId: m.membershipId, status: "ACTIVE" })}
-                        >
-                          Reativar
-                        </Button>
-                      )}
+                        {m.status === "ACTIVE" ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive"
+                            disabled={setStatus.isPending}
+                            onClick={() => setStatus.mutate({ membershipId: m.membershipId, status: "INACTIVE" })}
+                          >
+                            Desativar
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={setStatus.isPending}
+                            onClick={() => setStatus.mutate({ membershipId: m.membershipId, status: "ACTIVE" })}
+                          >
+                            Reativar
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -377,6 +397,22 @@ export function AccountDetail({ tenantId }: { tenantId: string }) {
           )}
         </ChartCard>
       </div>
+
+      <Dialog open={resetLink !== null} onOpenChange={(o) => { if (!o) setResetLink(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Ligação de reposição</DialogTitle></DialogHeader>
+          <DialogBody>
+            <p className="text-sm text-muted-foreground">Envie esta ligação ao utilizador. É temporária e permite definir uma nova palavra-passe.</p>
+            <div className="mt-3 flex items-center gap-2">
+              <Input readOnly value={resetLink ?? ""} className="flex-1 font-mono text-xs" aria-label="Ligação de reposição" />
+              <Button variant="outline" size="sm" onClick={() => { if (resetLink) { navigator.clipboard.writeText(resetLink); toast.success("Copiado"); } }}>Copiar</Button>
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button onClick={() => setResetLink(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
