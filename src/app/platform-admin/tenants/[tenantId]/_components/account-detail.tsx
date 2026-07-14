@@ -12,6 +12,7 @@ import { keepPreviousData } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { useUrlParam, useUrlParamInt } from "@/hooks/use-url-param";
 import { Pagination } from "@/components/pagination";
+import { ITEMS_PER_PAGE } from "@/lib/constants/pagination";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -65,7 +66,7 @@ export function AccountDetail({ tenantId }: { tenantId: string }) {
     : 90;
   const schoolId = school === "ALL" ? undefined : school;
 
-  const TIMELINE_PAGE_SIZE = 30;
+  const TIMELINE_PAGE_SIZE = ITEMS_PER_PAGE;
   const [timelinePage, setTimelinePage] = useUrlParamInt("tl", 1);
   const account = trpc.admin.account.get.useQuery({ tenantId });
   const charts = trpc.admin.account.charts.useQuery({ tenantId, ...(schoolId && { schoolId }), rangeDays });
@@ -353,6 +354,7 @@ export function AccountDetail({ tenantId }: { tenantId: string }) {
                 page={timelinePage}
                 totalPages={Math.ceil(timelineTotal / TIMELINE_PAGE_SIZE)}
                 total={timelineTotal}
+                pageSize={TIMELINE_PAGE_SIZE}
                 onPageChange={setTimelinePage}
               />
             </>

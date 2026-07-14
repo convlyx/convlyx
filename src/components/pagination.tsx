@@ -9,9 +9,11 @@ type PaginationProps = {
   totalPages: number;
   total: number;
   onPageChange: (page: number) => void;
+  /** Rows per page — drives the "showing X–Y" label. Defaults to 10. */
+  pageSize?: number;
 };
 
-export function Pagination({ page, totalPages, total, onPageChange }: PaginationProps) {
+export function Pagination({ page, totalPages, total, onPageChange, pageSize = 10 }: PaginationProps) {
   const t = useTranslations();
 
   if (totalPages <= 1) return null;
@@ -39,8 +41,8 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4">
       <p className="text-sm text-muted-foreground">
         {t("pagination.showing", {
-          from: String((page - 1) * 10 + 1),
-          to: String(Math.min(page * 10, total)),
+          from: String((page - 1) * pageSize + 1),
+          to: String(Math.min(page * pageSize, total)),
           total: String(total),
         })}
       </p>

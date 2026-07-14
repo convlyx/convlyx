@@ -145,6 +145,7 @@ export function AuditLogList({
         page={page}
         totalPages={Math.ceil(total / pageSize)}
         total={total}
+        pageSize={pageSize}
         onPageChange={(p) => setParam("page", String(p), false)}
       />
     </div>
