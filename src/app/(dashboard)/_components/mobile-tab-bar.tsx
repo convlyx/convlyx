@@ -45,7 +45,7 @@ export function MobileTabBar({ userRole, className }: { userRole: UserRole; clas
       style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
     >
       <div
-        className="pointer-events-auto mx-auto flex max-w-md items-center justify-around overflow-hidden rounded-2xl bg-card px-2 py-1.5 ring-1 ring-border/60"
+        className="pointer-events-auto mx-auto flex max-w-md items-stretch gap-1 rounded-2xl bg-card p-2 ring-1 ring-border/60"
         style={{ boxShadow: "0 14px 34px -14px color-mix(in oklch, var(--primary) 55%, black)" }}
       >
         {visibleTabs.map((tab) => {
@@ -59,12 +59,16 @@ export function MobileTabBar({ userRole, className }: { userRole: UserRole; clas
               href={tab.href}
               onClick={() => setPendingPath(tab.href)}
               className={cn(
-                "flex flex-col items-center gap-0.5 rounded-xl px-3.5 py-2 transition-colors",
+                // Equal-width slots (flex-1) keep tab spacing and the active
+                // pill's margins symmetric at every screen width. rounded-lg +
+                // the card's p-2 inset keeps the pill safely inside the card's
+                // rounded-2xl corners without clipping (see corner geometry).
+                "flex flex-1 min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-2 text-center transition-colors",
                 isActive ? "bg-primary/15 text-primary" : "text-muted-foreground",
               )}
             >
-              <Icon className={cn("h-5 w-5", isActive && "stroke-[2.5px]")} />
-              <span className="text-[10px] font-medium leading-tight">
+              <Icon className={cn("h-5 w-5 shrink-0", isActive && "stroke-[2.5px]")} />
+              <span className="max-w-full truncate text-[10px] font-medium leading-tight">
                 {tab.key === "settings"
                   ? t("common.profile")
                   : tab.key === "enrollments"
