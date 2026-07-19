@@ -210,6 +210,11 @@ model ClassSession {
   @@index([schoolId])
   @@index([instructorId])
   @@index([startsAt])
+  // Composite tenant+time indexes back the hot list/analytics range scans:
+  // class.list past/upcoming tabs + status filters (status is derived from the
+  // clock, so these filter on starts_at/ends_at) and analytics.attendanceTrend.
+  @@index([tenantId, startsAt])
+  @@index([tenantId, endsAt])
   @@map("class_sessions")
 }
 
