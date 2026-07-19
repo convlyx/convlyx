@@ -42,6 +42,7 @@ export function ClassDetailView({
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [cancelClassConfirm, setCancelClassConfirm] = useState(false);
+  const [confirmUnavailable, setConfirmUnavailable] = useState(false);
   const [removeEnrollmentId, setRemoveEnrollmentId] = useState<string | null>(null);
   const [confirmCompletedEnroll, setConfirmCompletedEnroll] = useState(false);
   const [pendingAttendanceChange, setPendingAttendanceChange] = useState<{ enrollmentId: string; status: "ATTENDED" | "NO_SHOW" } | null>(null);
@@ -104,6 +105,16 @@ export function ClassDetailView({
       utils.class.list.invalidate();
       track("class_cancelled", { class_id: classId });
       setCancelClassConfirm(false);
+    },
+    onError,
+  });
+
+  const instructorUnavailableMutation = trpc.class.instructorUnavailable.useMutation({
+    onSuccess: () => {
+      toast.success(t("toast.instructorUnavailable"));
+      utils.class.getById.invalidate({ id: classId });
+      utils.class.list.invalidate();
+      setConfirmUnavailable(false);
     },
     onError,
   });
@@ -265,6 +276,18 @@ export function ClassDetailView({
                 onClick={() => setCancelClassConfirm(true)}
               >
                 {t("classes.cancelClass")}
+              </Button>
+            )}
+            {/* Instructor: flag unavailable — only before their own class starts.
+                (The page already restricts instructors to their own classes.) */}
+            {isInstructor && classDetail.status === "SCHEDULED" && new Date(classDetail.startsAt).getTime() > nowMs && (
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={instructorUnavailableMutation.isPending}
+                onClick={() => setConfirmUnavailable(true)}
+              >
+                {t("classes.markUnavailable")}
               </Button>
             )}
           </div>
@@ -521,6 +544,15 @@ export function ClassDetailView({
         title={t("classes.cancelClassConfirmTitle")}
         message={t("classes.cancelClassConfirmMessage")}
         loading={cancelClassMutation.isPending}
+      />
+
+      <ConfirmDialog
+        open={confirmUnavailable}
+        onClose={() => setConfirmUnavailable(false)}
+        onConfirm={() => instructorUnavailableMutation.mutate({ id: classDetail.id })}
+        title={t("classes.unavailableConfirmTitle")}
+        message={t("classes.unavailableConfirmMessage")}
+        loading={instructorUnavailableMutation.isPending}
       />
 
       <ConfirmDialog

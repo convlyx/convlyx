@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations, useFormatter, useNow } from "next-intl";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { InfoTooltip } from "@/components/info-tooltip";
 import { HeroCardSkeleton } from "@/components/skeletons/hero-card-skeleton";
 import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -66,6 +69,9 @@ export function StudentHome({
   const { data: stats, isLoading: statsLoading } = trpc.enrollment.studentStats.useQuery();
 
   const utils = trpc.useUtils();
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+  // Captured once — the notice window is approximate and needn't tick live.
+  const [nowMs] = useState(() => now.getTime());
   const enrollMutation = trpc.enrollment.enroll.useMutation({
     onSuccess: () => {
       toast.success(t("toast.enrollmentSuccess"));
@@ -76,6 +82,33 @@ export function StudentHome({
     },
     onError,
   });
+
+  const cancelMutation = trpc.enrollment.cancel.useMutation({
+    onSuccess: () => {
+      toast.success(t("toast.enrollmentCancelled"));
+      utils.enrollment.listByStudent.invalidate();
+      utils.enrollment.studentStats.invalidate();
+      utils.class.list.invalidate();
+    },
+    onError,
+  });
+
+  // Self-cancellation is blocked inside the school's notice window (server-
+  // enforced; mirrored here to disable the button + explain why). Same logic
+  // as the /enrollments list.
+  const isWithinNoticeWindow = (enrollment: {
+    session: { startsAt: Date; school: { cancellationNoticeHours: number } };
+  }) => {
+    const noticeHours = enrollment.session.school.cancellationNoticeHours;
+    if (noticeHours <= 0) return false;
+    return new Date(enrollment.session.startsAt).getTime() - nowMs < noticeHours * 3600_000;
+  };
+  const lockedHint = (enrollment: {
+    session: { startsAt: Date; school: { cancellationNoticeHours: number } };
+  }) =>
+    isWithinNoticeWindow(enrollment)
+      ? t("enrollments.cancellationLockedHint", { hours: enrollment.session.school.cancellationNoticeHours })
+      : undefined;
 
   const activeEnrollments = (enrollments ?? []).filter((e) => e.status === "ENROLLED");
   const scheduledCount = stats?.scheduled ?? 0;
@@ -272,6 +305,19 @@ export function StudentHome({
                       <span className="truncate">{enrollment.session.instructor.name}</span>
                     </div>
                   </div>
+                  <div className="mt-2">
+                    <InfoTooltip content={lockedHint(enrollment)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        disabled={cancelMutation.isPending || isWithinNoticeWindow(enrollment)}
+                        onClick={() => setConfirmCancelId(enrollment.id)}
+                      >
+                        {t("enrollments.cancel")}
+                      </Button>
+                    </InfoTooltip>
+                  </div>
                 </div>
               </div>
             ))}
@@ -343,6 +389,18 @@ export function StudentHome({
       {!enrollmentsLoading && !classesLoading && upcomingEnrollments.length === 0 && availableClasses.length === 0 && !nextClass && (
         <EmptyState icon={BookOpen} message={t("dashboard.noClassesThisWeek")} />
       )}
+
+      <ConfirmDialog
+        open={confirmCancelId !== null}
+        onClose={() => setConfirmCancelId(null)}
+        onConfirm={() => {
+          if (confirmCancelId) cancelMutation.mutate({ enrollmentId: confirmCancelId });
+          setConfirmCancelId(null);
+        }}
+        title={t("classes.cancelOwnEnrollmentTitle")}
+        message={t("classes.cancelOwnEnrollmentMessage")}
+        loading={cancelMutation.isPending}
+      />
     </div>
   );
 }
