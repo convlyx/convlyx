@@ -22,6 +22,26 @@ export function testLoadMembership(userId: string, tenantId: string) {
     });
 }
 
+/**
+ * Build a tRPC caller authenticated as an arbitrary member of a tenant.
+ * Role/school are resolved live from the Membership (like the real context),
+ * so pass any seeded user id — student, instructor, second admin, etc.
+ */
+export function callerAs(
+  tenant: { tenantId: string },
+  userId: string,
+  userEmail: string | null = null,
+) {
+  return createCaller({
+    db,
+    tenantId: tenant.tenantId,
+    ip: null,
+    user: { id: userId },
+    userEmail,
+    loadMembership: testLoadMembership(userId, tenant.tenantId),
+  });
+}
+
 export type TestTenant = {
   tenantId: string;
   schoolId: string;
