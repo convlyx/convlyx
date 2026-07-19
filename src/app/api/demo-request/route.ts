@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod/v4";
 import { isSameOrigin } from "@/lib/csrf";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 // Pin to Dublin (eu-west-1) to co-locate with Supabase — avoids transatlantic DB latency.
@@ -32,6 +33,14 @@ const demoRequestSchema = z.object({
 export async function POST(request: Request) {
   if (!isSameOrigin(request.headers)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  // Throttle per IP: this is a public, email-sending endpoint, so cap it to
+  // stop inbox flooding / Resend-quota abuse. The same-origin check above is
+  // CSRF defence (a non-browser client can spoof Origin), not a rate limit.
+  const ip = getClientIp(request.headers);
+  const { success } = await rateLimit({ key: `demo-request:${ip}`, limit: 5, windowMs: 600_000 });
+  if (!success) {
+    return NextResponse.json({ error: "tooManyRequests" }, { status: 429 });
   }
   let body: unknown;
   try {
