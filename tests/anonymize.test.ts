@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { db } from "@/server/db";
 import { cleanupTenants, createTestTenant, type TestTenant } from "./helpers/tenant";
@@ -30,6 +31,28 @@ describe("user.anonymize", () => {
       select: { name: true, email: true },
     });
     expect(before.name).toMatch(/^Aluno /);
+
+    // Seed free-text notes ABOUT the subject — a performance note on their
+    // enrollment and an examiner note on an exam for their course.
+    await db.enrollment.update({
+      where: { id: a.enrollmentId },
+      data: { notes: "Aluno com dificuldades nas manobras" },
+    });
+    const examId = randomUUID();
+    await db.exam.create({
+      data: {
+        id: examId,
+        tenantId: a.tenantId,
+        schoolId: a.schoolId,
+        courseId: a.courseId,
+        type: "PRACTICAL",
+        result: "FAILED",
+        scheduledAt: new Date(Date.now() - 86_400_000),
+        examinerNotes: "Reprovado — parqueamento",
+        createdById: a.adminUserId,
+        updatedById: a.adminUserId,
+      },
+    });
 
     await a.asAdmin.user.anonymize({ id: a.studentUserId });
 
@@ -67,6 +90,18 @@ describe("user.anonymize", () => {
       select: { studentId: true },
     });
     expect(course?.studentId).toBe(a.studentUserId);
+
+    // ...but free-text notes about the subject are scrubbed (Art. 17).
+    const enrNotes = await db.enrollment.findUnique({
+      where: { id: a.enrollmentId },
+      select: { notes: true },
+    });
+    expect(enrNotes?.notes).toBeNull();
+    const exNotes = await db.exam.findUnique({
+      where: { id: examId },
+      select: { examinerNotes: true },
+    });
+    expect(exNotes?.examinerNotes).toBeNull();
   });
 
   test("rejects self-anonymize", async () => {

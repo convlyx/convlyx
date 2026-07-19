@@ -56,7 +56,7 @@ See `docs/MVP_PLAN.md` for full architecture, data model, and roadmap.
 
 ### GDPR Awareness
 - EU market — GDPR applies. All user data must be traceable via FK chains (User → Enrollments, ClassSessions, etc.) so data export and deletion are possible.
-- Soft delete covers most cases; a hard-delete path for GDPR requests will be added post-MVP.
+- Erasure (Art. 17) is implemented: `user.delete` hard-deletes (User row cascade + Supabase auth removal) when the subject has no history; `user.anonymize` scrubs PII in place (membership name/phone, global name/email, free-text `enrollment.notes` + `exam.examinerNotes`, notifications/push) for subjects with history that can't be hard-deleted. Both are per-membership and only scrub the global identity/login on the subject's LAST school. Consent records deliberately survive erasure (legal proof of consent). `user.exportData` (Art. 15) returns a versioned full dump (`convlyx.gdpr.v1`).
 - Keep side effects in tRPC procedures separable (e.g. `createEnrollment` does the insert, then triggers notifications) so future event-driven patterns (emails, audit logs, webhooks) can hook in without rewriting business logic.
 
 ### i18n

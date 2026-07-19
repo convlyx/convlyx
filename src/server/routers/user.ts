@@ -705,6 +705,26 @@ export const userRouter = router({
         await tx.notification.deleteMany({ where: { tenantId: ctx.tenantId, userId: target.userId } });
         await tx.pushSubscription.deleteMany({ where: { tenantId: ctx.tenantId, userId: target.userId } });
 
+        // Scrub free-text notes ABOUT the subject — instructor performance
+        // notes and examiner notes can carry identifying detail, so Art. 17
+        // erasure must clear the text, not just the name link. Keyed by
+        // studentId, so anonymizing an instructor never touches notes they
+        // authored about other people.
+        await tx.enrollment.updateMany({
+          where: { tenantId: ctx.tenantId, studentId: target.userId },
+          data: { notes: null },
+        });
+        const subjectCourses = await tx.studentCourse.findMany({
+          where: { tenantId: ctx.tenantId, studentId: target.userId },
+          select: { id: true },
+        });
+        if (subjectCourses.length > 0) {
+          await tx.exam.updateMany({
+            where: { tenantId: ctx.tenantId, courseId: { in: subjectCourses.map((c) => c.id) } },
+            data: { examinerNotes: null },
+          });
+        }
+
         if (isLastTenant) {
           // No other school controls them → scrub the global identity and kill
           // the login so the account can't be used again.
