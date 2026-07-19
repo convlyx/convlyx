@@ -84,14 +84,20 @@ export default async function DashboardLayout({
           tenantName={user.tenant.name}
           schoolName={user.school.name}
         />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 space-y-4">
-          <AnalyticsIdentifier {...analyticsProps} />
-          <ConsentGate />
-          <PostHogInit />
-          <Suspense fallback={null}>
-            <PostHogPageviews />
-          </Suspense>
-          {children}
+        {/* Padding lives on an inner wrapper, not the scroll container, so
+            `position: sticky; top: 0` descendants (e.g. the calendar's date
+            header) pin flush to the visible top instead of below the padding.
+            Mirrors InstructorLayout / MobileLayout. */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="p-4 md:p-6 space-y-4">
+            <AnalyticsIdentifier {...analyticsProps} />
+            <ConsentGate />
+            <PostHogInit />
+            <Suspense fallback={null}>
+              <PostHogPageviews />
+            </Suspense>
+            {children}
+          </div>
         </main>
       </div>
     </div>
