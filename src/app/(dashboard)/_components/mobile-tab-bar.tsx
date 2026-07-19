@@ -45,7 +45,7 @@ export function MobileTabBar({ userRole, className }: { userRole: UserRole; clas
       style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
     >
       <div
-        className="pointer-events-auto mx-auto flex max-w-md items-center justify-around rounded-2xl bg-card px-2 py-1.5 ring-1 ring-border/60"
+        className="pointer-events-auto mx-auto flex max-w-md items-center justify-around overflow-hidden rounded-2xl bg-card px-2 py-1.5 ring-1 ring-border/60"
         style={{ boxShadow: "0 14px 34px -14px color-mix(in oklch, var(--primary) 55%, black)" }}
       >
         {visibleTabs.map((tab) => {

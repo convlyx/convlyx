@@ -5,7 +5,7 @@ import { extractSubdomain } from "@/lib/subdomain";
 const publicPaths = ["/login", "/register", "/reset-password", "/update-password", "/install"];
 
 // Root domains that should not serve the app (no subdomain)
-const ROOT_DOMAINS = ["convlyx.com", "localhost:3000"];
+const ROOT_DOMAINS = ["convlyx.com"];
 
 // Reserved subdomains that are not real schools
 const RESERVED_SUBDOMAINS = ["admin", "www", "api"];
