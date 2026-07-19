@@ -11,7 +11,6 @@ import {
   ClipboardList,
   GraduationCap,
   Users,
-  Building2,
   UserCog,
   Settings,
   BarChart3,

@@ -18,7 +18,7 @@ import {
   Timer,
   Coffee,
 } from "lucide-react";
-import { typeKeys, statusKeys, statusVariant, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
+import { typeKeys, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
 import { PushPrompt } from "@/components/push-prompt";
 import { PendingAttendanceModal } from "./pending-attendance-modal";
 import { CurrentClassBanner } from "./current-class-banner";

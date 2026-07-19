@@ -334,11 +334,6 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                         </Button>
                       </div>
                     )}
-                    {isStudent && enrolledSessionIds.has(cls.id) && (
-                      <div className="mt-2">
-                        <Badge variant="default">{t("enrollments.enrolled")}</Badge>
-                      </div>
-                    )}
                     {canManage && (rowStatus === "SCHEDULED" || rowStatus === "IN_PROGRESS") && (
                       <div className="mt-2 flex gap-2 sm:hidden" onClick={(e) => e.preventDefault()}>
                         <Button variant="outline" size="sm" onClick={(e) => { e.preventDefault(); setEditClass(cls); }}>
@@ -420,9 +415,6 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                       >
                         {enrollingId === cls.id ? t("common.loading") : t("enrollments.enroll")}
                       </Button>
-                    )}
-                    {isStudent && enrolledSessionIds.has(cls.id) && (
-                      <Badge variant="default">{t("enrollments.enrolled")}</Badge>
                     )}
                     {canManage && (rowStatus === "SCHEDULED" || rowStatus === "IN_PROGRESS") && (
                       <div className="flex gap-1">

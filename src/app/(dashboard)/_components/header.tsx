@@ -23,7 +23,6 @@ export function Header({
   userId,
   userName,
   userRole,
-  tenantName,
   schoolName,
   userMobileNav,
 }: HeaderProps) {

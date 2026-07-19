@@ -73,7 +73,6 @@ export default async function NovidadesPostPage({
     <div className="min-h-screen bg-background">
       <script
         type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
       />
       <BlogNav backLabel={t("backToList")} backHref="/novidades" />
