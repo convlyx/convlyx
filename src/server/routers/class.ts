@@ -103,7 +103,7 @@ export const classRouter = router({
         capacity: true,
         status: true,
         instructor: { select: { id: true, ...userNameSelect(ctx.tenantId) } },
-        school: { select: { id: true, name: true, timeZone: true } },
+        school: { select: { id: true, name: true, timeZone: true, practicalSelfEnrollEnabled: true } },
         _count: { select: { enrollments: true } },
       } as const;
 
@@ -153,7 +153,7 @@ export const classRouter = router({
           status: true,
           createdAt: true,
           instructor: { select: { id: true, ...userNameSelect(ctx.tenantId) } },
-          school: { select: { id: true, name: true, cancellationNoticeHours: true, timeZone: true } },
+          school: { select: { id: true, name: true, cancellationNoticeHours: true, timeZone: true, practicalSelfEnrollEnabled: true } },
           createdBy: { select: { id: true, ...userNameSelect(ctx.tenantId) } },
           enrollments: {
             select: {

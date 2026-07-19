@@ -22,7 +22,7 @@ import {
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
 import { EmptyState } from "@/components/empty-state";
-import { typeKeys, statusKeys, statusVariant, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
+import { typeKeys, statusKeys, statusVariant, classTypeColorMap, classTypeBadgeClass, studentCanSelfEnroll } from "@/lib/constants/class";
 import { Pagination } from "@/components/pagination";
 import { SegmentedTabs } from "@/components/segmented-tabs";
 import { IconTile } from "@/components/icon-tile";
@@ -158,9 +158,15 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
   const serverItems = classesData?.items ?? [];
   const serverTotal = classesData?.total ?? 0;
 
+  // Students only browse classes they can actually self-enroll into: exclude
+  // already-enrolled, full, and — when the school has practical self-enroll
+  // disabled — practical classes (which would only bounce with an error).
   const studentVisibleClasses = isStudent
     ? serverItems.filter(
-        (cls) => !enrolledSessionIds.has(cls.id) && cls._count.enrollments < cls.capacity,
+        (cls) =>
+          !enrolledSessionIds.has(cls.id) &&
+          cls._count.enrollments < cls.capacity &&
+          studentCanSelfEnroll(cls),
       )
     : serverItems;
 

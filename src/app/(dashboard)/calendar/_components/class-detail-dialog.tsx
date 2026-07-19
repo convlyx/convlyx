@@ -8,7 +8,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { InfoTooltip } from "@/components/info-tooltip";
-import { typeKeys, statusKeys, statusVariant, enrollmentStatusKeys, enrollmentStatusVariant, classTypeBadgeClass, resolveEnrollmentDisplay } from "@/lib/constants/class";
+import { typeKeys, statusKeys, statusVariant, enrollmentStatusKeys, enrollmentStatusVariant, classTypeBadgeClass, resolveEnrollmentDisplay, studentCanSelfEnroll } from "@/lib/constants/class";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
@@ -84,7 +84,11 @@ export function ClassDetailDialog({
   if (!classDetail) return null;
 
   const isFull = classDetail.enrollments.filter((e) => e.status === "ENROLLED").length >= classDetail.capacity;
-  const canEnroll = userRole === "STUDENT" && classDetail.status === "SCHEDULED" && !isFull;
+  const canEnroll =
+    userRole === "STUDENT" &&
+    classDetail.status === "SCHEDULED" &&
+    !isFull &&
+    studentCanSelfEnroll(classDetail);
   const canMarkAttendance = ["ADMIN", "SECRETARY", "INSTRUCTOR"].includes(userRole)
     && (classDetail.status === "IN_PROGRESS" || classDetail.status === "COMPLETED");
   const canManage = userRole === "ADMIN" || userRole === "SECRETARY";

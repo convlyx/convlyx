@@ -20,7 +20,7 @@ import {
   XCircle,
   Sparkles,
 } from "lucide-react";
-import { typeKeys, classTypeColorMap, classTypeBadgeClass } from "@/lib/constants/class";
+import { typeKeys, classTypeColorMap, classTypeBadgeClass, studentCanSelfEnroll } from "@/lib/constants/class";
 import { toast } from "sonner";
 import { useTranslatedError } from "@/hooks/use-translated-error";
 import { track } from "@/lib/posthog";
@@ -101,7 +101,11 @@ export function StudentHome({
   const nextClass = upcomingEnrollments[0];
 
   const availableClasses = classes?.filter(
-    (cls) => cls.status === "SCHEDULED" && !enrolledSessionIds.has(cls.id) && cls._count.enrollments < cls.capacity
+    (cls) =>
+      cls.status === "SCHEDULED" &&
+      !enrolledSessionIds.has(cls.id) &&
+      cls._count.enrollments < cls.capacity &&
+      studentCanSelfEnroll(cls)
   ) ?? [];
 
   const totalClasses = attendedCount + noShowCount;

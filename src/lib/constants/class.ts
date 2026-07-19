@@ -4,6 +4,20 @@ export const typeKeys: Record<string, string> = {
   PRACTICAL: "classes.practical",
 };
 
+/**
+ * Whether a STUDENT may self-enroll into a class. Practical self-enrollment is
+ * a per-school opt-in (`practicalSelfEnrollEnabled`); theory is always open.
+ * Gates both the "Inscrever" button and whether an un-enrolled practical class
+ * appears in the student browse list. Mirrors the server rule enforced in
+ * `enrollment.enroll` — if this returns false the mutation would reject anyway.
+ */
+export function studentCanSelfEnroll(cls: {
+  classType: string;
+  school: { practicalSelfEnrollEnabled: boolean };
+}): boolean {
+  return cls.classType !== "PRACTICAL" || cls.school.practicalSelfEnrollEnabled;
+}
+
 // Class status translation keys
 export const statusKeys: Record<string, string> = {
   SCHEDULED: "classes.scheduled",
