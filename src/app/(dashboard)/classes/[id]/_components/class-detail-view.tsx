@@ -11,7 +11,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { StudentPicker } from "@/components/student-picker";
 import {
-  typeKeys, statusKeys, statusVariant, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap, classTypeBadgeClass, resolveEnrollmentDisplay,
+  typeKeys, statusKeys, statusVariant, enrollmentStatusKeys, enrollmentStatusVariant, classTypeColorMap, classTypeBadgeClass, resolveEnrollmentDisplay, effectiveClassStatus,
 } from "@/lib/constants/class";
 import { Textarea } from "@/components/ui/textarea";
 import { CategoryBadge } from "@/components/category-badge";
@@ -169,18 +169,21 @@ export function ClassDetailView({
     return true;
   }) ?? [];
 
-  const isActive = classDetail.status === "SCHEDULED" || classDetail.status === "IN_PROGRESS";
-  const canMarkAttendance = classDetail.status === "IN_PROGRESS" || classDetail.status === "COMPLETED";
+  // Class rows aren't transitioned by a cron — derive the live lifecycle
+  // status from the clock so an ended class reads/gates as COMPLETED.
+  const liveStatus = effectiveClassStatus(classDetail);
+  const isActive = liveStatus === "SCHEDULED" || liveStatus === "IN_PROGRESS";
+  const canMarkAttendance = liveStatus === "IN_PROGRESS" || liveStatus === "COMPLETED";
   const isStaff = userRole === "ADMIN" || userRole === "SECRETARY";
   const isInstructor = userRole === "INSTRUCTOR";
-  const canAddStudent = (isStaff || isInstructor) && classDetail.status !== "CANCELLED";
+  const canAddStudent = (isStaff || isInstructor) && liveStatus !== "CANCELLED";
 
   // QR check-in: theory class currently within its time window, for staff/instructor.
   const nowMs = new Date().getTime();
   const canOpenCheckIn =
     classDetail.classType === "THEORY" &&
     (isStaff || isInstructor) &&
-    classDetail.status !== "CANCELLED" &&
+    liveStatus !== "CANCELLED" &&
     new Date(classDetail.startsAt).getTime() <= nowMs &&
     new Date(classDetail.endsAt).getTime() >= nowMs;
 
@@ -206,8 +209,8 @@ export function ClassDetailView({
                 <h1 className="text-xl font-bold">{classDetail.title}</h1>
                 <Badge className={classTypeBadgeClass[classDetail.classType]}>{t(typeKeys[classDetail.classType])}</Badge>
                 <CategoryBadge category={classDetail.category} />
-                <Badge variant={statusVariant[classDetail.status] ?? "outline"}>
-                  {t(statusKeys[classDetail.status])}
+                <Badge variant={statusVariant[liveStatus] ?? "outline"}>
+                  {t(statusKeys[liveStatus])}
                 </Badge>
               </div>
               <div className="mt-2 space-y-1 text-sm text-muted-foreground">
@@ -257,7 +260,7 @@ export function ClassDetailView({
                 {t("common.edit")}
               </Button>
             )}
-            {classDetail.status === "COMPLETED" && (
+            {liveStatus === "COMPLETED" && (
               <Button
                 variant="outline"
                 size="sm"
@@ -280,7 +283,7 @@ export function ClassDetailView({
             )}
             {/* Instructor: flag unavailable — only before their own class starts.
                 (The page already restricts instructors to their own classes.) */}
-            {isInstructor && classDetail.status === "SCHEDULED" && new Date(classDetail.startsAt).getTime() > nowMs && (
+            {isInstructor && liveStatus === "SCHEDULED" && new Date(classDetail.startsAt).getTime() > nowMs && (
               <Button
                 variant="destructive"
                 size="sm"
@@ -319,7 +322,7 @@ export function ClassDetailView({
                       size="sm"
                       disabled={enrollMutation.isPending}
                       onClick={() => {
-                        if (classDetail.status === "COMPLETED") {
+                        if (liveStatus === "COMPLETED") {
                           setConfirmCompletedEnroll(true);
                         } else {
                           selectedStudents.forEach((studentId) => {
@@ -389,7 +392,7 @@ export function ClassDetailView({
                       {enrollment.student.name}
                     </Link>
                     {(() => {
-                      const displayStatus = resolveEnrollmentDisplay(enrollment.status, classDetail.status);
+                      const displayStatus = resolveEnrollmentDisplay(enrollment.status, liveStatus);
                       return (
                         <Badge variant={enrollmentStatusVariant[displayStatus] ?? "outline"}>
                           {t(enrollmentStatusKeys[displayStatus] ?? displayStatus)}
@@ -494,7 +497,7 @@ export function ClassDetailView({
                     </Button>
                   )}
                 </div>
-                {classDetail.status === "COMPLETED" && (enrollment.status === "ATTENDED" || enrollment.status === "NO_SHOW") && (
+                {liveStatus === "COMPLETED" && (enrollment.status === "ATTENDED" || enrollment.status === "NO_SHOW") && (
                   <div className="flex flex-col sm:flex-row gap-1 shrink-0">
                     {enrollment.status === "NO_SHOW" && (
                       <Button
@@ -563,7 +566,7 @@ export function ClassDetailView({
           setRemoveEnrollmentId(null);
         }}
         title={t("classes.removeStudentTitle")}
-        message={classDetail.status === "COMPLETED"
+        message={liveStatus === "COMPLETED"
           ? t("classes.removeStudentCompletedMessage")
           : t("classes.removeStudentMessage")}
         loading={cancelEnrollmentMutation.isPending}

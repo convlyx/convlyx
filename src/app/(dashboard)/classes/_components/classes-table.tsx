@@ -22,7 +22,7 @@ import {
 import { ViewToggle, useViewMode } from "@/components/view-toggle";
 import { CardListSkeleton } from "@/components/skeletons/card-list-skeleton";
 import { EmptyState } from "@/components/empty-state";
-import { typeKeys, statusKeys, statusVariant, classTypeColorMap, classTypeBadgeClass, studentCanSelfEnroll } from "@/lib/constants/class";
+import { typeKeys, statusKeys, statusVariant, classTypeColorMap, classTypeBadgeClass, studentCanSelfEnroll, effectiveClassStatus } from "@/lib/constants/class";
 import { Pagination } from "@/components/pagination";
 import { SegmentedTabs } from "@/components/segmented-tabs";
 import { IconTile } from "@/components/icon-tile";
@@ -301,6 +301,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
         <div className="grid gap-3 animate-in fade-in duration-300">
           {paginatedClasses.map((cls) => {
             const isClickable = canViewDetail(cls);
+            const rowStatus = effectiveClassStatus(cls);
             const cardClass = `rounded-xl border bg-card p-4 card-shadow transition-all block ${isClickable ? "group hover:card-shadow-hover hover:border-primary/20" : ""}`;
             const cardContent = (
                 <div className="flex items-start gap-3">
@@ -310,7 +311,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                       <p className={`font-medium truncate ${isClickable ? "group-hover:text-primary transition-colors" : ""}`}>{cls.title}</p>
                       <Badge className={classTypeBadgeClass[cls.classType]}>{t(typeKeys[cls.classType])}</Badge>
                       <CategoryBadge category={cls.category} />
-                      <Badge variant={statusVariant[cls.status] ?? "outline"}>{t(statusKeys[cls.status])}</Badge>
+                      <Badge variant={statusVariant[rowStatus] ?? "outline"}>{t(statusKeys[rowStatus])}</Badge>
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground mt-0.5">
                       <span className="flex items-center gap-1 truncate"><Users className="h-3.5 w-3.5 shrink-0" />{cls.instructor.name}</span>
@@ -322,7 +323,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                       </span>
                       <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5 shrink-0" />{cls._count.enrollments}/{cls.capacity}</span>
                     </div>
-                    {isStudent && cls.status === "SCHEDULED" && !enrolledSessionIds.has(cls.id) && cls._count.enrollments < cls.capacity && (
+                    {isStudent && rowStatus === "SCHEDULED" && !enrolledSessionIds.has(cls.id) && cls._count.enrollments < cls.capacity && (
                       <div className="mt-2">
                         <Button
                           size="sm"
@@ -338,7 +339,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                         <Badge variant="default">{t("enrollments.enrolled")}</Badge>
                       </div>
                     )}
-                    {canManage && (cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
+                    {canManage && (rowStatus === "SCHEDULED" || rowStatus === "IN_PROGRESS") && (
                       <div className="mt-2 flex gap-2 sm:hidden" onClick={(e) => e.preventDefault()}>
                         <Button variant="outline" size="sm" onClick={(e) => { e.preventDefault(); setEditClass(cls); }}>
                           <Pencil className="h-3.5 w-3.5 mr-1" />{t("common.edit")}
@@ -349,7 +350,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                   </div>
                   {isClickable && (
                     <div className="hidden sm:flex shrink-0 gap-1 items-center">
-                      {canManage && (cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
+                      {canManage && (rowStatus === "SCHEDULED" || rowStatus === "IN_PROGRESS") && (
                         <>
                           <Button variant="outline" size="icon-sm" onClick={(e) => { e.preventDefault(); setEditClass(cls); }} title={t("common.edit")} aria-label={t("common.edit")}>
                             <Pencil className="h-3.5 w-3.5" />
@@ -389,7 +390,9 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedClasses.map((cls) => (
+              {paginatedClasses.map((cls) => {
+                const rowStatus = effectiveClassStatus(cls);
+                return (
                 <TableRow key={cls.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell>
                     {canViewDetail(cls) ? (
@@ -407,9 +410,9 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                     {format.dateTime(new Date(cls.endsAt), { hour: "2-digit", minute: "2-digit" })}
                   </TableCell>
                   <TableCell>{cls._count.enrollments}/{cls.capacity}</TableCell>
-                  <TableCell><Badge variant={statusVariant[cls.status] ?? "outline"}>{t(statusKeys[cls.status])}</Badge></TableCell>
+                  <TableCell><Badge variant={statusVariant[rowStatus] ?? "outline"}>{t(statusKeys[rowStatus])}</Badge></TableCell>
                   <TableCell>
-                    {isStudent && cls.status === "SCHEDULED" && !enrolledSessionIds.has(cls.id) && cls._count.enrollments < cls.capacity && (
+                    {isStudent && rowStatus === "SCHEDULED" && !enrolledSessionIds.has(cls.id) && cls._count.enrollments < cls.capacity && (
                       <Button
                         size="sm"
                         disabled={enrollingId === cls.id}
@@ -421,7 +424,7 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                     {isStudent && enrolledSessionIds.has(cls.id) && (
                       <Badge variant="default">{t("enrollments.enrolled")}</Badge>
                     )}
-                    {canManage && (cls.status === "SCHEDULED" || cls.status === "IN_PROGRESS") && (
+                    {canManage && (rowStatus === "SCHEDULED" || rowStatus === "IN_PROGRESS") && (
                       <div className="flex gap-1">
                         <Button variant="outline" size="icon-sm" onClick={() => setEditClass(cls)} title={t("common.edit")} aria-label={t("common.edit")}>
                           <Pencil className="h-3.5 w-3.5" />
@@ -431,7 +434,8 @@ export function ClassesTable({ userRole, userId }: { userRole: UserRole; userId:
                     )}
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </DataTableCard>

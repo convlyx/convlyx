@@ -8,7 +8,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { InfoTooltip } from "@/components/info-tooltip";
-import { typeKeys, statusKeys, statusVariant, enrollmentStatusKeys, enrollmentStatusVariant, classTypeBadgeClass, resolveEnrollmentDisplay, studentCanSelfEnroll } from "@/lib/constants/class";
+import { typeKeys, statusKeys, statusVariant, enrollmentStatusKeys, enrollmentStatusVariant, classTypeBadgeClass, resolveEnrollmentDisplay, studentCanSelfEnroll, effectiveClassStatus } from "@/lib/constants/class";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { EditClassDialog } from "@/app/(dashboard)/classes/_components/edit-class-dialog";
@@ -119,17 +119,19 @@ export function ClassDetailDialog({
 
   if (!classDetail) return null;
 
+  // Derived live lifecycle status — class rows aren't cron-transitioned.
+  const liveStatus = effectiveClassStatus(classDetail);
   const isFull = classDetail.enrollments.filter((e) => e.status === "ENROLLED").length >= classDetail.capacity;
   const canEnroll =
     userRole === "STUDENT" &&
-    classDetail.status === "SCHEDULED" &&
+    liveStatus === "SCHEDULED" &&
     !isFull &&
     studentCanSelfEnroll(classDetail);
   const canMarkAttendance = ["ADMIN", "SECRETARY", "INSTRUCTOR"].includes(userRole)
-    && (classDetail.status === "IN_PROGRESS" || classDetail.status === "COMPLETED");
+    && (liveStatus === "IN_PROGRESS" || liveStatus === "COMPLETED");
   const canManage = userRole === "ADMIN" || userRole === "SECRETARY";
   const isInstructor = userRole === "INSTRUCTOR";
-  const isActive = classDetail.status === "SCHEDULED" || classDetail.status === "IN_PROGRESS";
+  const isActive = liveStatus === "SCHEDULED" || liveStatus === "IN_PROGRESS";
   const enrolledCount = classDetail.enrollments.filter((e) => e.status === "ENROLLED").length;
 
   // Check if current student is already enrolled
@@ -147,7 +149,7 @@ export function ClassDetailDialog({
 
   // A theory class currently within its time window — show the QR check-in link.
   const isOccurring =
-    classDetail.status !== "CANCELLED" &&
+    liveStatus !== "CANCELLED" &&
     classDetail.startsAt.getTime() <= nowMs &&
     classDetail.endsAt.getTime() >= nowMs;
   const canOpenCheckIn =
@@ -166,8 +168,8 @@ export function ClassDetailDialog({
             <Badge className={classTypeBadgeClass[classDetail.classType]}>
               {t(typeKeys[classDetail.classType])}
             </Badge>
-            <Badge variant={statusVariant[classDetail.status] ?? "outline"}>
-              {t(statusKeys[classDetail.status])}
+            <Badge variant={statusVariant[liveStatus] ?? "outline"}>
+              {t(statusKeys[liveStatus])}
             </Badge>
           </div>
 
@@ -239,7 +241,7 @@ export function ClassDetailDialog({
                           onNavigate={onClose}
                         />
                         {(() => {
-                          const displayStatus = resolveEnrollmentDisplay(enrollment.status, classDetail.status);
+                          const displayStatus = resolveEnrollmentDisplay(enrollment.status, liveStatus);
                           return (
                             <Badge variant={enrollmentStatusVariant[displayStatus] ?? "outline"}>
                               {t(enrollmentStatusKeys[displayStatus] ?? displayStatus)}
@@ -337,7 +339,7 @@ export function ClassDetailDialog({
 
         <DialogFooter>
           {/* Student: enroll or cancel */}
-          {userRole === "STUDENT" && classDetail.status === "SCHEDULED" && (
+          {userRole === "STUDENT" && liveStatus === "SCHEDULED" && (
             <>
               {myEnrollment ? (
                 <InfoTooltip content={isWithinNoticeWindow ? t("enrollments.cancellationLockedHint", { hours: noticeHours }) : undefined}>
@@ -368,7 +370,7 @@ export function ClassDetailDialog({
             </Link>
           )}
           {/* Instructor: flag unavailable — only before the class starts */}
-          {isInstructor && classDetail.status === "SCHEDULED" && classDetail.startsAt.getTime() > nowMs && (
+          {isInstructor && liveStatus === "SCHEDULED" && classDetail.startsAt.getTime() > nowMs && (
             <Button
               variant="destructive"
               disabled={instructorUnavailableMutation.isPending}

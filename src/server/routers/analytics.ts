@@ -226,8 +226,10 @@ export const analyticsRouter = router({
         where: {
           tenantId: ctx.tenantId,
           ...(schoolId && { schoolId }),
-          status: "COMPLETED",
-          endsAt: { gte: since },
+          // A class is "completed" once it has ended and wasn't cancelled —
+          // derived from the clock, since rows aren't transitioned by a cron.
+          status: { not: "CANCELLED" },
+          endsAt: { gte: since, lte: new Date() },
         },
         select: {
           endsAt: true,

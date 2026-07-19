@@ -25,8 +25,10 @@ export const classRouter = router({
   list: protectedProcedure
     .input(listClassesSchema)
     .query(async ({ ctx, input }) => {
-      // Status accuracy is maintained by the `sync-class-statuses` cron
-      // (every minute) — this read path stays a pure SELECT.
+      // Class rows are NOT transitioned by a cron. Lifecycle status is derived
+      // from the clock (see effectiveClassStatus / statusWhere below): the
+      // stored `status` column only persists CANCELLED (+ an early IN_PROGRESS
+      // on theory check-in). The status filter maps to time predicates.
 
       // Instructors see only their classes, students see available + enrolled.
       // The role-level instructor pin always wins over an explicit input filter.
@@ -59,6 +61,8 @@ export const classRouter = router({
         };
       }
 
+      const now = new Date();
+
       // Explicit from/to (calendar/dashboard date windows) filter on startsAt.
       const startsAtFilter: { gte?: Date; lte?: Date } = {};
       if (input?.from) startsAtFilter.gte = new Date(input.from);
@@ -69,10 +73,39 @@ export const classRouter = router({
       // "upcoming/current" instead of falling between the two tabs.
       const endsAtFilter: { gte?: Date; lt?: Date } = {};
       if (!input?.from && !input?.to && input?.time) {
-        const now = new Date();
         if (input.time === "upcoming") endsAtFilter.gte = now;
         else endsAtFilter.lt = now;
       }
+
+      // Lifecycle status is DERIVED from the clock — class rows aren't
+      // transitioned by a cron (see effectiveClassStatus), so a status filter
+      // maps to time predicates, not the stored column. CANCELLED is the one
+      // status actually persisted. ALL = no constraint (includes cancelled);
+      // no filter = everything except cancelled.
+      function statusWhere(status: string | undefined): object | null {
+        switch (status) {
+          case "ALL":
+            return null;
+          case "CANCELLED":
+            return { status: "CANCELLED" as const };
+          case "COMPLETED":
+            return { status: { not: "CANCELLED" as const }, endsAt: { lte: now } };
+          case "IN_PROGRESS":
+            return { status: { not: "CANCELLED" as const }, startsAt: { lte: now }, endsAt: { gt: now } };
+          case "SCHEDULED":
+            return { status: { not: "CANCELLED" as const }, startsAt: { gt: now } };
+          default:
+            return { status: { not: "CANCELLED" as const } };
+        }
+      }
+
+      // Collect the time-bearing predicates into AND so a status-derived
+      // startsAt/endsAt can't clobber the from/to or upcoming/past ones.
+      const and: object[] = [];
+      if (Object.keys(startsAtFilter).length > 0) and.push({ startsAt: startsAtFilter });
+      if (Object.keys(endsAtFilter).length > 0) and.push({ endsAt: endsAtFilter });
+      const statusFragment = statusWhere(input?.status);
+      if (statusFragment) and.push(statusFragment);
 
       const where = {
         tenantId: ctx.tenantId,
@@ -81,16 +114,10 @@ export const classRouter = router({
         ...(input?.schoolId && { schoolId: input.schoolId }),
         ...(input?.classType && { classType: input.classType }),
         ...(input?.category && { category: input.category }),
-        ...(Object.keys(startsAtFilter).length > 0 && { startsAt: startsAtFilter }),
-        ...(Object.keys(endsAtFilter).length > 0 && { endsAt: endsAtFilter }),
         ...(input?.search && {
           title: { contains: input.search, mode: "insensitive" as const },
         }),
-        ...(input?.status && input.status !== "ALL"
-          ? { status: input.status }
-          : !input?.status
-            ? { status: { not: "CANCELLED" as const } }
-            : {}),
+        ...(and.length > 0 && { AND: and }),
       };
 
       const select = {

@@ -4,6 +4,27 @@ export const typeKeys: Record<string, string> = {
   PRACTICAL: "classes.practical",
 };
 
+export type ClassStatusValue = "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+
+/**
+ * The effective lifecycle status of a class *right now*. Class rows are NOT
+ * transitioned by a cron — the stored `status` only reliably captures CANCELLED
+ * (and an early IN_PROGRESS when a theory check-in is opened). Everything else
+ * is derived from the clock so an ended class actually reads as COMPLETED and
+ * a running one as IN_PROGRESS. Use this for display + gating, never the raw
+ * stored `status`, so behaviour doesn't depend on a background job.
+ */
+export function effectiveClassStatus(
+  session: { status: string; startsAt: string | Date; endsAt: string | Date },
+  now: Date = new Date(),
+): ClassStatusValue {
+  if (session.status === "CANCELLED") return "CANCELLED";
+  const t = now.getTime();
+  if (t >= new Date(session.endsAt).getTime()) return "COMPLETED";
+  if (t >= new Date(session.startsAt).getTime()) return "IN_PROGRESS";
+  return "SCHEDULED";
+}
+
 /**
  * Whether a STUDENT may self-enroll into a class. Practical self-enrollment is
  * a per-school opt-in (`practicalSelfEnrollEnabled`); theory is always open.
