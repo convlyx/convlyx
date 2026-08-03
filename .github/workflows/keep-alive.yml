@@ -1,0 +1,66 @@
+name: Keep Supabase projects awake
+
+# Free-plan Supabase projects are paused after ~7 days without "sufficient user
+# database activity" — Supabase's benchmark is "a few user requests to the
+# database each day over the previous week"
+# (https://supabase.com/docs/guides/platform/free-project-pausing).
+# A paused project means migrations, local dev, and (for prod) the live app all
+# stop until someone restores it by hand from the dashboard.
+#
+# This workflow makes one trivial read against each project so both stay awake.
+# Rationale + rejected alternatives: docs/decisions/2026-08-03-supabase-keep-alive.md
+
+on:
+  schedule:
+    # Twice daily (07:00 + 19:00 UTC). Not once every ~5 days: Supabase measures
+    # requests *per day across the week*, and two spread-out pings mean a single
+    # delayed or failed run is harmless. GitHub's scheduler can lag by up to an
+    # hour under load, which doesn't matter at this granularity.
+    - cron: "0 7,19 * * *"
+  # Lets us verify both pings by hand right after adding the secrets, instead of
+  # waiting for the next scheduled run.
+  workflow_dispatch: {}
+
+# This repo is public. The job therefore deliberately: never triggers on
+# `pull_request` (so fork PRs can never see these secrets), uses no third-party
+# actions, and does not check out the repository — no repo code executes here,
+# so there is no path for committed code to read the service-role keys.
+permissions: {}
+
+jobs:
+  ping:
+    name: ping both Supabase projects
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      # A real query against a real table (not `SELECT 1`), over PostgREST, so
+      # it is indistinguishable from ordinary user traffic. Read-only — nothing
+      # is written to either database.
+      #
+      # Deliberately HTTP rather than psql: a Postgres connection from a GitHub
+      # runner would go through the 6543 transaction pooler, which routes by
+      # network origin and from a non-Vercel origin can land on the leftover
+      # "ghost" instance — the ping would pass while the live project still
+      # drifted toward pausing. See
+      # docs/decisions/2026-06-24-prod-db-routing-investigation.md.
+      - name: Ping production
+        run: |
+          curl --fail-with-body -sS -o /dev/null \
+            -w 'prod: HTTP %{http_code} in %{time_total}s\n' \
+            --retry 3 --retry-delay 10 --retry-all-errors \
+            -H "apikey: ${{ secrets.SUPABASE_PROD_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_PROD_SERVICE_ROLE_KEY }}" \
+            "${{ secrets.SUPABASE_PROD_URL }}/rest/v1/tenants?select=id&limit=1"
+
+      # `always()` so a production failure can never mask a dev failure — both
+      # are reported independently and either one fails the job.
+      - name: Ping development
+        if: always()
+        run: |
+          curl --fail-with-body -sS -o /dev/null \
+            -w 'dev: HTTP %{http_code} in %{time_total}s\n' \
+            --retry 3 --retry-delay 10 --retry-all-errors \
+            -H "apikey: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}" \
+            "${{ secrets.SUPABASE_DEV_URL }}/rest/v1/tenants?select=id&limit=1"
