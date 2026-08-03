@@ -48,6 +48,7 @@ jobs:
         run: |
           curl --fail-with-body -sS -o /dev/null \
             -w 'prod: HTTP %{http_code} in %{time_total}s\n' \
+            --connect-timeout 10 --max-time 30 \
             --retry 3 --retry-delay 10 --retry-all-errors \
             -H "apikey: ${{ secrets.SUPABASE_PROD_SERVICE_ROLE_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_PROD_SERVICE_ROLE_KEY }}" \
@@ -60,6 +61,7 @@ jobs:
         run: |
           curl --fail-with-body -sS -o /dev/null \
             -w 'dev: HTTP %{http_code} in %{time_total}s\n' \
+            --connect-timeout 10 --max-time 30 \
             --retry 3 --retry-delay 10 --retry-all-errors \
             -H "apikey: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}" \
