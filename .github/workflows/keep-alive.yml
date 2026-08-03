@@ -12,11 +12,14 @@ name: Keep Supabase projects awake
 
 on:
   schedule:
-    # Twice daily (07:00 + 19:00 UTC). Not once every ~5 days: Supabase measures
-    # requests *per day across the week*, and two spread-out pings mean a single
-    # delayed or failed run is harmless. GitHub's scheduler can lag by up to an
-    # hour under load, which doesn't matter at this granularity.
-    - cron: "0 7,19 * * *"
+    # Every 6 hours. Not once every ~5 days: Supabase measures requests *per day
+    # across the week*, and its stated benchmark is "a few user requests to the
+    # database each day" — 4/day sits comfortably inside that, where 1-2/day
+    # leans on a generous reading of "a few". Spreading them also means a
+    # delayed or failed run is harmless. Runs are ~5s and public-repo Actions
+    # minutes are free, so the extra frequency costs nothing. GitHub's scheduler
+    # can lag by up to an hour under load; irrelevant at this granularity.
+    - cron: "0 */6 * * *"
   # Lets us verify both pings by hand right after adding the secrets, instead of
   # waiting for the next scheduled run.
   workflow_dispatch: {}

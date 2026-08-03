@@ -25,9 +25,12 @@ paused."
 Two things follow from that wording, and they drove the design:
 
 1. **The metric is requests per day across the week, not one touch inside a
-   7-day window.** So the ping runs *twice daily*, not "every 5 days" as
-   originally sketched. It also means one delayed or failed run is harmless,
-   whereas a single ping every 5 days has no margin at all.
+   7-day window.** So the ping runs *every 6 hours* (4/day), not "every 5 days"
+   as originally sketched. 4/day sits comfortably inside "a few requests each
+   day", where 1-2/day would lean on a generous reading of "a few". It also
+   means a delayed or failed run is harmless, whereas a single ping every 5 days
+   has no margin at all. Runs take ~5s and public-repo Actions minutes are free,
+   so frequency costs nothing.
 2. **A read is activity.** Supabase says "requests", not "writes". This is also
    what the widely used [supabase-pause-prevention](https://github.com/travisvn/supabase-pause-prevention)
    tool does. So we do not persist anything — see "Read, not write" below.
@@ -135,6 +138,17 @@ forget exists. `/api/health` remains available for uptime pinging (a separate
 concern — keeping a function instance and DB pool warm), but it only covers
 production and does not address pausing.
 
+## Verification status
+
+- **2026-08-03 — mechanism verified.** Run `30838261988` returned
+  `prod: HTTP 200` and `dev: HTTP 200`; job wall time 5s. This proves the pings
+  reach both projects with authenticated queries.
+- **Open — does Supabase count it?** Reaching the database is not the same as
+  registering as qualifying activity, and the threshold is unpublished. The dev
+  project is the test: if it stays awake past 7 days with only this workflow
+  touching it, reads count. If it pauses anyway, escalate to a heartbeat write
+  (single-row `keep_alive` table upserted on the same schedule).
+
 ## Operational notes
 
 - **The dev project must be restored manually once** (Supabase dashboard) before
@@ -153,6 +167,13 @@ production and does not address pausing.
 - GitHub disables scheduled workflows in repositories with 60 days of no
   activity, warning by email first. Not a practical concern at the current
   commit cadence.
+- **The one silent failure mode:** a *failing* run emails you, but a run that
+  never fires produces no signal at all — so if the schedule itself stops
+  (workflow disabled, Actions outage, repo archived), both projects quietly
+  drift toward pausing with no alarm. Deliberately not mitigated further:
+  monitoring the monitor is out of proportion here. A glance at
+  `gh run list --workflow=keep-alive.yml` when touching infrastructure is
+  enough.
 
 ## Follow-ups (not part of this change)
 
