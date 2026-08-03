@@ -140,6 +140,14 @@ production and does not address pausing.
 - **The dev project must be restored manually once** (Supabase dashboard) before
   the workflow can keep it awake — a paused project cannot be pinged back to
   life over the REST API.
+- **`SUPABASE_*_URL` must be the project REST URL** (`https://<ref>.supabase.co`
+  — the same value as `NEXT_PUBLIC_SUPABASE_URL`), **not** a `postgresql://`
+  connection string. Getting this wrong was the first-run failure: curl reports
+  the opaque `Protocol "postgresql" not supported or disabled in libcurl`,
+  retries a permanent error, and prints `HTTP 000` having never made a request.
+  Each step now guards the value's shape and fails with an explicit message
+  instead. The project ref is the `postgres.<ref>` portion of the pooler
+  connection string.
 - Failures are loud: `--fail-with-body` fails the step on any non-2xx, and
   GitHub emails on failed scheduled runs.
 - GitHub disables scheduled workflows in repositories with 60 days of no

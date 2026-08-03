@@ -45,24 +45,46 @@ jobs:
       # drifted toward pausing. See
       # docs/decisions/2026-06-24-prod-db-routing-investigation.md.
       - name: Ping production
+        # Secrets go through `env`, not direct `${{ }}` interpolation into the
+        # script body — that keeps their values out of the generated shell source.
+        env:
+          BASE_URL: ${{ secrets.SUPABASE_PROD_URL }}
+          KEY: ${{ secrets.SUPABASE_PROD_SERVICE_ROLE_KEY }}
         run: |
+          # Guard the secret's shape. This must be the project REST URL, not the
+          # Postgres connection string: given a postgresql:// URL, curl fails
+          # with the opaque `Protocol "postgresql" not supported`, retries a
+          # permanent error, and reports HTTP 000 without ever making a request.
+          url="${BASE_URL%/}"
+          case "$url" in
+            https://*.supabase.co) ;;
+            *) echo "::error::SUPABASE_PROD_URL must be the project REST URL (https://<ref>.supabase.co), not a Postgres connection string." ; exit 1 ;;
+          esac
           curl --fail-with-body -sS -o /dev/null \
             -w 'prod: HTTP %{http_code} in %{time_total}s\n' \
             --connect-timeout 10 --max-time 30 \
             --retry 3 --retry-delay 10 --retry-all-errors \
-            -H "apikey: ${{ secrets.SUPABASE_PROD_SERVICE_ROLE_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_PROD_SERVICE_ROLE_KEY }}" \
-            "${{ secrets.SUPABASE_PROD_URL }}/rest/v1/tenants?select=id&limit=1"
+            -H "apikey: $KEY" \
+            -H "Authorization: Bearer $KEY" \
+            "$url/rest/v1/tenants?select=id&limit=1"
 
       # `always()` so a production failure can never mask a dev failure — both
       # are reported independently and either one fails the job.
       - name: Ping development
         if: always()
+        env:
+          BASE_URL: ${{ secrets.SUPABASE_DEV_URL }}
+          KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
         run: |
+          url="${BASE_URL%/}"
+          case "$url" in
+            https://*.supabase.co) ;;
+            *) echo "::error::SUPABASE_DEV_URL must be the project REST URL (https://<ref>.supabase.co), not a Postgres connection string." ; exit 1 ;;
+          esac
           curl --fail-with-body -sS -o /dev/null \
             -w 'dev: HTTP %{http_code} in %{time_total}s\n' \
             --connect-timeout 10 --max-time 30 \
             --retry 3 --retry-delay 10 --retry-all-errors \
-            -H "apikey: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}" \
-            "${{ secrets.SUPABASE_DEV_URL }}/rest/v1/tenants?select=id&limit=1"
+            -H "apikey: $KEY" \
+            -H "Authorization: Bearer $KEY" \
+            "$url/rest/v1/tenants?select=id&limit=1"
