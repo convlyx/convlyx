@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<title>Convlyx — Preços</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  @page { size: A4; margin: 0; }
+  body { width: 210mm; height: 297mm; overflow: hidden; position: relative; }
+  .wrap { padding: 11mm 15mm 0 15mm; }
+  header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6mm; }
+  h1 { font-size: 21pt; margin-top: 2mm; }
+  .lede { color: var(--ink-2); margin-top: 3mm; font-size: 10.5pt; max-width: 150mm; }
+
+  .plans { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 4mm; margin-top: 7mm; }
+  .plan { border: 1px solid var(--line); border-radius: 4mm; padding: 5mm 5mm; background: #fff; position: relative; }
+  .plan.hero { background: var(--green-900); color: #fff; border-color: var(--green-900); }
+  .plan .name { font-weight: 700; font-size: 11pt; }
+  .plan .for { font-size: 8.3pt; color: var(--muted); margin-top: 1mm; min-height: 8mm; }
+  .plan.hero .for { color: #a7d9bb; }
+  .price { margin-top: 2.5mm; display: flex; align-items: baseline; gap: 1.5mm; }
+  .price .v { font-size: 30pt; font-weight: 800; letter-spacing: -0.03em; }
+  .price .u { font-size: 9pt; color: var(--muted); }
+  .plan.hero .price .u { color: #a7d9bb; }
+  .plan .note { font-size: 8.5pt; margin-top: 1mm; color: var(--ink-2); }
+  .plan.hero .note { color: #e7f7ee; }
+  .plan .check { margin-top: 3mm; font-size: 8.6pt; }
+  .plan.hero .check li::before { border-color: #86efac; }
+  .badge { position: absolute; top: -3mm; left: 5.5mm; background: #86efac; color: var(--green-900); font-size: 7.5pt; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 1mm 3mm; border-radius: 999px; }
+
+  .incl { margin-top: 5.5mm; background: var(--green-50); border-radius: 4mm; padding: 4.5mm 6mm; }
+  .incl h2 { font-size: 11.5pt; margin-bottom: 2mm; }
+  .incl .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 6mm; font-size: 8.6pt; }
+
+  .steps { margin-top: 4.5mm; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5mm; }
+  .step .n { font-family: "Newsreader", serif; font-style: italic; font-size: 20pt; color: var(--green-600); line-height: 1; }
+  .step h3 { font-size: 10.5pt; margin: 1.5mm 0 1mm; }
+  .step p { font-size: 8.8pt; color: var(--ink-2); }
+
+  .faq { margin-top: 4.5mm; display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 8mm; }
+  .faq h4 { font-size: 9.5pt; font-weight: 700; }
+  .faq p { font-size: 8.6pt; color: var(--ink-2); margin-top: .8mm; }
+
+  .foot { position: absolute; left: 15mm; right: 15mm; bottom: 7mm; border-top: 1px solid var(--line); padding-top: 3.5mm; display: flex; justify-content: space-between; font-size: 8.5pt; color: var(--ink-2); }
+  .foot .site { font-weight: 800; color: var(--green-700); font-size: 11pt; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><div class="brand"><img src="../../../src/app/icon.png" alt="">Convlyx</div><span class="eyebrow">Preços · outubro 2026</span></header>
+
+  <h1>Uma mensalidade por escola. <span class="serif">Alunos sem limite.</span></h1>
+  <p class="lede">O preço não muda com o número de alunos e não há módulos à parte. A implementação está incluída e não há fidelização.</p>
+
+  <div class="plans">
+    <div class="plan hero">
+      <span class="badge">Só 10 vagas</span>
+      <div class="name">Escola Fundadora</div>
+      <div class="for">Para as primeiras 10 escolas que aderirem até 31/12/2026</div>
+      <div class="price"><span class="v">39 €</span><span class="u">/mês</span></div>
+      <div class="note"><b>3 meses grátis</b>. Depois, preço fixo para sempre.</div>
+      <ul class="check">
+        <li>Tudo incluído, alunos ilimitados</li>
+        <li>Nós montamos tudo e carregamos os alunos</li>
+        <li>Acesso direto aos fundadores</li>
+        <li>Peso real no que construímos a seguir</li>
+      </ul>
+    </div>
+    <div class="plan">
+      <div class="name">Escola</div>
+      <div class="for">Uma escola, uma morada</div>
+      <div class="price"><span class="v">59 €</span><span class="u">/mês</span></div>
+      <div class="note">Ou 590 €/ano: 2 meses oferecidos.</div>
+      <ul class="check">
+        <li>Tudo incluído, alunos ilimitados</li>
+        <li>Implementação incluída</li>
+        <li>Suporte por WhatsApp e email</li>
+        <li>Sem fidelização</li>
+      </ul>
+    </div>
+    <div class="plan">
+      <div class="name">Grupo</div>
+      <div class="for">2 ou mais escolas ou delegações</div>
+      <div class="price"><span class="v">49 €</span><span class="u">/escola/mês</span></div>
+      <div class="note">Cada escola no seu próprio endereço.</div>
+      <ul class="check">
+        <li>Tudo o que o plano Escola inclui</li>
+        <li>Uma conta de grupo, dados separados</li>
+        <li>Calendário com filtro por escola</li>
+        <li>Implementação incluída em todas</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="incl">
+    <h2>Incluído em todos os planos</h2>
+    <div class="grid">
+      <ul class="check"><li>App do aluno e do instrutor</li><li>Notificações no telemóvel</li><li>Instalação por QR, sem loja</li></ul>
+      <ul class="check"><li>Calendário e aulas recorrentes</li><li>Deteção de conflitos de horário</li><li>Presenças por QR e por lista</li></ul>
+      <ul class="check"><li>Cartas, exames e tentativas</li><li>Estatísticas e folhas em PDF</li><li>Ferramentas RGPD prontas a usar</li></ul>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step"><div class="n">1</div><h3>Conversa de 15 minutos</h3><p>Percebemos como a escola marca as aulas hoje: por telefone, WhatsApp ou papel.</p></div>
+    <div class="step"><div class="n">2</div><h3>Nós montamos tudo</h3><p>Em 48 horas, a escola tem o seu espaço criado e os alunos e instrutores carregados.</p></div>
+    <div class="step"><div class="n">3</div><h3>QR no balcão</h3><p>Os alunos instalam a app com a câmara do telemóvel. Ninguém precisa de formação.</p></div>
+  </div>
+
+  <div class="faq">
+    <div><h4>Temos de deixar o programa que usamos?</h4><p>Não. O Convlyx não substitui o software ligado ao IMT. Trata da relação diária com alunos e instrutores, que esse software não faz.</p></div>
+    <div><h4>E se não gostarmos?</h4><p>Cancelam com um email. Exportamos os vossos dados e apagamo-los dos nossos servidores, como prevê o RGPD.</p></div>
+    <div><h4>Onde ficam os dados?</h4><p>Em servidores na União Europeia (Irlanda), isolados por escola. O contrato de subcontratação RGPD está público em convlyx.com.</p></div>
+    <div><h4>Há contrato de permanência?</h4><p>Não. Basta uma ficha de adesão de uma página. Os termos estão todos públicos em convlyx.com.</p></div>
+  </div>
+</div>
+
+<div class="foot"><div>{{CONTACT_BLOCK}}<br><span style="color:var(--muted)">Ao preço acresce IVA à taxa legal, quando aplicável.</span></div><div class="site">convlyx.com</div></div>
+</body>
+</html>

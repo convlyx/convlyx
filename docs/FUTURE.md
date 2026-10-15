@@ -81,6 +81,16 @@ Living document of things to build, improve, or investigate post-MVP.
 - [ ] Feature flag management per tenant
 - [ ] Support ticket system
 
+### Sales & trial CRM inside admin.convlyx.com (idea, 2026-10-15)
+Idea that came out of the first trial school (escolaac): one place for the whole commercial and onboarding cycle, instead of a Google Sheet, terminal scripts and reminders in our heads. Not for now: the interim is `docs/sales/06-leads-centro.xlsx` + `automacao/convlyx-crm.gs` + `scripts/setup-trial-school.ts`. Build it when the manual process starts to hurt (roughly 5 or more schools in trial at once).
+- [ ] **Leads/pipeline:** import the Centro leads list; status per school (Novo → Em sequência → Respondeu → Em teste → Cliente / Perdido); owner; notes; next action + date.
+- [ ] **Follow-up alerts:** a daily digest (email or admin dashboard) of follow-ups due today, e.g. "escolaac: check how the trial is going (23/10)". This was the first pain point.
+- [ ] **One-click trial setup:** a "Create tenant + school + admin" button, then a "Seed trial data" button that runs the `setup-trial-school.ts` logic (test logins, example people, thinned classes; no emails).
+- [ ] **Generate access email:** fill the trial welcome email template (address, three logins, getting-started steps) ready to copy or send.
+- [ ] **Clean example data:** a "Clean example data" button that removes `@<sub>.convlyx.com` people and their classes before the school imports real students.
+- [ ] **Trial tracking:** trial start/end (3 months from go-live), activity from `Membership.lastSeenAt` (are students actually using it?), and a reminder 15 days before the trial ends.
+- [ ] Every action audited (same pattern as `admin.ops.*`).
+
 ## Superadmin (post-MVP)
 - [ ] SuperAdmin table with email allowlist (decoupled from tenant Users)
 - [ ] Superadmin UI on root domain or separate subdomain (e.g. `super.convlyx.com`)

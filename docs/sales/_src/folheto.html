@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<title>Convlyx — Escolas Fundadoras</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  @page { size: A4; margin: 0; }
+  body { width: 210mm; height: 297mm; overflow: hidden; position: relative; }
+  .top {
+    padding: 14mm 15mm 0 15mm; height: 136mm; position: relative;
+    background: radial-gradient(120% 90% at 100% 0%, #d6f3e2 0%, #eef9f3 38%, #ffffff 70%);
+  }
+  .top .brand { margin-bottom: 10mm; }
+  h1 { font-size: 28pt; max-width: 100mm; }
+  h1 .serif { display: block; font-size: 29pt; margin-top: 2px; }
+  .lede { margin-top: 6mm; font-size: 11.5pt; color: var(--ink-2); max-width: 104mm; }
+  .tags { margin-top: 6mm; display: flex; gap: 6px; flex-wrap: wrap; max-width: 110mm; }
+  .phones { position: absolute; right: 14mm; top: 14mm; width: 72mm; height: 115mm; }
+  .phone {
+    position: absolute; width: 45mm; border-radius: 6.5mm; border: 2.2mm solid #0f172a; overflow: hidden;
+    box-shadow: 0 10px 30px rgba(13,59,36,.22); background: #fff;
+  }
+  .phone img { width: 100%; display: block; }
+  .phone.a { right: 0; top: 0; z-index: 2; }
+  .phone.b { left: 0; top: 18mm; transform: rotate(-4deg); opacity: .97; }
+  .label { position: absolute; font-size: 7.5pt; font-weight: 600; color: var(--muted); }
+  .label.a { right: 0; top: 112mm; }
+  .label.b { left: 2mm; top: 124mm; }
+
+  .benefits { padding: 4mm 15mm 0 15mm; display: grid; grid-template-columns: repeat(4, 1fr); gap: 5mm; }
+  .benefit h3 { font-size: 10.5pt; margin-bottom: 1.5mm; }
+  .benefit p { font-size: 8.6pt; color: var(--ink-2); line-height: 1.45; }
+  .benefit .n { font-family: "Newsreader", serif; font-style: italic; color: var(--green-600); font-size: 18pt; line-height: 1; margin-bottom: 1mm; }
+
+  .offer {
+    margin: 6mm 15mm 0 15mm; border-radius: 5mm; background: var(--green-900); color: #fff;
+    display: grid; grid-template-columns: 1fr 38mm; gap: 8mm; padding: 7mm 8mm;
+  }
+  .offer .eyebrow { color: #86efac; }
+  .offer h2 { font-size: 17pt; margin: 1.5mm 0 3mm 0; }
+  .offer h2 .serif { color: #86efac; }
+  .offer .check li { font-size: 9.4pt; margin: 2.2mm 0; color: #e7f7ee; }
+  .offer .check li::before { border-color: #86efac; }
+  .offer .check b { color: #fff; }
+  .qr { background: #fff; border-radius: 3mm; padding: 2.5mm; text-align: center; align-self: center; }
+  .qr img { width: 100%; display: block; }
+  .qr span { display: block; color: var(--green-900); font-size: 7pt; font-weight: 700; margin-top: 1mm; line-height: 1.25; }
+  .deadline { font-size: 8pt; color: #a7d9bb; margin-top: 2mm; }
+
+  .contact { position: absolute; left: 15mm; right: 15mm; bottom: 9mm; display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid var(--line); padding-top: 4mm; }
+  .contact .who { font-size: 9pt; color: var(--ink-2); }
+  .contact .who b { color: var(--ink); font-size: 10pt; }
+  .contact .site { font-weight: 800; color: var(--green-700); font-size: 12pt; }
+</style>
+</head>
+<body>
+  <section class="top">
+    <div class="brand"><img src="../../../src/app/icon.png" alt="">Convlyx</div>
+    <div class="eyebrow">Para escolas de condução</div>
+    <h1 style="margin-top:3mm">O vosso programa trata do IMT.<span class="serif">O Convlyx trata dos alunos.</span></h1>
+    <p class="lede">A app no telemóvel para alunos e instrutores, que funciona ao lado do software que a escola já usa. Não é preciso trocar de programa, nem instalar nada a partir da App Store.</p>
+    <div class="tags"><span class="pill">Alunos e instrutores no telemóvel</span><span class="pill">Avisos automáticos</span><span class="pill">Presenças por QR</span><span class="pill">Português europeu</span></div>
+
+    <div class="phones">
+      <div class="phone b"><img src="../../../public/screenshots/app-home-instructor.png" alt=""></div>
+      <div class="phone a"><img src="../../../public/screenshots/app-home.png" alt=""></div>
+    </div>
+  </section>
+
+  <section class="benefits">
+    <div class="benefit"><div class="n">1</div><h3>Menos telefonemas</h3><p>Cada aluno vê no telemóvel as suas aulas, exames e progresso. Deixa de ligar à secretaria a perguntar quando é a próxima aula.</p></div>
+    <div class="benefit"><div class="n">2</div><h3>Avisos que chegam sozinhos</h3><p>Aula cancelada ou horário alterado? Todos os inscritos recebem a notificação na hora. Acabam as mensagens enviadas aluno a aluno.</p></div>
+    <div class="benefit"><div class="n">3</div><h3>Presenças sem papel</h3><p>Na teórica, o instrutor projeta um QR e cada aluno confirma a presença com o telemóvel. Na prática, basta um toque.</p></div>
+    <div class="benefit"><div class="n">4</div><h3>Instrutores organizados</h3><p>Cada instrutor tem o seu dia no telemóvel. Se não puder dar uma aula, os alunos inscritos são avisados no momento.</p></div>
+  </section>
+
+  <section class="offer">
+    <div>
+      <div class="eyebrow">Programa Escolas Fundadoras · só 10 escolas</div>
+      <h2>Experimentem 3 meses. <span class="serif">Sem pagar nada.</span></h2>
+      <ul class="check">
+        <li><b>3 meses grátis</b>, sem compromisso e sem cartão.</li>
+        <li>Depois, <b>39 €/mês por escola, um preço fixo para sempre</b> (o preço normal é 59 €).</li>
+        <li><b>Nós montamos tudo:</b> carregamos os vossos alunos a partir do Excel ou das fichas em papel.</li>
+        <li><b>Saem quando quiserem.</b> Os dados são vossos e levam-nos convosco.</li>
+      </ul>
+      <div class="deadline">Adesões até 31 de dezembro de 2026. Ao preço acresce IVA, quando aplicável.</div>
+    </div>
+    <div class="qr"><img src="{{QR_SRC}}" alt="QR"><span>{{QR_LABEL}}</span></div>
+  </section>
+
+  <div class="contact">
+    <div class="who">{{CONTACT_BLOCK}}</div>
+    <div class="site">convlyx.com</div>
+  </div>
+</body>
+</html>

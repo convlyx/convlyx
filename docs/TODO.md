@@ -65,6 +65,14 @@ Last reviewed: 2026-05-11.
 - [x] PDF export of full course report (course + exams + classes attended) per category. `exportCourseProgressPDF` in `src/lib/pdf-export.ts` renders one PDF per `StudentCourse`: student + course header, practical-only attendance stats scoped to that category, exam-result counts, exam history table, and a practical class history table. Triggered from the "Exportar PDF" button on each active course card on the student detail page.
 - [x] When abandoning a course, archive related future enrollments. `course.abandon` now cancels future `ENROLLED` enrollments in classes of the same category (plus `THEORY` classes if the student has no other in-progress course). All inside one transaction. The student gets a notification with the count.
 
+## 7. Trial onboarding (from the first trial school, escolaac, 2026-10-15)
+
+- [ ] **Getting-started guide to send with the access email**: a short video (2–3 min) and/or a 1–2 page PDF. It should cover the two sides (backoffice on the computer for the secretaria; app on the phone for students and instructors), installing the app without an app store, turning on notifications, and the "cancel a class and watch the notification arrive" test. For now the access email explains this in text (template in `docs/sales/`).
+- [ ] **The push prompt did not appear on install** when testing escolaac on Francisco's phone (which also has another tenant's app installed). `src/components/push-prompt.tsx` only shows when `serviceWorker` + `PushManager` exist, the user hasn't dismissed it, permission isn't `denied`, and there is no existing subscription. On iOS, `PushManager` only exists inside the installed PWA, not in a Safari tab. Reproduce on a clean device and confirm which condition blocks it. Fallback that works today: **Perfil → Ativar notificações** (`PushManager` in settings).
+- [ ] **Cleanup script for example data** created by `scripts/setup-trial-school.ts` (everyone `@<subdomain>.convlyx.com` plus their classes and enrolments), to run before a trial school imports its real students.
+- [ ] **Follow-up alerts for trial schools**: today they live only in our heads and calendars. Interim: a calendar reminder for each one (escolaac: Fri 23/10). Long-term: the CRM in admin.convlyx.com (see `FUTURE.md` → Platform Admin → Sales & trial CRM).
+- [ ] **Fix the usage notes in `scripts/admin-create-user.ts`**: `pnpm dotenv -e .env.prod -- tsx …` drops every `--flag` (pnpm swallows the first `--`). Use `pnpm tsx --env-file=.env.prod …` instead. Also switch it to `DIRECT_URL`, as `setup-trial-school.ts` does.
+
 ---
 
 ## Stale entries to remove from FUTURE.md

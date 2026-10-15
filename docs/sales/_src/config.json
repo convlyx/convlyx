@@ -1,0 +1,10 @@
+{
+  "_comment": "Edita estes valores e corre `python docs/sales/_src/build.py` para regenerar os PDFs.",
+  "contacts": [
+    { "name": "Pedro Laúdo", "phone": "" },
+    { "name": "Francisco", "phone": "" }
+  ],
+  "email": "convlyx@gmail.com",
+  "qr_url": "https://convlyx.com/?utm_source=folheto&utm_medium=print&utm_campaign=fundadoras",
+  "qr_label": "Ver o Convlyx em convlyx.com"
+}
